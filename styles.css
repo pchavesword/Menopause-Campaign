@@ -167,18 +167,26 @@ a { color: inherit; }
   padding-block: 128px 64px;
 }
 
+/* Navbar: always fixed at the top, above every section. The bar itself is
+   transparent and click-through; only the logo and button take pointer events. */
 .site-header {
-  position: absolute;
-  z-index: 2;
+  position: fixed;
+  z-index: 100;
   top: 0;
-  left: var(--gutter);
-  right: var(--gutter);
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+.site-header__inner {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding-top: 29px;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 39px calc(var(--edge) + var(--gutter)) 0;
 }
+.site-header__inner > * { pointer-events: auto; }
 .logo { display: block; flex: none; }
 .logo img { width: 97.5px; height: 24px; }
 .site-header .logo { margin-top: 9px; }
@@ -568,6 +576,8 @@ a { color: inherit; }
     --eob-top: 159px;      /* receipt offset from the top of the hero       */
     --eob-h: 902px;        /* receipt height at 371px wide                  */
     position: relative;
+    /* room for the part of the receipt that hangs below section 2 */
+    margin-bottom: calc(var(--eob-top) + var(--eob-h) - var(--hero-h) + 40px);
   }
   .hero {
     position: sticky;
@@ -576,17 +586,24 @@ a { color: inherit; }
     height: var(--hero-h);
     padding-block: 110px;
   }
+  /* Same height as the hero. The receipt is longer, so it hangs out of the
+     bottom of the panel; .intro's bottom margin reserves room for it. */
   .sarah {
     z-index: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    /* tall enough to hold the whole receipt once it has come to rest */
-    min-height: calc(var(--eob-top) + var(--eob-h) + 70px);
+    display: block;
+    height: var(--hero-h);
     /* top padding = receipt offset, so "Meet Sarah" lines up with the receipt's top edge */
-    padding-block: var(--eob-top) 70px;
+    padding-block: var(--eob-top) 0;
   }
-  .sarah__intro, .sarah__outro { max-width: 310px; align-self: flex-start; }
+  .sarah__intro, .sarah__outro { max-width: 310px; }
+  /* Closing copy sits below the panel, beside the overhanging receipt,
+     with its last line level with the receipt's bottom edge. */
+  .sarah__outro {
+    position: absolute;
+    left: var(--gutter);
+    bottom: calc(var(--hero-h) - var(--eob-top) - var(--eob-h));
+    width: 310px;
+  }
 
   /* The track starts at the top of the hero and ends where the receipt comes
      to rest inside section 2; the receipt is sticky inside it. */

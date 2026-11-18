@@ -226,7 +226,7 @@ a { color: inherit; }
   z-index: 3;
   width: 100%;
   max-width: 371px;
-  margin: 36px auto 0;               /* room for the "click to flip" cue above */
+  margin-inline: auto;
   aspect-ratio: 371 / 902;
   container-type: inline-size;
   perspective: 1400px;
@@ -251,6 +251,8 @@ a { color: inherit; }
   white-space: nowrap;
   cursor: pointer;
 }
+.eob__cue[hidden] { display: none; }
+.eob:has(.eob__cue:not([hidden])) { margin-top: 36px; } /* room for the cue on tablet and mobile */
 .eob__cue img { width: 20px; height: 20px; transition: transform 0.8s cubic-bezier(0.4, 0.1, 0.2, 1); }
 .eob.is-flipped .eob__cue img { transform: rotate(180deg); }
 
@@ -273,8 +275,65 @@ a { color: inherit; }
   backface-visibility: hidden;
   filter: drop-shadow(0 10px 28px rgba(13, 13, 13, 0.12));
 }
-.eob__face--front { aspect-ratio: 371 / 902; background: url("assets/paper.png") center / 100% 100% no-repeat; }
-.eob__face--back { aspect-ratio: 371 / 872; background: url("assets/paper-back.png") center / 100% 100% no-repeat; transform: rotateY(180deg); }
+.eob__face--front { aspect-ratio: 371 / 902; }
+.eob__face--back { aspect-ratio: 371 / 872; transform: rotateY(180deg); }
+
+/* The sheet is the paper itself. While the receipt unrolls, script.js sets
+   --unroll (px of paper rolled out so far) and the rest is clipped away. */
+.eob__sheet {
+  position: absolute;
+  inset: 0;
+  background: url("assets/paper.png") center / 100% 100% no-repeat;
+  clip-path: inset(0 0 calc(100% - var(--unroll, 100%)) 0);
+}
+.eob__face--back .eob__sheet { background-image: url("assets/paper-back.png"); }
+
+/* 3D paper roll at the unrolled edge. A cylinder made of flat strips, each
+   rotated around the roll's axis; --roll-r is its radius. The paper texture
+   on the strips shifts with --unroll, so the roll turns as it unwinds. */
+.eob__roll {
+  --u: calc(100cqw / 371);
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  opacity: 0;
+}
+.eob.is-rolled .eob__roll { opacity: var(--roll-o, 1); }
+.eob__roll-strip {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  /* chord of one segment (2·tan(π/24) = 0.2633) plus a hair of overlap */
+  height: calc(var(--roll-r) * 0.2633 + 0.8px);
+  top: calc(var(--unroll) - var(--roll-r) * 0.13165 - 0.4px);
+  transform: translateZ(var(--roll-r)) rotateX(var(--a)) translateZ(var(--roll-r));
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  background:
+    linear-gradient(rgba(40, 30, 60, var(--shade)), rgba(40, 30, 60, var(--shade))),
+    url("assets/paper.png") 0 calc(-1 * (var(--unroll) + var(--roll-r) * var(--arc))) / 100% calc(var(--u) * 902);
+}
+.eob.is-flipped .eob__roll-strip { background-image: linear-gradient(rgba(20, 5, 40, var(--shade)), rgba(20, 5, 40, var(--shade))), url("assets/paper-back.png"); }
+/* Soft shadows: one cast below the roll, one where it touches the paper. */
+.eob__roll-shadow {
+  position: absolute;
+  left: 2%;
+  width: 96%;
+  top: calc(var(--unroll) + var(--roll-r) * 0.35);
+  height: calc(var(--roll-r) * 2);
+  border-radius: 50%;
+  background: rgba(13, 13, 13, 0.32);
+  filter: blur(calc(var(--roll-r) * 0.55 + 2px));
+}
+.eob__roll-contact {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  top: calc(var(--unroll) - var(--roll-r) * 2.2);
+  height: calc(var(--roll-r) * 1.3);
+  background: linear-gradient(transparent, rgba(13, 13, 13, 0.1));
+}
 .eob__inner {
   --u: calc(100cqw / 371);
   display: flex;

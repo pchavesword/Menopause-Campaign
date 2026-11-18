@@ -58,6 +58,7 @@ if (document.documentElement.classList.contains('js-reveal')) {
 // Desktop scroll story (the hero and section 2 are position: sticky there):
 //   1. section 2 slides over the pinned hero, which blurs (--cover 0 -> 1);
 //   2. once the receipt lines up with "Meet Sarah" the "click to flip" cue shows;
+//      and the receipt unrolls from its paper roll as this happens;
 //   3. section 2 stays pinned for --pin px of scrolling, and the receipt flips
 //      a quarter of the way through (and flips back when scrolling up).
 // Everywhere: click the receipt or the cue to flip it; the copy beside it swaps.
@@ -106,7 +107,46 @@ if (document.documentElement.classList.contains('js-reveal')) {
   card.addEventListener('click', () => setFlipped(!flipped));
   cue.addEventListener('click', () => setFlipped(!flipped));
 
-  // ---- Scroll: blur, cue, scroll-flip ----
+  // ---- Paper roll ----
+  // Build the 3D roll: a ring of flat strips. Each strip knows its angle (--a),
+  // how far round the roll it sits (--arc, radians) and how shaded it is.
+  const roll = eob.querySelector('.eob__roll');
+  const SEGMENTS = 24;
+  if (roll && !reducedMotion) {
+    roll.insertAdjacentHTML('beforeend', '<div class="eob__roll-shadow"></div><div class="eob__roll-contact"></div>');
+    for (let i = 0; i < SEGMENTS; i += 1) {
+      const angle = (i / SEGMENTS) * Math.PI * 2;
+      const facingDown = Math.max(0, -Math.sin(angle)); // light comes from above
+      const turnedAway = 1 - Math.max(0, Math.cos(angle));
+      const strip = document.createElement('div');
+      strip.className = 'eob__roll-strip';
+      strip.style.setProperty('--a', `${((angle * 180) / Math.PI).toFixed(2)}deg`);
+      strip.style.setProperty('--arc', angle.toFixed(4));
+      strip.style.setProperty('--shade', (0.03 + 0.1 * turnedAway + 0.3 * facingDown).toFixed(3));
+      roll.appendChild(strip);
+    }
+  }
+
+  // Unroll `length` px of the receipt (out of `full`) and size the roll to the
+  // paper still wound on it.
+  const START = 0.33;       // share of the receipt already unrolled at the start
+  const THICKNESS = 3.2;    // how fast the roll thins as paper leaves it
+  const setUnroll = (length, full) => {
+    if (!roll || reducedMotion) return;
+    const left = Math.max(0, full - length);
+    if (left < 0.5) {
+      eob.classList.remove('is-rolled');
+      eob.style.removeProperty('--unroll');
+      eob.style.removeProperty('--roll-r');
+      return;
+    }
+    eob.classList.add('is-rolled');
+    eob.style.setProperty('--unroll', `${length.toFixed(1)}px`);
+    eob.style.setProperty('--roll-r', `${Math.sqrt(4 + (left * THICKNESS) / Math.PI).toFixed(2)}px`);
+    eob.style.setProperty('--roll-o', Math.min(1, left / 30).toFixed(2)); // fades as the last of it unwinds
+  };
+
+  // ---- Scroll: blur, unroll, cue, scroll-flip ----
   let queued = false;
   let pastFlipPoint = false;
 
@@ -117,6 +157,10 @@ if (document.documentElement.classList.contains('js-reveal')) {
       hero.style.removeProperty('--cover');
       eob.classList.remove('is-aligned');
       pastFlipPoint = false;
+      // The receipt unrolls as it travels up the screen: the roll stays about
+      // 80% of the way down the viewport until the paper runs out.
+      const box = eob.getBoundingClientRect();
+      setUnroll(Math.min(box.height, Math.max(box.height * START, window.innerHeight * 0.8 - box.top)), box.height);
       return;
     }
     const h = hero.getBoundingClientRect();
@@ -124,6 +168,9 @@ if (document.documentElement.classList.contains('js-reveal')) {
     const cover = Math.min(1, Math.max(0, (h.bottom + gap - panel.getBoundingClientRect().top) / (h.height + gap)));
     hero.style.setProperty('--cover', cover.toFixed(3));
     eob.classList.toggle('is-aligned', cover > 0.995);
+    // Unrolls while section 2 slides over the hero; fully out once they line up.
+    const full = eob.offsetHeight;
+    setUnroll(full * (START + (1 - START) * cover), full);
 
     // How far through the pinned stretch we are (0 = just pinned, 1 = released).
     const pin = parseFloat(getComputedStyle(intro).getPropertyValue('--pin')) || 0;

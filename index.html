@@ -58,13 +58,15 @@
       <!-- Track the receipt travels in while it stays pinned on desktop -->
       <div class="eob-track">
       <figure class="eob" data-reveal aria-label="Sarah's explanation of benefits: seven claims across six specialties, no perimenopause diagnosis">
-        <button class="eob__cue" type="button" aria-pressed="false" aria-label="Flip the receipt to see the connected version">
+        <!-- "Click to flip" cue: switched off for now. Remove the `hidden` attribute to bring it back. -->
+        <button class="eob__cue" hidden type="button" aria-pressed="false" aria-label="Flip the receipt to see the connected version">
           <span>click to flip</span>
           <img src="assets/ic-refresh-circle.svg" alt="" width="20" height="20">
         </button>
         <div class="eob__tilt">
           <div class="eob__card">
             <div class="eob__face eob__face--front">
+            <div class="eob__sheet">
             <div class="eob__inner">
               <div class="eob__head">
                 <p class="eob__title">Explanation of benefits</p>
@@ -97,7 +99,9 @@
             </div>
       
             </div>
+            </div>
             <div class="eob__face eob__face--back" aria-hidden="true" inert>
+            <div class="eob__sheet">
               <div class="eob__inner eob__inner--back">
                 <div class="eob__group">
                   <div class="eob__head">
@@ -121,7 +125,10 @@
                 </div>
               </div>
             </div>
+            </div>
           </div>
+          <!-- 3D paper roll, built by script.js -->
+          <div class="eob__roll" aria-hidden="true"></div>
         </div>
       </figure>
       </div>

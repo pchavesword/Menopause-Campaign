@@ -282,22 +282,56 @@ a { color: inherit; }
 .eob__face--back { aspect-ratio: 371 / 872; transform: rotateY(180deg) translateZ(0.5px); }
 /* Paper shadow: a plain box-shadow (cheap to rotate in 3D, unlike a filter).
    It follows the unrolled length and lifts off the page mid-flip. */
-.eob__face::before {
+.eob__card::before {
   content: "";
   position: absolute;
   inset: 0 0 auto;
   height: calc(var(--unroll, 100%) - 6px);
   box-shadow: 0 calc(10px + var(--lift, 0) * 14px) calc(28px + var(--lift, 0) * 22px) rgba(13, 13, 13, calc(0.12 + var(--lift, 0) * 0.06));
 }
+
+/* The back of the receipt is a little shorter than the front. */
+.eob.is-flipped .eob__card::before { height: calc(min(var(--unroll, 100%), 96.67%) - 6px); }
+
+/* Living paper. script.js cuts the receipt into horizontal strips (each one a
+   window onto a copy of the sheet) and bends them in 3D every frame, so the
+   paper curves, sways in a light breeze and reacts to scrolling. The original
+   faces stay in place, invisible, for assistive technology. */
+.eob.is-live .eob__face { opacity: 0; }
+.eob__strips { --strip-h: calc(100cqw * 902 / 371 / var(--strips)); position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
+.eob__strip {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  top: calc(var(--i) * var(--strip-h));
+  height: calc(var(--strip-h) + 1.5px); /* small overlap hides the seams */
+  transform-origin: 50% 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.eob__slice {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0.5px);
+}
+.eob__slice--back { transform: rotateY(180deg) translateZ(0.5px); }
+.eob__slice .eob__sheet { inset: auto; left: 0; width: 100%; top: calc(var(--i) * var(--strip-h) * -1); height: calc(100cqw * 902 / 371); }
+.eob__slice--back .eob__sheet { height: calc(100cqw * 872 / 371); background-image: url("assets/paper-back.png"); }
+
 /* The paper darkens slightly as it turns away from the light. */
 .eob__sheet::after {
   content: "";
   position: absolute;
   inset: 0;
   background: #1a1030;
-  opacity: calc(var(--lift, 0) * 0.22);
+  /* dimmer mid-flip, plus each strip's own light and shade (set by script.js) */
+  opacity: calc(var(--lift, 0) * 0.22 + var(--shade-front, 0));
   pointer-events: none;
 }
+.eob__slice--back .eob__sheet::after { opacity: calc(var(--lift, 0) * 0.22 + var(--shade-back, 0)); }
 
 /* The sheet is the paper itself. While the receipt unrolls, script.js sets
    --unroll (px of paper rolled out so far) and the rest is clipped away. */
@@ -319,6 +353,7 @@ a { color: inherit; }
   transform-style: preserve-3d;
   pointer-events: none;
   opacity: 0;
+  transform: translateZ(var(--roll-z, 0px)); /* rides on the bent paper */
 }
 .eob.is-rolled .eob__roll { opacity: var(--roll-o, 1); }
 .eob__roll-strip {

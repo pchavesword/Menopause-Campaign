@@ -174,9 +174,11 @@ if (document.documentElement.classList.contains('js-reveal')) {
   // paper still wound on it.
   const START = 0.33;       // share of the receipt already unrolled at the start
   const THICKNESS = 3.2;    // how fast the roll thins as paper leaves it
+  let unrolled = null; // px of paper out, or null once it is all out
   const setUnroll = (length, full) => {
     if (!roll || reducedMotion) return;
     const left = Math.max(0, full - length);
+    unrolled = left < 0.5 ? null : length;
     if (left < 0.5) {
       eob.classList.remove('is-rolled');
       eob.style.removeProperty('--unroll');
@@ -188,6 +190,103 @@ if (document.documentElement.classList.contains('js-reveal')) {
     eob.style.setProperty('--roll-r', `${Math.sqrt(4 + (left * THICKNESS) / Math.PI).toFixed(2)}px`);
     eob.style.setProperty('--roll-o', Math.min(1, left / 30).toFixed(2)); // fades as the last of it unwinds
   };
+
+  // ---- Living paper ----
+  // The receipt is cut into horizontal strips, each a window onto a copy of the
+  // sheet. Every frame the strips are tilted to follow a curve: a little
+  // permanent curl (paper that has been rolled never lies flat), a light breeze
+  // that travels down the sheet in waves and comes in gusts, and a swing when
+  // the page scrolls or the mouse brushes past. The top edge is held; the
+  // movement grows towards the free bottom edge.
+  const STRIPS = 16;
+  const strips = [];
+  let scrollSwing = 0;      // degrees, eased towards the scroll speed
+  let scrollSwingV = 0;
+  let lastScrollY = window.scrollY;
+  let breezeBoost = 0;      // 0-1, bumped by mouse movement over the receipt
+  let paperOnScreen = true;
+
+  if (!reducedMotion) {
+    const holder = document.createElement('div');
+    holder.className = 'eob__strips';
+    holder.setAttribute('aria-hidden', 'true');
+    holder.inert = true;
+    holder.style.setProperty('--strips', STRIPS);
+    const frontSheet = front.querySelector('.eob__sheet');
+    const backSheet = back.querySelector('.eob__sheet');
+    for (let i = 0; i < STRIPS; i += 1) {
+      const strip = document.createElement('div');
+      strip.className = 'eob__strip';
+      strip.style.setProperty('--i', i);
+      [['front', frontSheet], ['back', backSheet]].forEach(([side, sheet]) => {
+        const slice = document.createElement('div');
+        slice.className = `eob__slice eob__slice--${side}`;
+        slice.appendChild(sheet.cloneNode(true));
+        strip.appendChild(slice);
+      });
+      holder.appendChild(strip);
+      strips.push({ el: strip, shadeFront: -1, shadeBack: -1 });
+    }
+    card.appendChild(holder);
+    eob.classList.add('is-live');
+
+    new IntersectionObserver(([entry]) => { paperOnScreen = entry.isIntersecting; }).observe(eob);
+    eob.addEventListener('pointermove', (event) => {
+      breezeBoost = Math.min(1, breezeBoost + (Math.abs(event.movementX) + Math.abs(event.movementY)) / 400);
+    });
+
+    const DEG = Math.PI / 180;
+    // Tilt of the paper (degrees, + = leaning towards the viewer) at s = 0 (top) to 1 (bottom).
+    const tiltAt = (s, t, gust) =>
+      1.9 * Math.sin(s * 4.7 + 0.6) + 4.6 * s * s * s                       // permanent curl
+      + gust * Math.pow(s, 1.2) * (2.6 * Math.sin(1.1 * t - 3.2 * s) + 1.3 * Math.sin(1.9 * t - 5.5 * s + 1.3)) // breeze
+      + scrollSwing * s * s;                                                 // swing from scrolling
+    // Facing down = darker. Rounded to coarse steps so the strips only repaint when the light really changes.
+    const shadeFor = (deg) => Math.round(Math.min(0.22, Math.max(0, 0.05 - deg * 0.026)) * 250) / 250;
+
+    let previous = performance.now();
+    const animatePaper = (now) => {
+      requestAnimationFrame(animatePaper);
+      const dt = Math.min(0.05, (now - previous) / 1000);
+      previous = now;
+      if (!paperOnScreen) return;
+      const t = now / 1000;
+
+      // Scroll speed -> a damped swing of the free end.
+      const speed = (window.scrollY - lastScrollY) / Math.max(dt, 0.001);
+      lastScrollY = window.scrollY;
+      const swingTarget = Math.max(-4.5, Math.min(4.5, -speed / 350));
+      scrollSwingV += (60 * (swingTarget - scrollSwing) - 9 * scrollSwingV) * dt;
+      scrollSwing += scrollSwingV * dt;
+      breezeBoost *= Math.exp(-dt * 1.4);
+
+      // Gusts: the breeze swells and dies away; it is calmer while the heavy roll is still attached.
+      const gust = (0.55 + 0.45 * Math.sin(t * 0.31) * Math.sin(t * 0.17 + 1) + 1.6 * breezeBoost) * (unrolled === null ? 1 : 0.35);
+
+      const stripH = eob.offsetHeight / STRIPS;
+      let z = 0;
+      let lift = 0;   // how much shorter the bent paper is than the flat sheet so far
+      let rollZ = 0;
+      for (let i = 0; i < STRIPS; i += 1) {
+        const top = tiltAt(i / STRIPS, t, gust);
+        const bottom = tiltAt((i + 1) / STRIPS, t, gust);
+        const tilt = (top + bottom) / 2;
+        const s = (i + 0.5) / STRIPS;
+        const twist = gust * Math.pow(s, 1.5) * 1.5 * Math.sin(0.8 * t - 2.2 * s + 0.5);
+        const strip = strips[i];
+        strip.el.style.transform = `translate3d(0, ${(-lift).toFixed(2)}px, ${z.toFixed(2)}px) rotateX(${tilt.toFixed(3)}deg) rotateY(${twist.toFixed(3)}deg)`;
+        const shadeFront = shadeFor(tilt);
+        const shadeBack = shadeFor(-tilt);
+        if (shadeFront !== strip.shadeFront) { strip.shadeFront = shadeFront; strip.el.style.setProperty('--shade-front', shadeFront); }
+        if (shadeBack !== strip.shadeBack) { strip.shadeBack = shadeBack; strip.el.style.setProperty('--shade-back', shadeBack); }
+        if (unrolled !== null && unrolled >= i * stripH) rollZ = z + (unrolled - i * stripH) * Math.sin(tilt * DEG);
+        z += stripH * Math.sin(tilt * DEG);
+        lift += stripH * (1 - Math.cos(tilt * DEG));
+      }
+      roll.style.setProperty('--roll-z', `${rollZ.toFixed(2)}px`);
+    };
+    requestAnimationFrame(animatePaper);
+  }
 
   // ---- Scroll: blur, unroll, cue, scroll-flip ----
   let queued = false;

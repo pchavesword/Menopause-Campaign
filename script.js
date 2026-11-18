@@ -55,10 +55,10 @@ if (document.documentElement.classList.contains('js-reveal')) {
 }
 
 // Hero + receipt interactions.
-// Desktop scroll story (the hero and section 2 are position: sticky there):
-//   1. section 2 slides over the pinned hero, which blurs (--cover 0 -> 1);
-//   2. once the receipt lines up with "Meet Sarah" the "click to flip" cue shows;
-//      and the receipt unrolls from its paper roll as this happens;
+// Desktop scroll story (section 2 is position: sticky there):
+//   1. the hero scrolls away and section 2 rises to the top of the viewport;
+//      the receipt holds its place on screen and unrolls as this happens;
+//   2. once the receipt lines up with section 2 the "click to flip" cue shows;
 //   3. section 2 stays pinned for --pin px of scrolling, and the receipt turns
 //      over in step with that scrolling (scroll back up and it turns back).
 // The receipt only flips with scroll (on tablet and mobile: once it has fully
@@ -306,14 +306,13 @@ if (document.documentElement.classList.contains('js-reveal')) {
     requestAnimationFrame(animatePaper);
   }
 
-  // ---- Scroll: blur, unroll, cue, scroll-flip ----
+  // ---- Scroll: unroll, cue, scroll-flip ----
   let queued = false;
 
   const update = () => {
     queued = false;
-    if (getComputedStyle(hero).position !== 'sticky') {
+    if (getComputedStyle(panel).position !== 'sticky') {
       // Tablet and mobile: nothing is pinned, the cue is always visible.
-      hero.style.removeProperty('--cover');
       eob.classList.remove('is-aligned');
       // The receipt unrolls as it travels up the screen: the roll stays about
       // 80% of the way down the viewport until the paper runs out.
@@ -324,18 +323,19 @@ if (document.documentElement.classList.contains('js-reveal')) {
       flipTo((rollLine - 40 - box.bottom) / 280);
       return;
     }
-    const h = hero.getBoundingClientRect();
     const gap = 10; // space between the two panels
-    const cover = Math.min(1, Math.max(0, (h.bottom + gap - panel.getBoundingClientRect().top) / (h.height + gap)));
-    hero.style.setProperty('--cover', cover.toFixed(3));
+    const stickyTop = parseFloat(getComputedStyle(panel).top) || 0;
+    // 0 = page at the top (section 2 still a full hero-height below its resting
+    // place); 1 = section 2 has reached the top of the viewport.
+    const travel = hero.offsetHeight + gap;
+    const cover = Math.min(1, Math.max(0, 1 - (panel.getBoundingClientRect().top - stickyTop) / travel));
     eob.classList.toggle('is-aligned', cover > 0.995);
-    // Unrolls while section 2 slides over the hero; fully out once they line up.
+    // Unrolls while section 2 rises; fully out once it reaches the top.
     const full = eob.offsetHeight;
     setUnroll(full * (START + (1 - START) * cover), full);
 
     // How far through the pinned stretch we are (0 = just pinned, 1 = released).
     const pin = parseFloat(getComputedStyle(intro).getPropertyValue('--pin')) || 0;
-    const stickyTop = parseFloat(getComputedStyle(panel).top) || 0;
     const scrolledPastPin = stickyTop - (intro.getBoundingClientRect().top + hero.offsetHeight + gap);
     const pinned = pin > 0 ? scrolledPastPin / pin : 0; // 0 = just pinned, 1 = released
     flipTo((pinned - FLIP_FROM) / (FLIP_TO - FLIP_FROM));

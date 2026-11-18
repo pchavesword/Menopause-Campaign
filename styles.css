@@ -771,10 +771,10 @@ a { color: inherit; }
   .lg-only { display: inline; }
 
   /* Hero + "Meet Sarah" scroll interaction:
-     1. the hero pins to the top of the viewport,
-     2. section 2 scrolls up and over it,
-     3. the receipt holds its on-screen position until section 2 has fully
-        covered the hero, then scrolls away with section 2. */
+     1. the hero scrolls away normally and section 2 follows it up,
+     2. the receipt holds its on-screen position (and unrolls) until section 2
+        reaches the top of the viewport,
+     3. section 2 then stays pinned for --pin while the receipt turns over. */
   .intro {
     --hero-h: 600px;       /* hero height                                   */
     --sarah-h: var(--hero-h); /* section 2 height: same as the hero        */
@@ -787,19 +787,7 @@ a { color: inherit; }
   }
   /* Spacer: gives section 2 room to stay pinned for --pin of scrolling. */
   .intro::after { content: ""; display: block; height: var(--pin); }
-  .hero {
-    position: sticky;
-    top: var(--edge);
-    z-index: 0;
-    height: var(--hero-h);
-    padding-block: 110px;
-  }
-  /* The hero's content blurs as section 2 covers it. script.js sets --cover
-     from 0 (nothing covered) to 1 (fully covered). The panel's own edges stay
-     crisp because only the content inside it is blurred. */
-  @media (prefers-reduced-motion: no-preference) {
-    .hero__copy { filter: blur(calc(var(--cover, 0) * 12px)); }
-  }
+  .hero { height: var(--hero-h); padding-block: 110px; }
 
   /* The "click to flip" cue only shows once the receipt has lined up with
      "Meet Sarah" (script.js adds .is-aligned). */
@@ -809,7 +797,7 @@ a { color: inherit; }
   /* Same height as the hero. The receipt is longer, so it hangs out of the
      bottom of the panel; .intro's bottom margin reserves room for it. */
   .sarah {
-    position: sticky;      /* pins once it has covered the hero */
+    position: sticky;      /* pins once it reaches the top of the viewport */
     top: var(--edge);
     z-index: 1;
     display: block;

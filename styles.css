@@ -779,11 +779,13 @@ a { color: inherit; }
     --hero-h: 600px;       /* hero height                                   */
     --sarah-h: var(--hero-h); /* section 2 height: same as the hero        */
     --pin: 600px;          /* extra scroll while section 2 stays pinned and the receipt turns over */
-    --eob-top: 159px;      /* receipt offset from the top of the hero       */
+    --eob-top: 159px;      /* receipt offset from the top of the hero at page load */
+    --eob-rest: 70px;      /* receipt offset from the top of section 2 once it comes to rest:
+                              the same as section 2's top padding, so it lines up with "Meet Sarah" */
     --eob-h: 902px;        /* receipt height at 371px wide                  */
     position: relative;
     /* room for the part of the receipt that hangs below section 2 */
-    margin-bottom: calc(var(--eob-top) + var(--eob-h) - var(--sarah-h) + 40px);
+    margin-bottom: calc(var(--eob-rest) + var(--eob-h) - var(--sarah-h) + 40px);
   }
   /* Spacer: gives section 2 room to stay pinned for --pin of scrolling. */
   .intro::after { content: ""; display: block; height: var(--pin); }
@@ -802,7 +804,7 @@ a { color: inherit; }
     z-index: 1;
     display: block;
     height: var(--sarah-h);
-    padding-block: 70px 0;   /* first text block sits 70px below the top */
+    padding-block: var(--eob-rest) 0;   /* first text block sits 70px below the top, level with the resting receipt */
   }
   .sarah__intro, .sarah__outro { max-width: 310px; }
   /* Closing copy: inside the panel, 70px from its left and bottom edges. */
@@ -821,12 +823,13 @@ a { color: inherit; }
     top: calc(-1 * (var(--hero-h) + 10px));
     left: calc(50% + 69px);
     width: 371px;
-    height: calc(var(--hero-h) + 10px + var(--eob-top) + var(--eob-h));
+    height: calc(var(--hero-h) + 10px + var(--eob-rest) + var(--eob-h));
     pointer-events: none;
   }
   .eob {
     position: sticky;
-    top: calc(var(--edge) + var(--eob-top));
+    /* scrolls up with the page from --eob-top until it reaches --eob-rest, then holds */
+    top: calc(var(--edge) + var(--eob-rest));
     width: 371px;
     margin: var(--eob-top) 0 0;
     pointer-events: auto;

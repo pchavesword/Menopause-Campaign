@@ -229,7 +229,7 @@ a { color: inherit; }
   margin-inline: auto;
   aspect-ratio: 371 / 902;
   container-type: inline-size;
-  perspective: 1400px;
+  perspective: 2400px;
 }
 
 /* "Click to flip" cue: 16px above the receipt, centred on it */
@@ -263,8 +263,12 @@ a { color: inherit; }
   transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .eob.is-tilting .eob__tilt { transition: transform 0.12s linear; }
-.eob__card { cursor: pointer; transition: transform 0.8s cubic-bezier(0.4, 0.1, 0.2, 1); }
-.eob.is-flipped .eob__card { transform: rotateY(180deg); }
+/* The flip is animated by script.js with a spring: --flip is the angle and
+   --lift (0 to 1) peaks mid-turn, when the paper swings towards the viewer. */
+.eob__card {
+  transform: translateZ(calc(var(--lift, 0) * 70px)) rotateY(var(--flip, 0deg)) rotateZ(calc(var(--lift, 0) * -1.5deg));
+  will-change: transform;
+}
 
 .eob__face {
   position: absolute;
@@ -273,10 +277,27 @@ a { color: inherit; }
   width: 100%;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  filter: drop-shadow(0 10px 28px rgba(13, 13, 13, 0.12));
 }
-.eob__face--front { aspect-ratio: 371 / 902; }
-.eob__face--back { aspect-ratio: 371 / 872; transform: rotateY(180deg); }
+.eob__face--front { aspect-ratio: 371 / 902; transform: translateZ(0.5px); }
+.eob__face--back { aspect-ratio: 371 / 872; transform: rotateY(180deg) translateZ(0.5px); }
+/* Paper shadow: a plain box-shadow (cheap to rotate in 3D, unlike a filter).
+   It follows the unrolled length and lifts off the page mid-flip. */
+.eob__face::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(var(--unroll, 100%) - 6px);
+  box-shadow: 0 calc(10px + var(--lift, 0) * 14px) calc(28px + var(--lift, 0) * 22px) rgba(13, 13, 13, calc(0.12 + var(--lift, 0) * 0.06));
+}
+/* The paper darkens slightly as it turns away from the light. */
+.eob__sheet::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #1a1030;
+  opacity: calc(var(--lift, 0) * 0.22);
+  pointer-events: none;
+}
 
 /* The sheet is the paper itself. While the receipt unrolls, script.js sets
    --unroll (px of paper rolled out so far) and the rest is clipped away. */
@@ -705,7 +726,7 @@ a { color: inherit; }
         covered the hero, then scrolls away with section 2. */
   .intro {
     --hero-h: 600px;       /* hero height                                   */
-    --sarah-h: calc(var(--hero-h) + 200px); /* section 2 height             */
+    --sarah-h: var(--hero-h); /* section 2 height: same as the hero        */
     --pin: 400px;          /* extra scroll while section 2 stays pinned and the receipt flips */
     --eob-top: 159px;      /* receipt offset from the top of the hero       */
     --eob-h: 902px;        /* receipt height at 371px wide                  */
@@ -734,16 +755,15 @@ a { color: inherit; }
   .eob__cue { opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0s 0.4s; }
   .eob.is-aligned .eob__cue { opacity: 1; visibility: visible; transition: opacity 0.4s ease; }
 
-  /* 200px taller than the hero. The receipt is longer still, so it hangs out
-     of the bottom of the panel; .intro's bottom margin reserves room for it. */
+  /* Same height as the hero. The receipt is longer, so it hangs out of the
+     bottom of the panel; .intro's bottom margin reserves room for it. */
   .sarah {
     position: sticky;      /* pins once it has covered the hero */
     top: var(--edge);
     z-index: 1;
     display: block;
     height: var(--sarah-h);
-    /* top padding = receipt offset, so "Meet Sarah" lines up with the receipt's top edge */
-    padding-block: var(--eob-top) 0;
+    padding-block: 70px 0;   /* first text block sits 70px below the top */
   }
   .sarah__intro, .sarah__outro { max-width: 310px; }
   /* Closing copy: inside the panel, 70px from its left and bottom edges. */

@@ -61,7 +61,8 @@ if (document.documentElement.classList.contains('js-reveal')) {
 //      and the receipt unrolls from its paper roll as this happens;
 //   3. section 2 stays pinned for --pin px of scrolling, and the receipt flips
 //      a quarter of the way through (and flips back when scrolling up).
-// Everywhere: click the receipt or the cue to flip it; the copy beside it swaps.
+// The receipt only flips with scroll (on tablet and mobile: once it has fully
+// unrolled and travelled a little further up the screen). The copy beside it swaps.
 (() => {
   const intro = document.querySelector('.intro');
   const hero = document.querySelector('.hero');
@@ -78,6 +79,47 @@ if (document.documentElement.classList.contains('js-reveal')) {
   const FLIP_AT = 0.25; // fraction of the pinned scroll at which the receipt flips
 
   // ---- Flip ----
+  // The turn is a damped spring rather than a fixed-length transition: it eases
+  // in and out naturally, settles with a hint of overshoot, and if the visitor
+  // reverses direction mid-turn it carries its momentum instead of restarting.
+  const STIFFNESS = 40;
+  const DAMPING = 10.5;
+  let angle = 0;
+  let velocity = 0;
+  let target = 0;
+  let spinning = false;
+  let lastTime = 0;
+
+  const paint = () => {
+    card.style.setProperty('--flip', `${angle.toFixed(2)}deg`);
+    // 0 when flat, 1 when edge-on: lifts the paper, deepens its shadow, dims it.
+    card.style.setProperty('--lift', Math.abs(Math.sin((angle * Math.PI) / 180)).toFixed(3));
+  };
+  const spin = (now) => {
+    const dt = Math.min(0.032, (now - lastTime) / 1000);
+    lastTime = now;
+    velocity += (STIFFNESS * (target - angle) - DAMPING * velocity) * dt;
+    angle += velocity * dt;
+    if (Math.abs(target - angle) < 0.05 && Math.abs(velocity) < 0.5) {
+      angle = target;
+      velocity = 0;
+      spinning = false;
+    }
+    paint();
+    if (spinning) requestAnimationFrame(spin);
+  };
+  const spinTo = (next) => {
+    target = next;
+    if (reducedMotion) {
+      angle = next;
+      return paint();
+    }
+    if (spinning) return;
+    spinning = true;
+    lastTime = performance.now();
+    requestAnimationFrame(spin);
+  };
+
   let flipped = false;
   let swapTimer;
 
@@ -103,8 +145,9 @@ if (document.documentElement.classList.contains('js-reveal')) {
     back.toggleAttribute('inert', !flipped);
     back.setAttribute('aria-hidden', String(!flipped));
     showCopy(flipped ? 'back' : 'front');
+    spinTo(flipped ? 180 : 0);
   };
-  card.addEventListener('click', () => setFlipped(!flipped));
+  // The "click to flip" cue is hidden for now; if it comes back, it still works.
   cue.addEventListener('click', () => setFlipped(!flipped));
 
   // ---- Paper roll ----
@@ -160,7 +203,10 @@ if (document.documentElement.classList.contains('js-reveal')) {
       // The receipt unrolls as it travels up the screen: the roll stays about
       // 80% of the way down the viewport until the paper runs out.
       const box = eob.getBoundingClientRect();
-      setUnroll(Math.min(box.height, Math.max(box.height * START, window.innerHeight * 0.8 - box.top)), box.height);
+      const rollLine = window.innerHeight * 0.8;
+      setUnroll(Math.min(box.height, Math.max(box.height * START, rollLine - box.top)), box.height);
+      // Flip once it is fully unrolled and has moved up a further 120px.
+      setFlipped(box.bottom <= rollLine - 120);
       return;
     }
     const h = hero.getBoundingClientRect();

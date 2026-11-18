@@ -647,12 +647,15 @@ a { color: inherit; }
   .intro {
     --hero-h: 600px;       /* hero height                                   */
     --sarah-h: calc(var(--hero-h) + 200px); /* section 2 height             */
+    --pin: 400px;          /* extra scroll while section 2 stays pinned and the receipt flips */
     --eob-top: 159px;      /* receipt offset from the top of the hero       */
     --eob-h: 902px;        /* receipt height at 371px wide                  */
     position: relative;
     /* room for the part of the receipt that hangs below section 2 */
     margin-bottom: calc(var(--eob-top) + var(--eob-h) - var(--sarah-h) + 40px);
   }
+  /* Spacer: gives section 2 room to stay pinned for --pin of scrolling. */
+  .intro::after { content: ""; display: block; height: var(--pin); }
   .hero {
     position: sticky;
     top: var(--edge);
@@ -663,11 +666,20 @@ a { color: inherit; }
   /* The hero's content blurs as section 2 covers it. script.js sets --cover
      from 0 (nothing covered) to 1 (fully covered). The panel's own edges stay
      crisp because only the content inside it is blurred. */
-  .hero__copy { filter: blur(calc(var(--cover, 0) * 12px)); }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__copy { filter: blur(calc(var(--cover, 0) * 12px)); }
+  }
+
+  /* The "click to flip" cue only shows once the receipt has lined up with
+     "Meet Sarah" (script.js adds .is-aligned). */
+  .eob__cue { opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0s 0.4s; }
+  .eob.is-aligned .eob__cue { opacity: 1; visibility: visible; transition: opacity 0.4s ease; }
 
   /* 200px taller than the hero. The receipt is longer still, so it hangs out
      of the bottom of the panel; .intro's bottom margin reserves room for it. */
   .sarah {
+    position: sticky;      /* pins once it has covered the hero */
+    top: var(--edge);
     z-index: 1;
     display: block;
     height: var(--sarah-h);

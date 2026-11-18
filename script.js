@@ -54,46 +54,29 @@ if (document.documentElement.classList.contains('js-reveal')) {
   revealRest();
 }
 
-// Hero blur: on desktop the hero is pinned while section 2 slides over it.
-// --cover goes from 0 (section 2 just below the hero) to 1 (hero fully covered)
-// and drives the blur in styles.css.
+// Hero + receipt interactions.
+// Desktop scroll story (the hero and section 2 are position: sticky there):
+//   1. section 2 slides over the pinned hero, which blurs (--cover 0 -> 1);
+//   2. once the receipt lines up with "Meet Sarah" the "click to flip" cue shows;
+//   3. section 2 stays pinned for --pin px of scrolling, and the receipt flips
+//      a quarter of the way through (and flips back when scrolling up).
+// Everywhere: click the receipt or the cue to flip it; the copy beside it swaps.
 (() => {
+  const intro = document.querySelector('.intro');
   const hero = document.querySelector('.hero');
-  const cover = document.querySelector('.sarah');
-  if (!hero || !cover || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  let queued = false;
-  const update = () => {
-    queued = false;
-    if (getComputedStyle(hero).position !== 'sticky') {
-      hero.style.removeProperty('--cover'); // tablet and mobile: no pinning, no blur
-      return;
-    }
-    const h = hero.getBoundingClientRect();
-    const gap = 10; // space between the two panels
-    const progress = (h.bottom + gap - cover.getBoundingClientRect().top) / (h.height + gap);
-    hero.style.setProperty('--cover', Math.min(1, Math.max(0, progress)).toFixed(3));
-  };
-  const request = () => {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(update);
-  };
-  window.addEventListener('scroll', request, { passive: true });
-  window.addEventListener('resize', request);
-  update();
-})();
-
-// Receipt: click to flip, swap the copy beside it, and float with the mouse.
-(() => {
+  const panel = document.querySelector('.sarah');
   const eob = document.querySelector('.eob');
-  if (!eob) return;
+  if (!intro || !hero || !panel || !eob) return;
+
   const card = eob.querySelector('.eob__card');
   const cue = eob.querySelector('.eob__cue');
   const front = eob.querySelector('.eob__face--front');
   const back = eob.querySelector('.eob__face--back');
   const copy = document.querySelector('.sarah__outro-copy');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const FLIP_AT = 0.25; // fraction of the pinned scroll at which the receipt flips
+
+  // ---- Flip ----
   let flipped = false;
   let swapTimer;
 
@@ -109,8 +92,9 @@ if (document.documentElement.classList.contains('js-reveal')) {
     swapTimer = setTimeout(swap, 250);
   };
 
-  const flip = () => {
-    flipped = !flipped;
+  const setFlipped = (next) => {
+    if (next === flipped) return;
+    flipped = next;
     eob.classList.toggle('is-flipped', flipped);
     cue.setAttribute('aria-pressed', String(flipped));
     front.toggleAttribute('inert', flipped);
@@ -119,10 +103,48 @@ if (document.documentElement.classList.contains('js-reveal')) {
     back.setAttribute('aria-hidden', String(!flipped));
     showCopy(flipped ? 'back' : 'front');
   };
-  card.addEventListener('click', flip);
-  cue.addEventListener('click', flip);
+  card.addEventListener('click', () => setFlipped(!flipped));
+  cue.addEventListener('click', () => setFlipped(!flipped));
 
-  // Floating tilt that follows the mouse (mouse/trackpad only).
+  // ---- Scroll: blur, cue, scroll-flip ----
+  let queued = false;
+  let pastFlipPoint = false;
+
+  const update = () => {
+    queued = false;
+    if (getComputedStyle(hero).position !== 'sticky') {
+      // Tablet and mobile: nothing is pinned, the cue is always visible.
+      hero.style.removeProperty('--cover');
+      eob.classList.remove('is-aligned');
+      pastFlipPoint = false;
+      return;
+    }
+    const h = hero.getBoundingClientRect();
+    const gap = 10; // space between the two panels
+    const cover = Math.min(1, Math.max(0, (h.bottom + gap - panel.getBoundingClientRect().top) / (h.height + gap)));
+    hero.style.setProperty('--cover', cover.toFixed(3));
+    eob.classList.toggle('is-aligned', cover > 0.995);
+
+    // How far through the pinned stretch we are (0 = just pinned, 1 = released).
+    const pin = parseFloat(getComputedStyle(intro).getPropertyValue('--pin')) || 0;
+    const stickyTop = parseFloat(getComputedStyle(panel).top) || 0;
+    const scrolledPastPin = stickyTop - (intro.getBoundingClientRect().top + hero.offsetHeight + gap);
+    const past = pin > 0 && scrolledPastPin / pin >= FLIP_AT;
+    if (past !== pastFlipPoint) {
+      pastFlipPoint = past;
+      setFlipped(past); // down past the flip point: show the back; back up: show the front
+    }
+  };
+  const request = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(update);
+  };
+  window.addEventListener('scroll', request, { passive: true });
+  window.addEventListener('resize', request);
+  update();
+
+  // ---- Floating tilt that follows the mouse (mouse/trackpad only) ----
   if (reducedMotion || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
   const tilt = eob.querySelector('.eob__tilt');
   eob.addEventListener('pointermove', (event) => {

@@ -587,6 +587,11 @@ a { color: inherit; }
     height: var(--hero-h);
     padding-block: 110px;
   }
+  /* The hero's content blurs as section 2 covers it. script.js sets --cover
+     from 0 (nothing covered) to 1 (fully covered). The panel's own edges stay
+     crisp because only the content inside it is blurred. */
+  .hero__copy { filter: blur(calc(var(--cover, 0) * 12px)); }
+
   /* 200px taller than the hero. The receipt is longer still, so it hangs out
      of the bottom of the panel; .intro's bottom margin reserves room for it. */
   .sarah {

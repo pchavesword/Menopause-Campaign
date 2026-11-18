@@ -53,3 +53,33 @@ if (document.documentElement.classList.contains('js-reveal')) {
   window.addEventListener('scroll', revealRest, { passive: true });
   revealRest();
 }
+
+// Hero blur: on desktop the hero is pinned while section 2 slides over it.
+// --cover goes from 0 (section 2 just below the hero) to 1 (hero fully covered)
+// and drives the blur in styles.css.
+(() => {
+  const hero = document.querySelector('.hero');
+  const cover = document.querySelector('.sarah');
+  if (!hero || !cover || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  let queued = false;
+  const update = () => {
+    queued = false;
+    if (getComputedStyle(hero).position !== 'sticky') {
+      hero.style.removeProperty('--cover'); // tablet and mobile: no pinning, no blur
+      return;
+    }
+    const h = hero.getBoundingClientRect();
+    const gap = 10; // space between the two panels
+    const progress = (h.bottom + gap - cover.getBoundingClientRect().top) / (h.height + gap);
+    hero.style.setProperty('--cover', Math.min(1, Math.max(0, progress)).toFixed(3));
+  };
+  const request = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(update);
+  };
+  window.addEventListener('scroll', request, { passive: true });
+  window.addEventListener('resize', request);
+  update();
+})();

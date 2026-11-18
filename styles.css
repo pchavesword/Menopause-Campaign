@@ -797,7 +797,7 @@ a { color: inherit; }
   .intro {
     --hero-h: 600px;       /* hero height                                   */
     --sarah-h: var(--hero-h); /* section 2 height: same as the hero        */
-    --pin: 600px;          /* extra scroll while section 2 stays pinned and the receipt turns over */
+    --pin: 400px;          /* extra scroll while section 2 stays pinned and the receipt flips */
     --eob-top: 159px;      /* receipt offset from the top of the hero at page load */
     --eob-rest: 70px;      /* receipt offset from the top of section 2 once it comes to rest:
                               the same as section 2's top padding, so it lines up with "Meet Sarah" */

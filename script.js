@@ -59,8 +59,8 @@ if (document.documentElement.classList.contains('js-reveal')) {
 //   1. the hero scrolls away and section 2 rises to the top of the viewport;
 //      the receipt holds its place on screen and unrolls as this happens;
 //   2. once the receipt lines up with section 2 the "click to flip" cue shows;
-//   3. section 2 stays pinned for --pin px of scrolling, and the receipt turns
-//      over in step with that scrolling (scroll back up and it turns back).
+//   3. section 2 stays pinned for --pin px of scrolling, and the receipt flips
+//      in one go a quarter of the way through (and back when scrolling up).
 // The receipt only flips with scroll (on tablet and mobile: once it has fully
 // unrolled and travelled a little further up the screen). The copy beside it swaps.
 (() => {
@@ -76,16 +76,14 @@ if (document.documentElement.classList.contains('js-reveal')) {
   const back = eob.querySelector('.eob__face--back');
   const copy = document.querySelector('.sarah__outro-copy');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // The receipt turns over between these two points of the pinned scroll (0-1).
-  const FLIP_FROM = 0.08;
-  const FLIP_TO = 0.88;
+  const FLIP_AT = 0.25; // fraction of the pinned scroll at which the receipt flips
 
   // ---- Flip ----
-  // The angle follows the scroll position through a critically damped spring:
-  // it tracks the scroll closely but glides instead of jumping when the wheel
-  // moves in steps, and never overshoots.
-  const STIFFNESS = 140;
-  const DAMPING = 23.5;
+  // The turn is a damped spring rather than a fixed-length transition: it eases
+  // in and out naturally, settles with a hint of overshoot, and if the visitor
+  // reverses direction mid-turn it carries its momentum instead of restarting.
+  const STIFFNESS = 40;
+  const DAMPING = 10.5;
   let angle = 0;
   let velocity = 0;
   let target = 0;
@@ -153,16 +151,13 @@ if (document.documentElement.classList.contains('js-reveal')) {
     showCopy(flipped ? 'back' : 'front');
   };
 
-  // Turn the receipt to match scroll progress (0 = front, 1 = back). The copy
-  // and the faces' roles swap at the halfway point, when the paper is edge-on.
-  const ease = (x) => x * x * (3 - 2 * x); // soft start and finish
-  const flipTo = (progress) => {
-    const p = Math.min(1, Math.max(0, progress));
-    setFlipped(p > 0.5);
-    spinTo(reducedMotion ? (p > 0.5 ? 180 : 0) : 180 * ease(p));
+  // Flip to the back (true) or the front (false) in one continuous turn.
+  const flipTo = (toBack) => {
+    setFlipped(toBack);
+    spinTo(toBack ? 180 : 0);
   };
   // The "click to flip" cue is hidden for now; if it comes back, it still works.
-  cue.addEventListener('click', () => flipTo(flipped ? 0 : 1));
+  cue.addEventListener('click', () => flipTo(!flipped));
 
   // ---- Paper roll ----
   // Build the 3D roll: a ring of flat strips. Each strip knows its angle (--a),
@@ -319,8 +314,8 @@ if (document.documentElement.classList.contains('js-reveal')) {
       const box = eob.getBoundingClientRect();
       const rollLine = window.innerHeight * 0.8;
       setUnroll(Math.min(box.height, Math.max(box.height * START, rollLine - box.top)), box.height);
-      // Once fully unrolled, it turns over across the next 280px of travel.
-      flipTo((rollLine - 40 - box.bottom) / 280);
+      // Flip once it is fully unrolled and has moved up a further 120px.
+      flipTo(box.bottom <= rollLine - 120);
       return;
     }
     const gap = 10; // space between the two panels
@@ -337,8 +332,8 @@ if (document.documentElement.classList.contains('js-reveal')) {
     // How far through the pinned stretch we are (0 = just pinned, 1 = released).
     const pin = parseFloat(getComputedStyle(intro).getPropertyValue('--pin')) || 0;
     const scrolledPastPin = stickyTop - (intro.getBoundingClientRect().top + hero.offsetHeight + gap);
-    const pinned = pin > 0 ? scrolledPastPin / pin : 0; // 0 = just pinned, 1 = released
-    flipTo((pinned - FLIP_FROM) / (FLIP_TO - FLIP_FROM));
+    // Down past the flip point: show the back; back up above it: show the front.
+    flipTo(pin > 0 && scrolledPastPin / pin >= FLIP_AT);
   };
   const request = () => {
     if (queued) return;

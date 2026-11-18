@@ -778,7 +778,7 @@ a { color: inherit; }
   .intro {
     --hero-h: 600px;       /* hero height                                   */
     --sarah-h: var(--hero-h); /* section 2 height: same as the hero        */
-    --pin: 400px;          /* extra scroll while section 2 stays pinned and the receipt flips */
+    --pin: 600px;          /* extra scroll while section 2 stays pinned and the receipt turns over */
     --eob-top: 159px;      /* receipt offset from the top of the hero       */
     --eob-h: 902px;        /* receipt height at 371px wide                  */
     position: relative;

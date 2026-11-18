@@ -88,12 +88,16 @@ if (document.documentElement.classList.contains('js-reveal')) {
   let velocity = 0;
   let target = 0;
   let spinning = false;
+  let turnDim = 0;
   let lastTime = 0;
 
   const paint = () => {
     card.style.setProperty('--flip', `${angle.toFixed(2)}deg`);
-    // 0 when flat, 1 when edge-on: lifts the paper, deepens its shadow, dims it.
-    card.style.setProperty('--lift', Math.abs(Math.sin((angle * Math.PI) / 180)).toFixed(3));
+    // --lift: 0 when flat, 1 when edge-on (lifts the paper, deepens its shadow, dims it).
+    // --turn: how wide the paper looks from the front (narrows its shadow as it turns).
+    turnDim = Math.abs(Math.sin((angle * Math.PI) / 180));
+    eob.style.setProperty('--lift', turnDim.toFixed(3));
+    eob.style.setProperty('--turn', Math.abs(Math.cos((angle * Math.PI) / 180)).toFixed(3));
   };
   const spin = (now) => {
     const dt = Math.min(0.032, (now - lastTime) / 1000);
@@ -159,13 +163,15 @@ if (document.documentElement.classList.contains('js-reveal')) {
     roll.insertAdjacentHTML('beforeend', '<div class="eob__roll-shadow"></div><div class="eob__roll-contact"></div>');
     for (let i = 0; i < SEGMENTS; i += 1) {
       const angle = (i / SEGMENTS) * Math.PI * 2;
-      const facingDown = Math.max(0, -Math.sin(angle)); // light comes from above
-      const turnedAway = 1 - Math.max(0, Math.cos(angle));
+      const half = Math.PI / SEGMENTS;
+      // Light comes from above: surfaces facing down or turned away are darker.
+      const rollShade = (a) => (0.03 + 0.1 * (1 - Math.max(0, Math.cos(a))) + 0.3 * Math.max(0, -Math.sin(a))).toFixed(3);
       const strip = document.createElement('div');
       strip.className = 'eob__roll-strip';
       strip.style.setProperty('--a', `${((angle * 180) / Math.PI).toFixed(2)}deg`);
       strip.style.setProperty('--arc', angle.toFixed(4));
-      strip.style.setProperty('--shade', (0.03 + 0.1 * turnedAway + 0.3 * facingDown).toFixed(3));
+      strip.style.setProperty('--shade', rollShade(angle + half));   // shade at the strip's upper edge
+      strip.style.setProperty('--shade2', rollShade(angle - half));  // ...and at its lower edge, matching its neighbours
       roll.appendChild(strip);
     }
   }
@@ -225,7 +231,7 @@ if (document.documentElement.classList.contains('js-reveal')) {
         strip.appendChild(slice);
       });
       holder.appendChild(strip);
-      strips.push({ el: strip, shadeFront: -1, shadeBack: -1 });
+      strips.push(strip);
     }
     card.appendChild(holder);
     eob.classList.add('is-live');
@@ -241,8 +247,7 @@ if (document.documentElement.classList.contains('js-reveal')) {
       1.9 * Math.sin(s * 4.7 + 0.6) + 4.6 * s * s * s                       // permanent curl
       + gust * Math.pow(s, 1.2) * (2.6 * Math.sin(1.1 * t - 3.2 * s) + 1.3 * Math.sin(1.9 * t - 5.5 * s + 1.3)) // breeze
       + scrollSwing * s * s;                                                 // swing from scrolling
-    // Facing down = darker. Rounded to coarse steps so the strips only repaint when the light really changes.
-    const shadeFor = (deg) => Math.round(Math.min(0.22, Math.max(0, 0.05 - deg * 0.026)) * 250) / 250;
+    const shadeFor = (deg) => Math.min(0.22, Math.max(0, 0.05 - deg * 0.026)); // facing down = darker
 
     let previous = performance.now();
     const animatePaper = (now) => {
@@ -274,11 +279,14 @@ if (document.documentElement.classList.contains('js-reveal')) {
         const s = (i + 0.5) / STRIPS;
         const twist = gust * Math.pow(s, 1.5) * 1.5 * Math.sin(0.8 * t - 2.2 * s + 0.5);
         const strip = strips[i];
-        strip.el.style.transform = `translate3d(0, ${(-lift).toFixed(2)}px, ${z.toFixed(2)}px) rotateX(${tilt.toFixed(3)}deg) rotateY(${twist.toFixed(3)}deg)`;
-        const shadeFront = shadeFor(tilt);
-        const shadeBack = shadeFor(-tilt);
-        if (shadeFront !== strip.shadeFront) { strip.shadeFront = shadeFront; strip.el.style.setProperty('--shade-front', shadeFront); }
-        if (shadeBack !== strip.shadeBack) { strip.shadeBack = shadeBack; strip.el.style.setProperty('--shade-back', shadeBack); }
+        // Each strip sits a hair behind the one above it, so where they overlap
+        // the drawing order is always the same (no flicker along the joins).
+        strip.style.transform = `translate3d(0, ${(-lift).toFixed(2)}px, ${(z - i * 0.15).toFixed(2)}px) rotateX(${tilt.toFixed(3)}deg) rotateY(${twist.toFixed(3)}deg)`;
+        const dim = turnDim * 0.2; // the whole sheet dims a little mid-flip
+        strip.style.setProperty('--f0', (shadeFor(top) + dim).toFixed(3));
+        strip.style.setProperty('--f1', (shadeFor(bottom) + dim).toFixed(3));
+        strip.style.setProperty('--b0', (shadeFor(-top) + dim).toFixed(3));
+        strip.style.setProperty('--b1', (shadeFor(-bottom) + dim).toFixed(3));
         if (unrolled !== null && unrolled >= i * stripH) rollZ = z + (unrolled - i * stripH) * Math.sin(tilt * DEG);
         z += stripH * Math.sin(tilt * DEG);
         lift += stripH * (1 - Math.cos(tilt * DEG));

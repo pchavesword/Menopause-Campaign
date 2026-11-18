@@ -280,18 +280,20 @@ a { color: inherit; }
 }
 .eob__face--front { aspect-ratio: 371 / 902; transform: translateZ(0.5px); }
 .eob__face--back { aspect-ratio: 371 / 872; transform: rotateY(180deg) translateZ(0.5px); }
-/* Paper shadow: a plain box-shadow (cheap to rotate in 3D, unlike a filter).
-   It follows the unrolled length and lifts off the page mid-flip. */
-.eob__card::before {
+/* Paper shadow: a plain box-shadow (cheap in 3D, unlike a filter). It lives on
+   the tilt layer, well behind the paper, so the bending sheet can never dip
+   under it; it narrows as the paper turns (--turn) and follows the unrolled length. */
+.eob__tilt::before {
   content: "";
   position: absolute;
   inset: 0 0 auto;
   height: calc(var(--unroll, 100%) - 6px);
+  transform: translateZ(-60px) scaleX(var(--turn, 1));
   box-shadow: 0 calc(10px + var(--lift, 0) * 14px) calc(28px + var(--lift, 0) * 22px) rgba(13, 13, 13, calc(0.12 + var(--lift, 0) * 0.06));
 }
 
 /* The back of the receipt is a little shorter than the front. */
-.eob.is-flipped .eob__card::before { height: calc(min(var(--unroll, 100%), 96.67%) - 6px); }
+.eob.is-flipped .eob__tilt::before { height: calc(min(var(--unroll, 100%), 96.67%) - 6px); }
 
 /* Living paper. script.js cuts the receipt into horizontal strips (each one a
    window onto a copy of the sheet) and bends them in 3D every frame, so the
@@ -320,18 +322,30 @@ a { color: inherit; }
 .eob__slice--back { transform: rotateY(180deg) translateZ(0.5px); }
 .eob__slice .eob__sheet { inset: auto; left: 0; width: 100%; top: calc(var(--i) * var(--strip-h) * -1); height: calc(100cqw * 902 / 371); }
 .eob__slice--back .eob__sheet { height: calc(100cqw * 872 / 371); background-image: url("assets/paper-back.png"); }
-
-/* The paper darkens slightly as it turns away from the light. */
-.eob__sheet::after {
+/* Light and shade: one smooth gradient per strip, running from the shade at its
+   top edge (--f0 / --b0) to the shade at its bottom edge (--f1 / --b1). Each
+   strip ends on the value the next one starts with, so there are no bands or
+   seams. Clipped to the unrolled paper; on the last strip it is also masked to
+   the torn edge. */
+.eob__slice::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: #1a1030;
-  /* dimmer mid-flip, plus each strip's own light and shade (set by script.js) */
-  opacity: calc(var(--lift, 0) * 0.22 + var(--shade-front, 0));
-  pointer-events: none;
+  will-change: transform;
+  background: linear-gradient(rgba(26, 16, 48, var(--f0, 0)), rgba(26, 16, 48, var(--f1, 0)));
+  clip-path: inset(0 0 calc(100% - clamp(0px, var(--unroll, 100000px) - var(--i) * var(--strip-h), 100%)) 0);
 }
-.eob__slice--back .eob__sheet::after { opacity: calc(var(--lift, 0) * 0.22 + var(--shade-back, 0)); }
+.eob__slice--back::after { background: linear-gradient(rgba(26, 16, 48, var(--b0, 0)), rgba(26, 16, 48, var(--b1, 0))); }
+.eob__strip:last-child .eob__slice::after {
+  -webkit-mask: url("assets/paper.png") 0 calc(var(--i) * var(--strip-h) * -1) / 100% calc(100cqw * 902 / 371) no-repeat;
+  mask: url("assets/paper.png") 0 calc(var(--i) * var(--strip-h) * -1) / 100% calc(100cqw * 902 / 371) no-repeat;
+}
+.eob__strip:last-child .eob__slice--back::after {
+  -webkit-mask-image: url("assets/paper-back.png");
+  mask-image: url("assets/paper-back.png");
+  -webkit-mask-size: 100% calc(100cqw * 872 / 371);
+  mask-size: 100% calc(100cqw * 872 / 371);
+}
 
 /* The sheet is the paper itself. While the receipt unrolls, script.js sets
    --unroll (px of paper rolled out so far) and the rest is clipped away. */
@@ -367,10 +381,10 @@ a { color: inherit; }
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   background:
-    linear-gradient(rgba(40, 30, 60, var(--shade)), rgba(40, 30, 60, var(--shade))),
+    linear-gradient(rgba(40, 30, 60, var(--shade)), rgba(40, 30, 60, var(--shade2))),
     url("assets/paper.png") 0 calc(-1 * (var(--unroll) + var(--roll-r) * var(--arc))) / 100% calc(var(--u) * 902);
 }
-.eob.is-flipped .eob__roll-strip { background-image: linear-gradient(rgba(20, 5, 40, var(--shade)), rgba(20, 5, 40, var(--shade))), url("assets/paper-back.png"); }
+.eob.is-flipped .eob__roll-strip { background-image: linear-gradient(rgba(20, 5, 40, var(--shade)), rgba(20, 5, 40, var(--shade2))), url("assets/paper-back.png"); }
 /* Soft shadows: one cast below the roll, one where it touches the paper. */
 .eob__roll-shadow {
   position: absolute;
@@ -380,6 +394,7 @@ a { color: inherit; }
   height: calc(var(--roll-r) * 2);
   border-radius: 50%;
   background: rgba(13, 13, 13, 0.32);
+  transform: translateZ(-30px); /* behind the paper, so it only falls on the page */
   filter: blur(calc(var(--roll-r) * 0.55 + 2px));
 }
 .eob__roll-contact {
@@ -389,6 +404,7 @@ a { color: inherit; }
   top: calc(var(--unroll) - var(--roll-r) * 2.2);
   height: calc(var(--roll-r) * 1.3);
   background: linear-gradient(transparent, rgba(13, 13, 13, 0.1));
+  transform: translateZ(3px);   /* clear of the paper surface */
 }
 .eob__inner {
   --u: calc(100cqw / 371);

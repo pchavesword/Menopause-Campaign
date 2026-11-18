@@ -58,43 +58,86 @@
       <!-- Track the receipt travels in while it stays pinned on desktop -->
       <div class="eob-track">
       <figure class="eob" data-reveal aria-label="Sarah's explanation of benefits: seven claims across six specialties, no perimenopause diagnosis">
-        <div class="eob__inner">
-          <div class="eob__head">
-            <p class="eob__title">Explanation of benefits</p>
-            <p class="eob__sub">This is not a bill</p>
-            <p class="eob__who"><b>SARAH, AGE 46 ·</b> 12 months plan</p>
+        <button class="eob__cue" type="button" aria-pressed="false" aria-label="Flip the receipt to see the connected version">
+          <span>click to flip</span>
+          <img src="assets/ic-refresh-circle.svg" alt="" width="20" height="20">
+        </button>
+        <div class="eob__tilt">
+          <div class="eob__card">
+            <div class="eob__face eob__face--front">
+            <div class="eob__inner">
+              <div class="eob__head">
+                <p class="eob__title">Explanation of benefits</p>
+                <p class="eob__sub">This is not a bill</p>
+                <p class="eob__who"><b>SARAH, AGE 46 ·</b> 12 months plan</p>
+              </div>
+              <img class="eob__rule" src="assets/rule-327.svg" alt="">
+
+              <ul class="eob__visits">
+                <li><span class="eob__month">FEB</span><span class="eob__desc"><b>PRIMARY CARE</b><span>Fatigue, sleep complaint</span><i>Visit, labs</i></span><span class="eob__cost">$</span></li>
+                <li><span class="eob__month">MAR</span><span class="eob__desc"><b>BEHAVIORAL HEALTH</b><span>New onset anxiety</span><i>Visit</i></span><span class="eob__cost">$</span></li>
+                <li><span class="eob__month">APR</span><span class="eob__desc"><b>ORTHOPEDICS</b><span>Hip and knee pain</span><i>Visit, imaging</i></span><span class="eob__cost">$</span></li>
+                <li><span class="eob__month">JUN</span><span class="eob__desc"><b>NEUROLOGY</b><span>Memory, concentration</span><i>Visit, cognitive screen</i></span><span class="eob__cost">$</span></li>
+                <li><span class="eob__month">AUG</span><span class="eob__desc"><b>GYNECOLOGY</b><span>Irregular bleeding</span><i>Visit, ultrasound</i></span><span class="eob__cost">$</span></li>
+                <li><span class="eob__month">OCT</span><span class="eob__desc"><b>PHYSICAL THERAPY</b><span>Ongoing joint pain</span><i>Course of visits</i></span><span class="eob__cost">$</span></li>
+                <li><span class="eob__month">NOV</span><span class="eob__desc"><b>BEHAVIORAL HEALTH</b><span>Anxiety</span><i>Visit, prescription</i></span><span class="eob__cost">$</span></li>
+              </ul>
+
+              <p class="eob__reason">Reason for visit: not specified</p>
+
+              <dl class="eob__totals">
+                <div><dt>Claims processed</dt><dd>7</dd></div>
+                <div><dt>Specialties</dt><dd>6</dd></div>
+                <div><dt>Perimenopause diagnosis</dt><dd>NONE</dd></div>
+              </dl>
+              <img class="eob__rule" src="assets/rule-327.svg" alt="">
+              <p class="eob__paid"><span>TOTAL PLAN PAID</span><span>$$$$$$</span></p>
+              <div class="eob__barcode" aria-hidden="true"></div>
+              <figcaption class="eob__caption">Illustrative composite, not an actual member record.</figcaption>
+            </div>
+      
+            </div>
+            <div class="eob__face eob__face--back" aria-hidden="true" inert>
+              <div class="eob__inner eob__inner--back">
+                <div class="eob__group">
+                  <div class="eob__head">
+                    <p class="eob__title">Explanation of benefits</p>
+                    <p class="eob__sub">This is not a bill</p>
+                  </div>
+                  <img class="eob__rule" src="assets/rule-327-white.svg" alt="">
+                  <p class="eob__kicker">The same year, connected</p>
+                  <p class="eob__headline">One intake.<br>One care team.<br>One record.</p>
+                  <p class="eob__body">A dedicated Women’s Health Specialist who sees the whole picture, treats across her symptoms and stays with her between visits.</p>
+                  <dl class="eob__summary">
+                    <dt>Care team</dt><dd>One Women’s Health Specialist</dd>
+                    <dt>Record</dt><dd>One connected record</dd>
+                    <dt>Pattern</dt><dd>Recognized at intake</dd>
+                    <dt>Fee</dt><dd>One capped program fee</dd>
+                  </dl>
+                </div>
+                <div class="eob__group">
+                  <p class="eob__pill">Treated as one connected case</p>
+                  <div class="eob__barcode" aria-hidden="true"></div>
+                </div>
+              </div>
+            </div>
           </div>
-          <img class="eob__rule" src="assets/rule-327.svg" alt="">
-
-          <ul class="eob__visits">
-            <li><span class="eob__month">FEB</span><span class="eob__desc"><b>PRIMARY CARE</b><span>Fatigue, sleep complaint</span><i>Visit, labs</i></span><span class="eob__cost">$</span></li>
-            <li><span class="eob__month">MAR</span><span class="eob__desc"><b>BEHAVIORAL HEALTH</b><span>New onset anxiety</span><i>Visit</i></span><span class="eob__cost">$</span></li>
-            <li><span class="eob__month">APR</span><span class="eob__desc"><b>ORTHOPEDICS</b><span>Hip and knee pain</span><i>Visit, imaging</i></span><span class="eob__cost">$</span></li>
-            <li><span class="eob__month">JUN</span><span class="eob__desc"><b>NEUROLOGY</b><span>Memory, concentration</span><i>Visit, cognitive screen</i></span><span class="eob__cost">$</span></li>
-            <li><span class="eob__month">AUG</span><span class="eob__desc"><b>GYNECOLOGY</b><span>Irregular bleeding</span><i>Visit, ultrasound</i></span><span class="eob__cost">$</span></li>
-            <li><span class="eob__month">OCT</span><span class="eob__desc"><b>PHYSICAL THERAPY</b><span>Ongoing joint pain</span><i>Course of visits</i></span><span class="eob__cost">$</span></li>
-            <li><span class="eob__month">NOV</span><span class="eob__desc"><b>BEHAVIORAL HEALTH</b><span>Anxiety</span><i>Visit, prescription</i></span><span class="eob__cost">$</span></li>
-          </ul>
-
-          <p class="eob__reason">Reason for visit: not specified</p>
-
-          <dl class="eob__totals">
-            <div><dt>Claims processed</dt><dd>7</dd></div>
-            <div><dt>Specialties</dt><dd>6</dd></div>
-            <div><dt>Perimenopause diagnosis</dt><dd>NONE</dd></div>
-          </dl>
-          <img class="eob__rule" src="assets/rule-327.svg" alt="">
-          <p class="eob__paid"><span>TOTAL PLAN PAID</span><span>$$$$$$</span></p>
-          <div class="eob__barcode" aria-hidden="true"></div>
-          <figcaption class="eob__caption">Illustrative composite, not an actual member record.</figcaption>
         </div>
       </figure>
       </div>
 
       <div class="sarah__outro" data-reveal="children">
         <img class="rule" data-reveal src="assets/rule-310.svg" alt="">
-        <p>Each visit made sense on its own. Together, they pointed somewhere no one looked. Nothing in her file said menopause.</p>
-        <p>The gap between the story she lived and the record the system kept is where women's health spend hides.</p>
+        <!-- Copy swaps when the receipt is flipped -->
+        <div class="sarah__outro-copy" aria-live="polite">
+          <div class="sarah__outro-side" data-side="front">
+            <p>Each visit made sense on its own. Together, they pointed somewhere no one looked. Nothing in her file said menopause.</p>
+            <p>The gap between the story she lived and the record the system kept is where women's health spend hides.</p>
+          </div>
+          <div class="sarah__outro-side" data-side="back" hidden>
+            <p>Same member, now legible as one story instead of seven. Visits and adjustments handled inside the program do not generate separate claims. Referrals, imaging or procedures that are clinically needed still do, and they are better targeted because someone has read the whole story.</p>
+          </div>
+        </div>
       </div>
     </section>
 

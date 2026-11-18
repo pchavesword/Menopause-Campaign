@@ -83,3 +83,60 @@ if (document.documentElement.classList.contains('js-reveal')) {
   window.addEventListener('resize', request);
   update();
 })();
+
+// Receipt: click to flip, swap the copy beside it, and float with the mouse.
+(() => {
+  const eob = document.querySelector('.eob');
+  if (!eob) return;
+  const card = eob.querySelector('.eob__card');
+  const cue = eob.querySelector('.eob__cue');
+  const front = eob.querySelector('.eob__face--front');
+  const back = eob.querySelector('.eob__face--back');
+  const copy = document.querySelector('.sarah__outro-copy');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let flipped = false;
+  let swapTimer;
+
+  const showCopy = (side) => {
+    if (!copy) return;
+    const swap = () => {
+      copy.querySelectorAll('.sarah__outro-side').forEach((el) => { el.hidden = el.dataset.side !== side; });
+      copy.classList.remove('is-swapping');
+    };
+    clearTimeout(swapTimer);
+    if (reducedMotion) return swap();
+    copy.classList.add('is-swapping'); // fade out, swap, fade back in
+    swapTimer = setTimeout(swap, 250);
+  };
+
+  const flip = () => {
+    flipped = !flipped;
+    eob.classList.toggle('is-flipped', flipped);
+    cue.setAttribute('aria-pressed', String(flipped));
+    front.toggleAttribute('inert', flipped);
+    front.setAttribute('aria-hidden', String(flipped));
+    back.toggleAttribute('inert', !flipped);
+    back.setAttribute('aria-hidden', String(!flipped));
+    showCopy(flipped ? 'back' : 'front');
+  };
+  card.addEventListener('click', flip);
+  cue.addEventListener('click', flip);
+
+  // Floating tilt that follows the mouse (mouse/trackpad only).
+  if (reducedMotion || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  const tilt = eob.querySelector('.eob__tilt');
+  eob.addEventListener('pointermove', (event) => {
+    const box = eob.getBoundingClientRect();
+    const x = (event.clientX - box.left) / box.width - 0.5;  // -0.5 (left) to 0.5 (right)
+    const y = (event.clientY - box.top) / box.height - 0.5;  // -0.5 (top) to 0.5 (bottom)
+    eob.classList.add('is-tilting');
+    tilt.style.setProperty('--ry', `${(x * 14).toFixed(2)}deg`);
+    tilt.style.setProperty('--rx', `${(-y * 8).toFixed(2)}deg`);
+    tilt.style.setProperty('--tx', `${(x * 12).toFixed(1)}px`);
+    tilt.style.setProperty('--ty', `${(y * 12).toFixed(1)}px`);
+  });
+  eob.addEventListener('pointerleave', () => {
+    eob.classList.remove('is-tilting'); // ease back to rest
+    ['--rx', '--ry', '--tx', '--ty'].forEach((name) => tilt.style.removeProperty(name));
+  });
+})();

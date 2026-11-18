@@ -214,6 +214,9 @@ a { color: inherit; }
   gap: 40px;
 }
 .sarah__intro, .sarah__outro { display: flex; flex-direction: column; gap: 24px; }
+.sarah__outro-side { display: flex; flex-direction: column; gap: 24px; transition: opacity 0.25s ease; }
+.sarah__outro-side[hidden] { display: none; }
+.sarah__outro-copy.is-swapping .sarah__outro-side { opacity: 0; }
 .eob-track { display: contents; } /* only becomes a real box on desktop */
 
 /* Receipt. Everything inside is sized in --u (1/371 of the receipt width),
@@ -223,12 +226,55 @@ a { color: inherit; }
   z-index: 3;
   width: 100%;
   max-width: 371px;
-  margin-inline: auto;
+  margin: 36px auto 0;               /* room for the "click to flip" cue above */
   aspect-ratio: 371 / 902;
-  background: url("assets/paper.png") center / 100% 100% no-repeat;
-  filter: drop-shadow(0 10px 28px rgba(13, 13, 13, 0.12));
   container-type: inline-size;
+  perspective: 1400px;
 }
+
+/* "Click to flip" cue: 16px above the receipt, centred on it */
+.eob__cue {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 16px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--grey-600);
+  font: 500 12px/1 var(--sans);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.eob__cue img { width: 20px; height: 20px; transition: transform 0.8s cubic-bezier(0.4, 0.1, 0.2, 1); }
+.eob.is-flipped .eob__cue img { transform: rotate(180deg); }
+
+/* Two nested 3D layers: .eob__tilt floats with the mouse, .eob__card flips. */
+.eob__tilt, .eob__card { position: absolute; inset: 0; transform-style: preserve-3d; }
+.eob__tilt {
+  transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.eob.is-tilting .eob__tilt { transition: transform 0.12s linear; }
+.eob__card { cursor: pointer; transition: transform 0.8s cubic-bezier(0.4, 0.1, 0.2, 1); }
+.eob.is-flipped .eob__card { transform: rotateY(180deg); }
+
+.eob__face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  filter: drop-shadow(0 10px 28px rgba(13, 13, 13, 0.12));
+}
+.eob__face--front { aspect-ratio: 371 / 902; background: url("assets/paper.png") center / 100% 100% no-repeat; }
+.eob__face--back { aspect-ratio: 371 / 872; background: url("assets/paper-back.png") center / 100% 100% no-repeat; transform: rotateY(180deg); }
 .eob__inner {
   --u: calc(100cqw / 371);
   display: flex;
@@ -281,7 +327,34 @@ a { color: inherit; }
 .eob__totals { display: flex; flex-direction: column; gap: calc(var(--u) * 8); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
 .eob__totals > div, .eob__paid { display: flex; justify-content: space-between; gap: calc(var(--u) * 8); white-space: nowrap; }
 .eob__paid { font-weight: 700; letter-spacing: 0.05em; }
-.eob__barcode { height: calc(var(--u) * 35); background: linear-gradient(90deg, transparent 0.000%, #0d0d0d 0.000% 0.669%, transparent 0.669%, transparent 1.336%, #0d0d0d 1.336% 1.671%, transparent 1.671%, transparent 3.009%, #0d0d0d 3.009% 3.678%, transparent 3.678%, transparent 4.349%, #0d0d0d 4.349% 5.352%, transparent 5.352%, transparent 6.021%, #0d0d0d 6.021% 6.356%, transparent 6.356%, transparent 7.024%, #0d0d0d 7.024% 7.359%, transparent 7.359%, transparent 8.694%, #0d0d0d 8.694% 9.698%, transparent 9.698%, transparent 10.367%, #0d0d0d 10.367% 10.702%, transparent 10.702%, transparent 11.370%, #0d0d0d 11.370% 12.039%, transparent 12.039%, transparent 13.043%, #0d0d0d 13.043% 13.377%, transparent 13.377%, transparent 14.382%, #0d0d0d 14.382% 15.386%, transparent 15.386%, transparent 16.052%, #0d0d0d 16.052% 16.721%, transparent 16.721%, transparent 17.391%, #0d0d0d 17.391% 17.726%, transparent 17.726%, transparent 18.728%, #0d0d0d 18.728% 19.731%, transparent 19.731%, transparent 20.737%, #0d0d0d 20.737% 21.072%, transparent 21.072%, transparent 21.740%, #0d0d0d 21.740% 22.075%, transparent 22.075%, transparent 23.076%, #0d0d0d 23.076% 23.745%, transparent 23.745%, transparent 24.416%, #0d0d0d 24.416% 25.419%, transparent 25.419%, transparent 26.422%, #0d0d0d 26.422% 27.091%, transparent 27.091%, transparent 27.758%, #0d0d0d 27.758% 28.093%, transparent 28.093%, transparent 29.098%, #0d0d0d 29.098% 29.432%, transparent 29.432%, transparent 30.101%, #0d0d0d 30.101% 30.435%, transparent 30.435%, transparent 31.104%, #0d0d0d 31.104% 32.107%, transparent 32.107%, transparent 32.777%, #0d0d0d 32.777% 33.780%, transparent 33.780%, transparent 34.450%, #0d0d0d 34.450% 35.118%, transparent 35.118%, transparent 35.786%, #0d0d0d 35.786% 36.120%, transparent 36.120%, transparent 36.789%, #0d0d0d 36.789% 37.458%, transparent 37.458%, transparent 38.128%, #0d0d0d 38.128% 39.132%, transparent 39.132%, transparent 40.135%, #0d0d0d 40.135% 40.469%, transparent 40.469%, transparent 41.471%, #0d0d0d 41.471% 42.140%, transparent 42.140%, transparent 42.810%, #0d0d0d 42.810% 43.479%, transparent 43.479%, transparent 44.147%, #0d0d0d 44.147% 44.481%, transparent 44.481%, transparent 45.150%, #0d0d0d 45.150% 45.484%, transparent 45.484%, transparent 46.153%, #0d0d0d 46.153% 46.822%, transparent 46.822%, transparent 47.492%, #0d0d0d 47.492% 48.496%, transparent 48.496%, transparent 49.498%, #0d0d0d 49.498% 50.167%, transparent 50.167%, transparent 50.835%, #0d0d0d 50.835% 51.169%, transparent 51.169%, transparent 52.174%, #0d0d0d 52.174% 52.509%, transparent 52.509%, transparent 53.177%, #0d0d0d 53.177% 54.181%, transparent 54.181%, transparent 54.850%, #0d0d0d 54.850% 55.519%, transparent 55.519%, transparent 56.523%, #0d0d0d 56.523% 56.857%, transparent 56.857%, transparent 57.526%, #0d0d0d 57.526% 58.529%, transparent 58.529%, transparent 59.199%, #0d0d0d 59.199% 59.868%, transparent 59.868%, transparent 60.535%, #0d0d0d 60.535% 60.870%, transparent 60.870%, transparent 61.872%, #0d0d0d 61.872% 62.206%, transparent 62.206%, transparent 62.878%, #0d0d0d 62.878% 63.546%, transparent 63.546%, transparent 64.214%, #0d0d0d 64.214% 65.217%, transparent 65.217%, transparent 65.887%, #0d0d0d 65.887% 66.221%, transparent 66.221%, transparent 67.223%, #0d0d0d 67.223% 68.227%, transparent 68.227%, transparent 69.229%, #0d0d0d 69.229% 69.898%, transparent 69.898%, transparent 70.569%, #0d0d0d 70.569% 70.903%, transparent 70.903%, transparent 71.905%, #0d0d0d 71.905% 72.574%, transparent 72.574%, transparent 73.245%, #0d0d0d 73.245% 74.248%, transparent 74.248%, transparent 75.251%, #0d0d0d 75.251% 75.585%, transparent 75.585%, transparent 76.587%, #0d0d0d 76.587% 77.256%, transparent 77.256%, transparent 77.927%, #0d0d0d 77.927% 78.261%, transparent 78.261%, transparent 79.263%, #0d0d0d 79.263% 79.932%, transparent 79.932%, transparent 80.602%, #0d0d0d 80.602% 81.606%, transparent 81.606%, transparent 82.609%, #0d0d0d 82.609% 82.943%, transparent 82.943%, transparent 83.948%, #0d0d0d 83.948% 84.617%, transparent 84.617%, transparent 85.284%, #0d0d0d 85.284% 85.953%, transparent 85.953%, transparent 86.621%, #0d0d0d 86.621% 86.955%, transparent 86.955%, transparent 87.960%, #0d0d0d 87.960% 88.295%, transparent 88.295%, transparent 89.633%, #0d0d0d 89.633% 89.968%, transparent 89.968%, transparent 90.969%, #0d0d0d 90.969% 91.304%, transparent 91.304%, transparent 92.309%, #0d0d0d 92.309% 92.978%, transparent 92.978%, transparent 93.645%, #0d0d0d 93.645% 93.980%, transparent 93.980%, transparent 94.985%, #0d0d0d 94.985% 95.319%, transparent 95.319%, transparent 96.321%, #0d0d0d 96.321% 96.656%, transparent 96.656%, transparent 97.324%, #0d0d0d 97.324% 97.659%, transparent 97.659%, transparent 98.664%, #0d0d0d 98.664% 98.998%, transparent 98.998%, transparent 99.667%, #0d0d0d 99.667% 100.000%, transparent 100.000%); }
+.eob__barcode { height: calc(var(--u) * 35); background: linear-gradient(90deg, transparent 0.000%, var(--bar, #0d0d0d) 0.000% 0.669%, transparent 0.669%, transparent 1.336%, var(--bar, #0d0d0d) 1.336% 1.671%, transparent 1.671%, transparent 3.009%, var(--bar, #0d0d0d) 3.009% 3.678%, transparent 3.678%, transparent 4.349%, var(--bar, #0d0d0d) 4.349% 5.352%, transparent 5.352%, transparent 6.021%, var(--bar, #0d0d0d) 6.021% 6.356%, transparent 6.356%, transparent 7.024%, var(--bar, #0d0d0d) 7.024% 7.359%, transparent 7.359%, transparent 8.694%, var(--bar, #0d0d0d) 8.694% 9.698%, transparent 9.698%, transparent 10.367%, var(--bar, #0d0d0d) 10.367% 10.702%, transparent 10.702%, transparent 11.370%, var(--bar, #0d0d0d) 11.370% 12.039%, transparent 12.039%, transparent 13.043%, var(--bar, #0d0d0d) 13.043% 13.377%, transparent 13.377%, transparent 14.382%, var(--bar, #0d0d0d) 14.382% 15.386%, transparent 15.386%, transparent 16.052%, var(--bar, #0d0d0d) 16.052% 16.721%, transparent 16.721%, transparent 17.391%, var(--bar, #0d0d0d) 17.391% 17.726%, transparent 17.726%, transparent 18.728%, var(--bar, #0d0d0d) 18.728% 19.731%, transparent 19.731%, transparent 20.737%, var(--bar, #0d0d0d) 20.737% 21.072%, transparent 21.072%, transparent 21.740%, var(--bar, #0d0d0d) 21.740% 22.075%, transparent 22.075%, transparent 23.076%, var(--bar, #0d0d0d) 23.076% 23.745%, transparent 23.745%, transparent 24.416%, var(--bar, #0d0d0d) 24.416% 25.419%, transparent 25.419%, transparent 26.422%, var(--bar, #0d0d0d) 26.422% 27.091%, transparent 27.091%, transparent 27.758%, var(--bar, #0d0d0d) 27.758% 28.093%, transparent 28.093%, transparent 29.098%, var(--bar, #0d0d0d) 29.098% 29.432%, transparent 29.432%, transparent 30.101%, var(--bar, #0d0d0d) 30.101% 30.435%, transparent 30.435%, transparent 31.104%, var(--bar, #0d0d0d) 31.104% 32.107%, transparent 32.107%, transparent 32.777%, var(--bar, #0d0d0d) 32.777% 33.780%, transparent 33.780%, transparent 34.450%, var(--bar, #0d0d0d) 34.450% 35.118%, transparent 35.118%, transparent 35.786%, var(--bar, #0d0d0d) 35.786% 36.120%, transparent 36.120%, transparent 36.789%, var(--bar, #0d0d0d) 36.789% 37.458%, transparent 37.458%, transparent 38.128%, var(--bar, #0d0d0d) 38.128% 39.132%, transparent 39.132%, transparent 40.135%, var(--bar, #0d0d0d) 40.135% 40.469%, transparent 40.469%, transparent 41.471%, var(--bar, #0d0d0d) 41.471% 42.140%, transparent 42.140%, transparent 42.810%, var(--bar, #0d0d0d) 42.810% 43.479%, transparent 43.479%, transparent 44.147%, var(--bar, #0d0d0d) 44.147% 44.481%, transparent 44.481%, transparent 45.150%, var(--bar, #0d0d0d) 45.150% 45.484%, transparent 45.484%, transparent 46.153%, var(--bar, #0d0d0d) 46.153% 46.822%, transparent 46.822%, transparent 47.492%, var(--bar, #0d0d0d) 47.492% 48.496%, transparent 48.496%, transparent 49.498%, var(--bar, #0d0d0d) 49.498% 50.167%, transparent 50.167%, transparent 50.835%, var(--bar, #0d0d0d) 50.835% 51.169%, transparent 51.169%, transparent 52.174%, var(--bar, #0d0d0d) 52.174% 52.509%, transparent 52.509%, transparent 53.177%, var(--bar, #0d0d0d) 53.177% 54.181%, transparent 54.181%, transparent 54.850%, var(--bar, #0d0d0d) 54.850% 55.519%, transparent 55.519%, transparent 56.523%, var(--bar, #0d0d0d) 56.523% 56.857%, transparent 56.857%, transparent 57.526%, var(--bar, #0d0d0d) 57.526% 58.529%, transparent 58.529%, transparent 59.199%, var(--bar, #0d0d0d) 59.199% 59.868%, transparent 59.868%, transparent 60.535%, var(--bar, #0d0d0d) 60.535% 60.870%, transparent 60.870%, transparent 61.872%, var(--bar, #0d0d0d) 61.872% 62.206%, transparent 62.206%, transparent 62.878%, var(--bar, #0d0d0d) 62.878% 63.546%, transparent 63.546%, transparent 64.214%, var(--bar, #0d0d0d) 64.214% 65.217%, transparent 65.217%, transparent 65.887%, var(--bar, #0d0d0d) 65.887% 66.221%, transparent 66.221%, transparent 67.223%, var(--bar, #0d0d0d) 67.223% 68.227%, transparent 68.227%, transparent 69.229%, var(--bar, #0d0d0d) 69.229% 69.898%, transparent 69.898%, transparent 70.569%, var(--bar, #0d0d0d) 70.569% 70.903%, transparent 70.903%, transparent 71.905%, var(--bar, #0d0d0d) 71.905% 72.574%, transparent 72.574%, transparent 73.245%, var(--bar, #0d0d0d) 73.245% 74.248%, transparent 74.248%, transparent 75.251%, var(--bar, #0d0d0d) 75.251% 75.585%, transparent 75.585%, transparent 76.587%, var(--bar, #0d0d0d) 76.587% 77.256%, transparent 77.256%, transparent 77.927%, var(--bar, #0d0d0d) 77.927% 78.261%, transparent 78.261%, transparent 79.263%, var(--bar, #0d0d0d) 79.263% 79.932%, transparent 79.932%, transparent 80.602%, var(--bar, #0d0d0d) 80.602% 81.606%, transparent 81.606%, transparent 82.609%, var(--bar, #0d0d0d) 82.609% 82.943%, transparent 82.943%, transparent 83.948%, var(--bar, #0d0d0d) 83.948% 84.617%, transparent 84.617%, transparent 85.284%, var(--bar, #0d0d0d) 85.284% 85.953%, transparent 85.953%, transparent 86.621%, var(--bar, #0d0d0d) 86.621% 86.955%, transparent 86.955%, transparent 87.960%, var(--bar, #0d0d0d) 87.960% 88.295%, transparent 88.295%, transparent 89.633%, var(--bar, #0d0d0d) 89.633% 89.968%, transparent 89.968%, transparent 90.969%, var(--bar, #0d0d0d) 90.969% 91.304%, transparent 91.304%, transparent 92.309%, var(--bar, #0d0d0d) 92.309% 92.978%, transparent 92.978%, transparent 93.645%, var(--bar, #0d0d0d) 93.645% 93.980%, transparent 93.980%, transparent 94.985%, var(--bar, #0d0d0d) 94.985% 95.319%, transparent 95.319%, transparent 96.321%, var(--bar, #0d0d0d) 96.321% 96.656%, transparent 96.656%, transparent 97.324%, var(--bar, #0d0d0d) 97.324% 97.659%, transparent 97.659%, transparent 98.664%, var(--bar, #0d0d0d) 98.664% 98.998%, transparent 98.998%, transparent 99.667%, var(--bar, #0d0d0d) 99.667% 100.000%, transparent 100.000%); }
+/* Back of the receipt */
+.eob__inner--back { --bar: var(--white); justify-content: space-between; height: calc(var(--u) * 814); color: var(--white); }
+.eob__group { display: flex; flex-direction: column; gap: calc(var(--u) * 20); }
+.eob__inner--back .eob__sub { color: #dbdbdb; }
+.eob__kicker { font-size: calc(var(--u) * 10); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.eob__inner--back .eob__headline { font: 400 calc(var(--u) * 40) / 1.1 var(--serif); text-box: trim-both cap alphabetic; }
+.eob__inner--back .eob__body { font-size: calc(var(--u) * 16); line-height: 1.4; }
+.eob__summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: calc(var(--u) * 12) calc(var(--u) * 21);
+  padding: calc(var(--u) * 12);
+  border-radius: calc(var(--u) * 8);
+  background: var(--purple-600);
+  white-space: nowrap;
+}
+.eob__summary dt { font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+.eob__summary dd { font-weight: 500; }
+.eob__pill {
+  padding: calc(var(--u) * 12);
+  border-radius: calc(var(--u) * 8);
+  background: #5a238e;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-transform: uppercase;
+}
 .eob__caption { font-size: calc(var(--u) * 9.5); color: var(--grey-600); text-align: center; }
 
 /* ==========================================================================

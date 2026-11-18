@@ -55,12 +55,14 @@ if (document.documentElement.classList.contains('js-reveal')) {
 }
 
 // Hero + receipt interactions.
-// Desktop scroll story (section 2 is position: sticky there):
+// Desktop scroll story (nothing is pinned, the page scrolls continuously;
+// only the receipt is position: sticky):
 //   1. the hero scrolls away and section 2 rises to the top of the viewport;
 //      the receipt holds its place on screen and unrolls as this happens;
-//   2. once the receipt lines up with section 2 the "click to flip" cue shows;
-//   3. section 2 stays pinned for --pin px of scrolling, and the receipt flips
-//      in one go a quarter of the way through (and back when scrolling up).
+//   2. once section 2 reaches the top, the receipt lines up with "Meet Sarah"
+//      and travels on with it (the "click to flip" cue shows from here);
+//   3. a few pixels later the receipt flips in one go while it keeps moving
+//      (and flips back when scrolling up past the same point).
 // The receipt only flips with scroll (on tablet and mobile: once it has fully
 // unrolled and travelled a little further up the screen). The copy beside it swaps.
 (() => {
@@ -76,7 +78,7 @@ if (document.documentElement.classList.contains('js-reveal')) {
   const back = eob.querySelector('.eob__face--back');
   const copy = document.querySelector('.sarah__outro-copy');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const FLIP_AT = 0.25; // fraction of the pinned scroll at which the receipt flips
+  const FLIP_AFTER = 40; // px of scroll after section 2 reaches the top at which the receipt flips
 
   // ---- Flip ----
   // The turn is a damped spring rather than a fixed-length transition: it eases
@@ -306,8 +308,8 @@ if (document.documentElement.classList.contains('js-reveal')) {
 
   const update = () => {
     queued = false;
-    if (getComputedStyle(panel).position !== 'sticky') {
-      // Tablet and mobile: nothing is pinned, the cue is always visible.
+    if (getComputedStyle(eob).position !== 'sticky') {
+      // Tablet and mobile: the receipt sits in the normal flow, the cue is always visible.
       eob.classList.remove('is-aligned');
       // The receipt unrolls as it travels up the screen: the roll stays about
       // 80% of the way down the viewport until the paper runs out.
@@ -319,21 +321,17 @@ if (document.documentElement.classList.contains('js-reveal')) {
       return;
     }
     const gap = 10; // space between the two panels
-    const stickyTop = parseFloat(getComputedStyle(panel).top) || 0;
-    // 0 = page at the top (section 2 still a full hero-height below its resting
-    // place); 1 = section 2 has reached the top of the viewport.
-    const travel = hero.offsetHeight + gap;
-    const cover = Math.min(1, Math.max(0, 1 - (panel.getBoundingClientRect().top - stickyTop) / travel));
+    const pageTop = parseFloat(getComputedStyle(intro.closest('.page')).paddingTop) || 0;
+    // How far section 2 is from the top of the viewport (negative once it has passed it).
+    const toTop = panel.getBoundingClientRect().top - pageTop;
+    // 0 = page at the top (section 2 a full hero-height below); 1 = section 2 at the top.
+    const cover = Math.min(1, Math.max(0, 1 - toTop / (hero.offsetHeight + gap)));
     eob.classList.toggle('is-aligned', cover > 0.995);
     // Unrolls while section 2 rises; fully out once it reaches the top.
     const full = eob.offsetHeight;
     setUnroll(full * (START + (1 - START) * cover), full);
-
-    // How far through the pinned stretch we are (0 = just pinned, 1 = released).
-    const pin = parseFloat(getComputedStyle(intro).getPropertyValue('--pin')) || 0;
-    const scrolledPastPin = stickyTop - (intro.getBoundingClientRect().top + hero.offsetHeight + gap);
     // Down past the flip point: show the back; back up above it: show the front.
-    flipTo(pin > 0 && scrolledPastPin / pin >= FLIP_AT);
+    flipTo(-toTop >= FLIP_AFTER);
   };
   const request = () => {
     if (queued) return;

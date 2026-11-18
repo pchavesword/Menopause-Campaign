@@ -793,11 +793,10 @@ a { color: inherit; }
      1. the hero scrolls away normally and section 2 follows it up,
      2. the receipt holds its on-screen position (and unrolls) until section 2
         reaches the top of the viewport,
-     3. section 2 then stays pinned for --pin while the receipt turns over. */
+     3. the two then scroll on together (nothing is pinned) and the receipt flips. */
   .intro {
     --hero-h: 600px;       /* hero height                                   */
     --sarah-h: var(--hero-h); /* section 2 height: same as the hero        */
-    --pin: 400px;          /* extra scroll while section 2 stays pinned and the receipt flips */
     --eob-top: 159px;      /* receipt offset from the top of the hero at page load */
     --eob-rest: 70px;      /* receipt offset from the top of section 2 once it comes to rest:
                               the same as section 2's top padding, so it lines up with "Meet Sarah" */
@@ -806,8 +805,6 @@ a { color: inherit; }
     /* room for the part of the receipt that hangs below section 2 */
     margin-bottom: calc(var(--eob-rest) + var(--eob-h) - var(--sarah-h) + 40px);
   }
-  /* Spacer: gives section 2 room to stay pinned for --pin of scrolling. */
-  .intro::after { content: ""; display: block; height: var(--pin); }
   .hero { height: var(--hero-h); padding-block: 110px; }
 
   /* The "click to flip" cue only shows once the receipt has lined up with
@@ -818,8 +815,6 @@ a { color: inherit; }
   /* Same height as the hero. The receipt is longer, so it hangs out of the
      bottom of the panel; .intro's bottom margin reserves room for it. */
   .sarah {
-    position: sticky;      /* pins once it reaches the top of the viewport */
-    top: var(--edge);
     z-index: 1;
     display: block;
     height: var(--sarah-h);

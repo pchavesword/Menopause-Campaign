@@ -206,6 +206,7 @@ a { color: inherit; }
   gap: 40px;
 }
 .sarah__intro, .sarah__outro { display: flex; flex-direction: column; gap: 24px; }
+.eob-track { display: contents; } /* only becomes a real box on desktop */
 
 /* Receipt. Everything inside is sized in --u (1/371 of the receipt width),
    so it scales as one piece and always fits the paper image. */
@@ -557,18 +558,53 @@ a { color: inherit; }
 @media (min-width: 1024px) {
   .lg-only { display: inline; }
 
-  .hero { min-height: 600px; padding-block: 110px; }
-
-  /* The receipt straddles the hero and the lilac panel. */
+  /* Hero + "Meet Sarah" scroll interaction:
+     1. the hero pins to the top of the viewport,
+     2. section 2 scrolls up and over it,
+     3. the receipt holds its on-screen position until section 2 has fully
+        covered the hero, then scrolls away with section 2. */
+  .intro {
+    --hero-h: 600px;       /* hero height                                   */
+    --eob-top: 159px;      /* receipt offset from the top of the hero       */
+    --eob-h: 902px;        /* receipt height at 371px wide                  */
+    position: relative;
+  }
+  .hero {
+    position: sticky;
+    top: var(--edge);
+    z-index: 0;
+    height: var(--hero-h);
+    padding-block: 110px;
+  }
   .sarah {
+    z-index: 1;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 600px;
+    /* tall enough to hold the whole receipt once it has come to rest */
+    min-height: calc(var(--eob-top) + var(--eob-h) + 70px);
     padding-block: 74px 70px;
   }
   .sarah__intro, .sarah__outro { max-width: 310px; align-self: flex-start; }
-  .eob { position: absolute; top: -451px; left: calc(50% + 69px); width: 371px; margin: 0; }
+
+  /* The track starts at the top of the hero and ends where the receipt comes
+     to rest inside section 2; the receipt is sticky inside it. */
+  .eob-track {
+    display: block;
+    position: absolute;
+    top: calc(-1 * (var(--hero-h) + 10px));
+    left: calc(50% + 69px);
+    width: 371px;
+    height: calc(var(--hero-h) + 10px + var(--eob-top) + var(--eob-h));
+    pointer-events: none;
+  }
+  .eob {
+    position: sticky;
+    top: calc(var(--edge) + var(--eob-top));
+    width: 371px;
+    margin: var(--eob-top) 0 0;
+    pointer-events: auto;
+  }
 
   .meet { grid-template-columns: minmax(0, 480fr) minmax(0, 600fr); }
   .meet__card { min-height: 0; }

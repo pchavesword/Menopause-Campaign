@@ -583,7 +583,8 @@ a { color: inherit; }
     justify-content: space-between;
     /* tall enough to hold the whole receipt once it has come to rest */
     min-height: calc(var(--eob-top) + var(--eob-h) + 70px);
-    padding-block: 74px 70px;
+    /* top padding = receipt offset, so "Meet Sarah" lines up with the receipt's top edge */
+    padding-block: var(--eob-top) 70px;
   }
   .sarah__intro, .sarah__outro { max-width: 310px; align-self: flex-start; }
 

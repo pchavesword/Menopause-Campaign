@@ -676,8 +676,13 @@ a { color: inherit; }
 .faq__item summary:focus-visible { outline-offset: -4px; }
 .faq__icon { flex: none; padding: 4px; border: 1px solid var(--ink); border-radius: 50%; background: var(--white); }
 .faq__icon img { width: 20px; height: 20px; }
-.faq__less, .faq__item[open] .faq__plus { display: none; }
-.faq__item[open] .faq__less { display: block; }
+/* The plus turns 45° into an x when the question is open. script.js toggles
+   .is-open (so the icon starts turning the moment a question is clicked, in
+   step with the answer sliding open or shut); [open] covers the no-script case. */
+.faq__plus { transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.2, 1); }
+.faq__item.is-open .faq__plus,
+.faq__item[open]:not(.is-closing) .faq__plus { transform: rotate(45deg); }
+.faq__answer { overflow: hidden; }
 .faq__answer { padding: 0 20px 24px; }
 .faq__answer p { text-box: none; }
 

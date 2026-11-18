@@ -371,3 +371,47 @@ if (document.documentElement.classList.contains('js-reveal')) {
   window.addEventListener('scroll', update, { passive: true });
   update();
 })();
+
+// FAQ: slide answers open and shut instead of snapping.
+(() => {
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.faq__item').forEach((item) => {
+    const summary = item.querySelector('summary');
+    const answer = item.querySelector('.faq__answer');
+    if (!summary || !answer || !answer.animate) return;
+    let running = null;
+
+    summary.addEventListener('click', (event) => {
+      if (reducedMotion) return; // native open/close, no animation
+      event.preventDefault();
+      const opening = !item.open || item.classList.contains('is-closing');
+
+      // Where the answer is right now: mid-animation if a previous click is
+      // still playing (so a quick second click reverses smoothly), otherwise
+      // fully open or fully shut.
+      const style = getComputedStyle(answer);
+      const current = running
+        ? { height: style.height, paddingBottom: style.paddingBottom, opacity: style.opacity }
+        : null;
+      if (running) running.cancel();
+
+      item.classList.toggle('is-open', opening);
+      item.classList.toggle('is-closing', !opening);
+      item.open = true; // keep the answer rendered while it animates
+
+      const full = { height: `${answer.scrollHeight}px`, paddingBottom: getComputedStyle(answer).paddingBottom, opacity: 1 };
+      const shut = { height: '0px', paddingBottom: '0px', opacity: 0 };
+      running = answer.animate([current || (opening ? shut : full), opening ? full : shut], {
+        duration: 380,
+        easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)',
+      });
+      running.onfinish = () => {
+        running = null;
+        if (!opening) {
+          item.open = false;
+          item.classList.remove('is-closing');
+        }
+      };
+    });
+  });
+})();

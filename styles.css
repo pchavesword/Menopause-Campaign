@@ -1,6 +1,6 @@
 /* ==========================================================================
    Sword Health — "The hidden cost of menopause" landing page
-   Mobile-first. Breakpoints: 640 / 760 / 1024 (desktop design = 1280).
+   Mobile-first. Breakpoints: 640 / 760 / 1024 (desktop design = 1440).
    ========================================================================== */
 
 @font-face {
@@ -37,14 +37,14 @@
 
   --edge: 10px;                              /* page margin around panels   */
   --gutter: clamp(20px, 5.47vw, 70px);       /* panel inner padding         */
-  --section-gap: clamp(72px, 11vw, 140px);
+  --section-gap: clamp(72px, 8.4vw, 120px);  /* the one gap between every section */
   --radius: 16px;
   --lilac: radial-gradient(ellipse 89.84% 100% at 50% 0, #f2f2f2, #dfcaf2);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: clip; }
 
 body {
   margin: 0;
@@ -63,7 +63,7 @@ a { color: inherit; }
 
 /* The design trims text boxes to cap-height / baseline. Progressive enhancement:
    browsers without `text-box` simply get slightly looser spacing. */
-:where(h1, h2, h3, p, blockquote, figcaption, .btn, .questions__n, summary > span:first-child) {
+:where(h1, h2, h3, p, blockquote, figcaption, .btn, summary > span:first-child) {
   text-box: trim-both cap alphabetic;
 }
 
@@ -71,10 +71,27 @@ a { color: inherit; }
 
 /* ---------- Layout primitives ---------- */
 
-.page { max-width: 1280px; margin-inline: auto; padding: var(--edge) var(--edge) 0; }
+.page { max-width: 1440px; margin-inline: auto; padding: var(--edge) var(--edge) 0; }
 
 .panel { position: relative; border-radius: var(--radius); padding-inline: var(--gutter); }
 .panel--lilac { background: var(--lilac); }
+
+/* Wide panels (hero, section 2): the background runs out to 20px from the
+   edges of the screen while the content stays lined up with the 1440px page.
+   --vw is the viewport width without the scrollbar (script.js keeps it exact);
+   --bleed is how far the panel reaches past the page's content edge. */
+:root {
+  --vw: 100vw;
+  --wide-inset: 20px;   /* space between a wide panel and the screen edge, and below the hero */
+  --bleed: calc((var(--vw) - min(var(--vw), 1440px)) / 2 + var(--edge) - var(--wide-inset));
+  --panel-w: calc(min(var(--vw), 1440px) - 2 * var(--edge)); /* a regular panel's width */
+  /* Right-hand column that holds the receipts in section 2 and the card in section 3 */
+  --visual-w: min(560px, calc(0.44 * (var(--panel-w) - 2 * var(--gutter))));
+}
+.panel--bleed {
+  margin-inline: calc(-1 * var(--bleed));
+  padding-inline: max(20px, calc(var(--bleed) + var(--gutter))); /* lines up with the page; at least 20px on phones */
+}
 
 .wrap { margin-inline: var(--gutter); }
 .section { margin-top: var(--section-gap); }
@@ -154,20 +171,18 @@ a { color: inherit; }
 .tex--offset { opacity: 0.75; }
 .tex--offset img { left: 17.83%; top: -2.46%; }
 
+
+/* Outline button: white with a black border; inverts on hover. */
+.btn--outline { background: var(--white); color: var(--ink); }
+.btn--outline:hover { background: var(--ink); color: var(--white); }
+
+.md-up { display: none; }
+
 /* ==========================================================================
-   Section 1 — hero
+   Navbar
    ========================================================================== */
 
-.hero {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  overflow: hidden;
-  background: var(--white);
-  padding-block: 128px 64px;
-}
-
-/* Navbar: always fixed at the top, above every section. The bar itself is
+/* Always fixed at the top, above every section. The bar itself is
    transparent and click-through; only the logo and button take pointer events. */
 .site-header {
   position: fixed;
@@ -196,326 +211,513 @@ a { color: inherit; }
 .site-header.is-scrolled::before { opacity: 1; }
 .site-header__inner {
   position: relative; /* above the frosted bar */
-
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  max-width: 1280px;
+  max-width: 1440px;
   margin-inline: auto;
-  padding: 39px calc(var(--edge) + var(--gutter)) 0;
+  padding: 30px calc(var(--edge) + var(--gutter)) 0;
 }
 .site-header__inner > * { pointer-events: auto; }
 .logo { display: block; flex: none; }
 .logo img { width: 97.5px; height: 24px; }
 .site-header .logo { margin-top: 9px; }
 
+/* ==========================================================================
+   Section 1 — hero (centred title)
+   ========================================================================== */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background: var(--white);
+  /* Fills the screen (less the page margin above and the gap below). */
+  min-height: calc(100svh - var(--edge) - var(--wide-inset));
+  padding-block: 120px 140px;
+  text-align: center;
+}
 .hero__copy {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 431px;
+  align-items: center;
+  gap: clamp(28px, 3.4vw, 43px);
+  max-width: 585px;
 }
-.hero__lead { max-width: 410px; }
-.hero__cta { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.hero__title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(40px, 24px + 3.6vw, 69.43px);
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.hero__cta { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+/* Scroll indicator: bottom centre of the hero, a line with a light running down it. */
+.scroll-cue {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: clamp(28px, 5svh, 48px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.scroll-cue__label { font: 500 11px/1 var(--sans); letter-spacing: 1.6px; text-transform: uppercase; text-box: none; }
+.scroll-cue__line {
+  position: relative;
+  overflow: hidden;
+  width: 1px;
+  height: 48px;
+  background: rgba(13, 13, 13, 0.18);
+}
+.scroll-cue__line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 18px;
+  background: var(--ink);
+  animation: scroll-cue 2s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+}
+@keyframes scroll-cue {
+  from { transform: translateY(-18px); }
+  to { transform: translateY(48px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue__line::after { animation: none; transform: translateY(15px); }
+}
 
 /* ==========================================================================
-   Section 2 — Meet Sarah + receipt
+   Section 2 — Meet Sarah + receipt + "Sarah isn't alone"
    ========================================================================== */
 
 .sarah {
-  margin-top: 10px;
+  margin-top: var(--wide-inset);
   padding-block: 56px;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 64px;
 }
+.sarah__top { display: flex; flex-direction: column; gap: 40px; }
+.sarah__copy { display: flex; flex-direction: column; gap: 40px; }
 .sarah__intro, .sarah__outro { display: flex; flex-direction: column; gap: 24px; }
-.sarah__outro-side { display: flex; flex-direction: column; gap: 24px; transition: opacity 0.25s ease; }
-.sarah__outro-side[hidden] { display: none; }
-.sarah__outro-copy.is-swapping .sarah__outro-side { opacity: 0; }
-.eob-track { display: contents; } /* only becomes a real box on desktop */
 
-/* Receipt. Everything inside is sized in --u (1/371 of the receipt width),
-   so it scales as one piece and always fits the paper image. */
-.eob {
+/* The window the receipt is seen through. The receipt is more than four times
+   as tall as it is wide, so only its lower part shows (the claims summary);
+   the rest runs out of the top. On desktop the pinned panel is the window. */
+.receipt-window {
   position: relative;
-  z-index: 3;
-  width: 100%;
-  max-width: 371px;
-  margin-inline: auto;
-  aspect-ratio: 371 / 902;
-  container-type: inline-size;
-  perspective: 2400px;
-}
-
-/* "Click to flip" cue: 16px above the receipt, centred on it */
-.eob__cue {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 16px);
-  transform: translateX(-50%);
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--grey-600);
-  font: 500 12px/1 var(--sans);
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.eob__cue[hidden] { display: none; }
-.eob:has(.eob__cue:not([hidden])) { margin-top: 36px; } /* room for the cue on tablet and mobile */
-.eob__cue img { width: 20px; height: 20px; transition: transform 0.8s cubic-bezier(0.4, 0.1, 0.2, 1); }
-.eob.is-flipped .eob__cue img { transform: rotate(180deg); }
-
-/* Two nested 3D layers: .eob__tilt floats with the mouse, .eob__card flips. */
-.eob__tilt, .eob__card { position: absolute; inset: 0; transform-style: preserve-3d; }
-.eob__tilt {
-  transform: translate3d(var(--tx, 0px), var(--ty, 0px), 0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.eob.is-tilting .eob__tilt { transition: transform 0.12s linear; }
-/* The flip is animated by script.js with a spring: --flip is the angle and
-   --lift (0 to 1) peaks mid-turn, when the paper swings towards the viewer. */
-.eob__card {
-  transform: translateZ(calc(var(--lift, 0) * 70px)) rotateY(var(--flip, 0deg)) rotateZ(calc(var(--lift, 0) * -1.5deg));
-  will-change: transform;
-}
-
-.eob__face {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-.eob__face--front { aspect-ratio: 371 / 902; transform: translateZ(0.5px); }
-.eob__face--back { aspect-ratio: 371 / 872; transform: rotateY(180deg) translateZ(0.5px); }
-/* Paper shadow: a plain box-shadow (cheap in 3D, unlike a filter). It lives on
-   the tilt layer, well behind the paper, so the bending sheet can never dip
-   under it; it narrows as the paper turns (--turn) and follows the unrolled length. */
-.eob__tilt::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: calc(var(--unroll, 100%) - 6px);
-  transform: translateZ(-60px) scaleX(var(--turn, 1));
-  box-shadow: 0 calc(10px + var(--lift, 0) * 14px) calc(28px + var(--lift, 0) * 22px) rgba(13, 13, 13, calc(0.12 + var(--lift, 0) * 0.06));
-}
-
-/* The back of the receipt is a little shorter than the front. */
-.eob.is-flipped .eob__tilt::before { height: calc(min(var(--unroll, 100%), 96.67%) - 6px); }
-
-/* Living paper. script.js cuts the receipt into horizontal strips (each one a
-   window onto a copy of the sheet) and bends them in 3D every frame, so the
-   paper curves, sways in a light breeze and reacts to scrolling. The original
-   faces stay in place, invisible, for assistive technology. */
-.eob.is-live .eob__face { opacity: 0; }
-.eob__strips { --strip-h: calc(100cqw * 902 / 371 / var(--strips)); position: absolute; inset: 0; transform-style: preserve-3d; pointer-events: none; }
-.eob__strip {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  top: calc(var(--i) * var(--strip-h));
-  height: calc(var(--strip-h) + 1.5px); /* small overlap hides the seams */
-  transform-origin: 50% 0;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-.eob__slice {
-  position: absolute;
-  inset: 0;
+  justify-content: center;
+  align-items: flex-end;
+  height: min(72svh, 560px);
+  margin-inline: -20px;
+  padding: 0 20px 28px;   /* room for the paper's shadow */
   overflow: hidden;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0.5px);
+  -webkit-mask-image: linear-gradient(transparent, #000 56px);
+  mask-image: linear-gradient(transparent, #000 56px);
 }
-.eob__slice--back { transform: rotateY(180deg) translateZ(0.5px); }
-.eob__slice .eob__sheet { inset: auto; left: 0; width: 100%; top: calc(var(--i) * var(--strip-h) * -1); height: calc(100cqw * 902 / 371); }
-.eob__slice--back .eob__sheet { height: calc(100cqw * 872 / 371); background-image: url("assets/paper-back.png"); }
-/* Light and shade: one smooth gradient per strip, running from the shade at its
-   top edge (--f0 / --b0) to the shade at its bottom edge (--f1 / --b1). Each
-   strip ends on the value the next one starts with, so there are no bands or
-   seams. Clipped to the unrolled paper; on the last strip it is also masked to
-   the torn edge. */
-.eob__slice::after {
+.receipt-morph { flex: none; width: min(100%, 371px); }
+
+/* Receipt. Everything inside is sized in --u (1/371 of the receipt's width),
+   so the same markup works at any size: Sarah's, and the small ones in the
+   collage. */
+.receipt { position: relative; width: 100%; container-type: inline-size; }
+.receipt__feed {
+  --u: calc(100cqw / 371);
+  position: relative;
+  filter: drop-shadow(0 calc(var(--u) * 8) calc(var(--u) * 20) rgba(42, 12, 78, 0.2));
+}
+/* script.js: --hidden clips the paper that is still on the roll; --jx, --jy
+   and --jr nudge the paper once a second. */
+.receipt__paper {
+  position: relative;
+  padding: calc(var(--u) * 20) calc(var(--u) * 22) calc(var(--u) * 40);
+  color: var(--ink);
+  clip-path: inset(0 0 var(--hidden, 0px) 0);
+  transform: translate(var(--jx, 0px), var(--jy, 0px)) rotate(var(--jr, 0deg));
+  transform-origin: 50% 100%;
+}
+/* The paper itself. --flip mirrors the creases now and then; --shade dims the
+   receipts further back in the collage. */
+.receipt__sheet {
+  position: absolute;
+  inset: 0 0 0.26% 0;
+  background: url("assets/receipt-paper.png") center / 100% 100% no-repeat;
+  transform: scaleX(var(--flip, 1));
+}
+.receipt__sheet::after {
   content: "";
   position: absolute;
   inset: 0;
-  will-change: transform;
-  background: linear-gradient(rgba(26, 16, 48, var(--f0, 0)), rgba(26, 16, 48, var(--f1, 0)));
-  clip-path: inset(0 0 calc(100% - clamp(0px, var(--unroll, 100000px) - var(--i) * var(--strip-h), 100%)) 0);
+  background: rgb(96 64 150 / var(--shade, 0));
+  -webkit-mask: url("assets/receipt-paper.png") center / 100% 100% no-repeat;
+  mask: url("assets/receipt-paper.png") center / 100% 100% no-repeat;
 }
-.eob__slice--back::after { background: linear-gradient(rgba(26, 16, 48, var(--b0, 0)), rgba(26, 16, 48, var(--b1, 0))); }
-.eob__strip:last-child .eob__slice::after {
-  -webkit-mask: url("assets/paper.png") 0 calc(var(--i) * var(--strip-h) * -1) / 100% calc(100cqw * 902 / 371) no-repeat;
-  mask: url("assets/paper.png") 0 calc(var(--i) * var(--strip-h) * -1) / 100% calc(100cqw * 902 / 371) no-repeat;
-}
-.eob__strip:last-child .eob__slice--back::after {
-  -webkit-mask-image: url("assets/paper-back.png");
-  mask-image: url("assets/paper-back.png");
-  -webkit-mask-size: 100% calc(100cqw * 872 / 371);
-  mask-size: 100% calc(100cqw * 872 / 371);
-}
-
-/* The sheet is the paper itself. While the receipt unrolls, script.js sets
-   --unroll (px of paper rolled out so far) and the rest is clipped away. */
-.eob__sheet {
-  position: absolute;
-  inset: 0;
-  background: url("assets/paper.png") center / 100% 100% no-repeat;
-  clip-path: inset(0 0 calc(100% - var(--unroll, 100%)) 0);
-}
-.eob__face--back .eob__sheet { background-image: url("assets/paper-back.png"); }
-
-/* 3D paper roll at the unrolled edge. A cylinder made of flat strips, each
-   rotated around the roll's axis; --roll-r is its radius. The paper texture
-   on the strips shifts with --unroll, so the roll turns as it unwinds. */
-.eob__roll {
-  --u: calc(100cqw / 371);
-  position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
-  pointer-events: none;
-  opacity: 0;
-  transform: translateZ(var(--roll-z, 0px)); /* rides on the bent paper */
-}
-.eob.is-rolled .eob__roll { opacity: var(--roll-o, 1); }
-.eob__roll-strip {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  /* chord of one segment (2·tan(π/24) = 0.2633) plus a hair of overlap */
-  height: calc(var(--roll-r) * 0.2633 + 0.8px);
-  top: calc(var(--unroll) - var(--roll-r) * 0.13165 - 0.4px);
-  transform: translateZ(var(--roll-r)) rotateX(var(--a)) translateZ(var(--roll-r));
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  background:
-    linear-gradient(rgba(40, 30, 60, var(--shade)), rgba(40, 30, 60, var(--shade2))),
-    url("assets/paper.png") 0 calc(-1 * (var(--unroll) + var(--roll-r) * var(--arc))) / 100% calc(var(--u) * 902);
-}
-.eob.is-flipped .eob__roll-strip { background-image: linear-gradient(rgba(20, 5, 40, var(--shade)), rgba(20, 5, 40, var(--shade2))), url("assets/paper-back.png"); }
-/* Soft shadows: one cast below the roll, one where it touches the paper. */
-.eob__roll-shadow {
-  position: absolute;
-  left: 2%;
-  width: 96%;
-  top: calc(var(--unroll) + var(--roll-r) * 0.35);
-  height: calc(var(--roll-r) * 2);
-  border-radius: 50%;
-  background: rgba(13, 13, 13, 0.32);
-  transform: translateZ(-30px); /* behind the paper, so it only falls on the page */
-  filter: blur(calc(var(--roll-r) * 0.55 + 2px));
-}
-.eob__roll-contact {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  top: calc(var(--unroll) - var(--roll-r) * 2.2);
-  height: calc(var(--roll-r) * 1.3);
-  background: linear-gradient(transparent, rgba(13, 13, 13, 0.1));
-  transform: translateZ(3px);   /* clear of the paper surface */
-}
-.eob__inner {
-  --u: calc(100cqw / 371);
+.receipt__body {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: calc(var(--u) * 20);
-  padding: calc(var(--u) * 24) calc(var(--u) * 22) 0;
-  font-size: calc(var(--u) * 13);
-  line-height: 1;
+  font: 400 calc(var(--u) * 10) / 1 var(--sans);
 }
-.eob__inner :where(p, figcaption, b, span, i, dt, dd) { text-box: none; line-height: 1; }
-.eob__rule { display: block; width: 100%; height: 1px; }
+.receipt :where(p, dt, dd, span, b) { text-box: none; line-height: 1; }
 
-.eob__head { text-align: center; }
-.eob__title { font-size: calc(var(--u) * 20); }
-.eob__sub { margin-top: calc(var(--u) * 6); font-size: calc(var(--u) * 10); color: var(--grey-600); }
-.eob__who { margin-top: calc(var(--u) * 16); font-size: calc(var(--u) * 10); letter-spacing: 0.05em; text-transform: uppercase; }
-.eob__who b { font-weight: 700; }
+.receipt__head { display: flex; flex-direction: column; gap: calc(var(--u) * 10); text-align: center; }
+.receipt__date, .receipt__sub, .receipt__caption, .visit__date, .visit__line { color: var(--grey-600); }
+.receipt__issuer { margin-bottom: calc(var(--u) * -4); font-size: calc(var(--u) * 12); font-weight: 600; text-transform: uppercase; }
+.receipt__title { font-size: calc(var(--u) * 16); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.receipt__sub { font-style: italic; }
+/* A 1px line that takes up no room, as in the design. */
+.receipt__rule { height: calc(var(--u) * 1); margin-top: calc(var(--u) * -1); background: #5e5e5e; }
+.receipt__heading { font-size: calc(var(--u) * 13); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
 
-.eob__visits { display: flex; flex-direction: column; gap: calc(var(--u) * 10); }
-.eob__visits li { display: flex; align-items: flex-start; }
-.eob__visits li + li {
-  padding-top: calc(var(--u) * 10);
+.receipt__member, .receipt__claims { display: flex; flex-direction: column; gap: calc(var(--u) * 12); }
+.receipt__plan { display: flex; flex-direction: column; gap: calc(var(--u) * 8); font-size: calc(var(--u) * 11); letter-spacing: 0.05em; }
+.receipt__plan > div { display: flex; justify-content: space-between; gap: calc(var(--u) * 8); }
+.receipt__plan :where(dt, dd) { line-height: 1.2; }
+.receipt__plan dt { color: #5e5e5e; text-transform: uppercase; }
+.receipt__plan dd { white-space: nowrap; text-align: right; }
+
+.receipt__claims { padding-bottom: calc(var(--u) * 8); }
+.receipt__claims .receipt__heading { height: calc(var(--u) * 16); }
+.visit { display: flex; flex-direction: column; gap: calc(var(--u) * 13); }
+.visit + .visit {
+  margin-top: calc(var(--u) * 12);
+  padding-top: calc(var(--u) * 12);
   background: url("assets/visit-separator.svg") left top / 100% calc(var(--u) * 0.75) no-repeat;
 }
-.eob__month { flex: none; width: calc(var(--u) * 49); font-weight: 700; letter-spacing: 0.05em; color: var(--grey-600); }
-.eob__desc { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u) * 6); color: var(--grey-600); }
-.eob__desc b { font-weight: 700; letter-spacing: 0.05em; color: var(--ink); }
-.eob__desc span { font-weight: 600; }
-.eob__desc i { font-style: normal; }
-.eob__cost { flex: none; font-weight: 700; letter-spacing: 0.05em; text-align: right; }
+.visit__date { text-transform: uppercase; }
+.visit__row { display: flex; align-items: flex-end; justify-content: space-between; gap: calc(var(--u) * 8); }
+.visit__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u) * 8); }
+.visit__specialty { font-size: calc(var(--u) * 13); font-weight: 700; color: var(--ink); text-transform: uppercase; }
+.visit__line span:first-child { text-transform: uppercase; }
+.visit__amount { font: 500 calc(var(--u) * 18) / 1 var(--serif); letter-spacing: -0.03em; white-space: nowrap; }
 
-.eob__inner .eob__reason {
-  padding: calc(var(--u) * 12);
+.receipt__summary {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 20);
+  padding: calc(var(--u) * 16);
+  border: calc(var(--u) * 1) solid #af7bdf;
   border-radius: calc(var(--u) * 8);
-  background: var(--purple-600);
-  color: var(--white);
-  font-size: calc(var(--u) * 14);
-  font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: 0.05em;
-  text-align: center;
-  text-transform: uppercase;
-  text-box: trim-both cap alphabetic;
+  background: #f7f2fc;
 }
-@supports not (text-box: trim-both cap alphabetic) {
-  .eob__inner .eob__reason { padding-block: calc(var(--u) * 8.5); }
+.receipt__totals { display: flex; flex-direction: column; gap: calc(var(--u) * 14); }
+.receipt__totals > div { display: flex; align-items: flex-end; gap: calc(var(--u) * 4); }
+/* dotted leader between the label and its value */
+.receipt__totals > div::before {
+  content: "";
+  order: 1;
+  flex: 1;
+  min-width: 0;
+  height: calc(var(--u) * 0.75);
+  background: url("assets/visit-separator.svg") left top / calc(var(--u) * 327) 100% repeat-x;
+}
+.receipt__totals dt { order: 0; font-size: calc(var(--u) * 12); font-weight: 500; color: #5e5e5e; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; text-box: trim-both cap alphabetic; }
+.receipt__totals dd { order: 2; font-size: calc(var(--u) * 13); font-weight: 600; letter-spacing: 0.05em; white-space: nowrap; text-box: trim-both cap alphabetic; }
+.receipt__grand { display: flex; align-items: flex-start; justify-content: space-between; gap: calc(var(--u) * 8); font-size: calc(var(--u) * 13); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+.receipt__grand b { font: 500 calc(var(--u) * 22) / 1 var(--serif); letter-spacing: -0.03em; }
+.receipt__barcode { height: calc(var(--u) * 55); background: linear-gradient(90deg, transparent 0.000%, var(--ink) 0.000% 0.669%, transparent 0.669%, transparent 1.336%, var(--ink) 1.336% 1.671%, transparent 1.671%, transparent 3.009%, var(--ink) 3.009% 3.678%, transparent 3.678%, transparent 4.349%, var(--ink) 4.349% 5.352%, transparent 5.352%, transparent 6.021%, var(--ink) 6.021% 6.356%, transparent 6.356%, transparent 7.024%, var(--ink) 7.024% 7.359%, transparent 7.359%, transparent 8.694%, var(--ink) 8.694% 9.698%, transparent 9.698%, transparent 10.367%, var(--ink) 10.367% 10.702%, transparent 10.702%, transparent 11.370%, var(--ink) 11.370% 12.039%, transparent 12.039%, transparent 13.043%, var(--ink) 13.043% 13.377%, transparent 13.377%, transparent 14.382%, var(--ink) 14.382% 15.386%, transparent 15.386%, transparent 16.052%, var(--ink) 16.052% 16.721%, transparent 16.721%, transparent 17.391%, var(--ink) 17.391% 17.726%, transparent 17.726%, transparent 18.728%, var(--ink) 18.728% 19.731%, transparent 19.731%, transparent 20.737%, var(--ink) 20.737% 21.072%, transparent 21.072%, transparent 21.740%, var(--ink) 21.740% 22.075%, transparent 22.075%, transparent 23.076%, var(--ink) 23.076% 23.745%, transparent 23.745%, transparent 24.416%, var(--ink) 24.416% 25.419%, transparent 25.419%, transparent 26.422%, var(--ink) 26.422% 27.091%, transparent 27.091%, transparent 27.758%, var(--ink) 27.758% 28.093%, transparent 28.093%, transparent 29.098%, var(--ink) 29.098% 29.432%, transparent 29.432%, transparent 30.101%, var(--ink) 30.101% 30.435%, transparent 30.435%, transparent 31.104%, var(--ink) 31.104% 32.107%, transparent 32.107%, transparent 32.777%, var(--ink) 32.777% 33.780%, transparent 33.780%, transparent 34.450%, var(--ink) 34.450% 35.118%, transparent 35.118%, transparent 35.786%, var(--ink) 35.786% 36.120%, transparent 36.120%, transparent 36.789%, var(--ink) 36.789% 37.458%, transparent 37.458%, transparent 38.128%, var(--ink) 38.128% 39.132%, transparent 39.132%, transparent 40.135%, var(--ink) 40.135% 40.469%, transparent 40.469%, transparent 41.471%, var(--ink) 41.471% 42.140%, transparent 42.140%, transparent 42.810%, var(--ink) 42.810% 43.479%, transparent 43.479%, transparent 44.147%, var(--ink) 44.147% 44.481%, transparent 44.481%, transparent 45.150%, var(--ink) 45.150% 45.484%, transparent 45.484%, transparent 46.153%, var(--ink) 46.153% 46.822%, transparent 46.822%, transparent 47.492%, var(--ink) 47.492% 48.496%, transparent 48.496%, transparent 49.498%, var(--ink) 49.498% 50.167%, transparent 50.167%, transparent 50.835%, var(--ink) 50.835% 51.169%, transparent 51.169%, transparent 52.174%, var(--ink) 52.174% 52.509%, transparent 52.509%, transparent 53.177%, var(--ink) 53.177% 54.181%, transparent 54.181%, transparent 54.850%, var(--ink) 54.850% 55.519%, transparent 55.519%, transparent 56.523%, var(--ink) 56.523% 56.857%, transparent 56.857%, transparent 57.526%, var(--ink) 57.526% 58.529%, transparent 58.529%, transparent 59.199%, var(--ink) 59.199% 59.868%, transparent 59.868%, transparent 60.535%, var(--ink) 60.535% 60.870%, transparent 60.870%, transparent 61.872%, var(--ink) 61.872% 62.206%, transparent 62.206%, transparent 62.878%, var(--ink) 62.878% 63.546%, transparent 63.546%, transparent 64.214%, var(--ink) 64.214% 65.217%, transparent 65.217%, transparent 65.887%, var(--ink) 65.887% 66.221%, transparent 66.221%, transparent 67.223%, var(--ink) 67.223% 68.227%, transparent 68.227%, transparent 69.229%, var(--ink) 69.229% 69.898%, transparent 69.898%, transparent 70.569%, var(--ink) 70.569% 70.903%, transparent 70.903%, transparent 71.905%, var(--ink) 71.905% 72.574%, transparent 72.574%, transparent 73.245%, var(--ink) 73.245% 74.248%, transparent 74.248%, transparent 75.251%, var(--ink) 75.251% 75.585%, transparent 75.585%, transparent 76.587%, var(--ink) 76.587% 77.256%, transparent 77.256%, transparent 77.927%, var(--ink) 77.927% 78.261%, transparent 78.261%, transparent 79.263%, var(--ink) 79.263% 79.932%, transparent 79.932%, transparent 80.602%, var(--ink) 80.602% 81.606%, transparent 81.606%, transparent 82.609%, var(--ink) 82.609% 82.943%, transparent 82.943%, transparent 83.948%, var(--ink) 83.948% 84.617%, transparent 84.617%, transparent 85.284%, var(--ink) 85.284% 85.953%, transparent 85.953%, transparent 86.621%, var(--ink) 86.621% 86.955%, transparent 86.955%, transparent 87.960%, var(--ink) 87.960% 88.295%, transparent 88.295%, transparent 89.633%, var(--ink) 89.633% 89.968%, transparent 89.968%, transparent 90.969%, var(--ink) 90.969% 91.304%, transparent 91.304%, transparent 92.309%, var(--ink) 92.309% 92.978%, transparent 92.978%, transparent 93.645%, var(--ink) 93.645% 93.980%, transparent 93.980%, transparent 94.985%, var(--ink) 94.985% 95.319%, transparent 95.319%, transparent 96.321%, var(--ink) 96.321% 96.656%, transparent 96.656%, transparent 97.324%, var(--ink) 97.324% 97.659%, transparent 97.659%, transparent 98.664%, var(--ink) 98.664% 98.998%, transparent 98.998%, transparent 99.667%, var(--ink) 99.667% 100.001%, transparent 100.001%); }
+.receipt__caption { text-align: center; }
+
+/* The roll the paper comes off while the receipt unrolls. script.js sets
+   --roll-y (where the paper ends) and --roll-r (it thins as paper leaves it). */
+.receipt__roll { display: none; }
+.receipt.is-rolled .receipt__roll {
+  display: block;
+  position: absolute;
+  left: -1.2%;
+  width: 102.4%;
+  top: var(--roll-y, 0px);
+  height: calc(var(--roll-r, 20px) * 2);
+  margin-top: calc(var(--roll-r, 20px) * -0.55);
+  border-radius: calc(var(--u) * 5) / 46%;
+  background: linear-gradient(#fdfcfe, #fff 16%, #f1edf6 48%, #d9d2e6 84%, #c8bfd9);
 }
 
-.eob__totals { display: flex; flex-direction: column; gap: calc(var(--u) * 8); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
-.eob__totals > div, .eob__paid { display: flex; justify-content: space-between; gap: calc(var(--u) * 8); white-space: nowrap; }
-.eob__paid { font-weight: 700; letter-spacing: 0.05em; }
-.eob__barcode { height: calc(var(--u) * 35); background: linear-gradient(90deg, transparent 0.000%, var(--bar, #0d0d0d) 0.000% 0.669%, transparent 0.669%, transparent 1.336%, var(--bar, #0d0d0d) 1.336% 1.671%, transparent 1.671%, transparent 3.009%, var(--bar, #0d0d0d) 3.009% 3.678%, transparent 3.678%, transparent 4.349%, var(--bar, #0d0d0d) 4.349% 5.352%, transparent 5.352%, transparent 6.021%, var(--bar, #0d0d0d) 6.021% 6.356%, transparent 6.356%, transparent 7.024%, var(--bar, #0d0d0d) 7.024% 7.359%, transparent 7.359%, transparent 8.694%, var(--bar, #0d0d0d) 8.694% 9.698%, transparent 9.698%, transparent 10.367%, var(--bar, #0d0d0d) 10.367% 10.702%, transparent 10.702%, transparent 11.370%, var(--bar, #0d0d0d) 11.370% 12.039%, transparent 12.039%, transparent 13.043%, var(--bar, #0d0d0d) 13.043% 13.377%, transparent 13.377%, transparent 14.382%, var(--bar, #0d0d0d) 14.382% 15.386%, transparent 15.386%, transparent 16.052%, var(--bar, #0d0d0d) 16.052% 16.721%, transparent 16.721%, transparent 17.391%, var(--bar, #0d0d0d) 17.391% 17.726%, transparent 17.726%, transparent 18.728%, var(--bar, #0d0d0d) 18.728% 19.731%, transparent 19.731%, transparent 20.737%, var(--bar, #0d0d0d) 20.737% 21.072%, transparent 21.072%, transparent 21.740%, var(--bar, #0d0d0d) 21.740% 22.075%, transparent 22.075%, transparent 23.076%, var(--bar, #0d0d0d) 23.076% 23.745%, transparent 23.745%, transparent 24.416%, var(--bar, #0d0d0d) 24.416% 25.419%, transparent 25.419%, transparent 26.422%, var(--bar, #0d0d0d) 26.422% 27.091%, transparent 27.091%, transparent 27.758%, var(--bar, #0d0d0d) 27.758% 28.093%, transparent 28.093%, transparent 29.098%, var(--bar, #0d0d0d) 29.098% 29.432%, transparent 29.432%, transparent 30.101%, var(--bar, #0d0d0d) 30.101% 30.435%, transparent 30.435%, transparent 31.104%, var(--bar, #0d0d0d) 31.104% 32.107%, transparent 32.107%, transparent 32.777%, var(--bar, #0d0d0d) 32.777% 33.780%, transparent 33.780%, transparent 34.450%, var(--bar, #0d0d0d) 34.450% 35.118%, transparent 35.118%, transparent 35.786%, var(--bar, #0d0d0d) 35.786% 36.120%, transparent 36.120%, transparent 36.789%, var(--bar, #0d0d0d) 36.789% 37.458%, transparent 37.458%, transparent 38.128%, var(--bar, #0d0d0d) 38.128% 39.132%, transparent 39.132%, transparent 40.135%, var(--bar, #0d0d0d) 40.135% 40.469%, transparent 40.469%, transparent 41.471%, var(--bar, #0d0d0d) 41.471% 42.140%, transparent 42.140%, transparent 42.810%, var(--bar, #0d0d0d) 42.810% 43.479%, transparent 43.479%, transparent 44.147%, var(--bar, #0d0d0d) 44.147% 44.481%, transparent 44.481%, transparent 45.150%, var(--bar, #0d0d0d) 45.150% 45.484%, transparent 45.484%, transparent 46.153%, var(--bar, #0d0d0d) 46.153% 46.822%, transparent 46.822%, transparent 47.492%, var(--bar, #0d0d0d) 47.492% 48.496%, transparent 48.496%, transparent 49.498%, var(--bar, #0d0d0d) 49.498% 50.167%, transparent 50.167%, transparent 50.835%, var(--bar, #0d0d0d) 50.835% 51.169%, transparent 51.169%, transparent 52.174%, var(--bar, #0d0d0d) 52.174% 52.509%, transparent 52.509%, transparent 53.177%, var(--bar, #0d0d0d) 53.177% 54.181%, transparent 54.181%, transparent 54.850%, var(--bar, #0d0d0d) 54.850% 55.519%, transparent 55.519%, transparent 56.523%, var(--bar, #0d0d0d) 56.523% 56.857%, transparent 56.857%, transparent 57.526%, var(--bar, #0d0d0d) 57.526% 58.529%, transparent 58.529%, transparent 59.199%, var(--bar, #0d0d0d) 59.199% 59.868%, transparent 59.868%, transparent 60.535%, var(--bar, #0d0d0d) 60.535% 60.870%, transparent 60.870%, transparent 61.872%, var(--bar, #0d0d0d) 61.872% 62.206%, transparent 62.206%, transparent 62.878%, var(--bar, #0d0d0d) 62.878% 63.546%, transparent 63.546%, transparent 64.214%, var(--bar, #0d0d0d) 64.214% 65.217%, transparent 65.217%, transparent 65.887%, var(--bar, #0d0d0d) 65.887% 66.221%, transparent 66.221%, transparent 67.223%, var(--bar, #0d0d0d) 67.223% 68.227%, transparent 68.227%, transparent 69.229%, var(--bar, #0d0d0d) 69.229% 69.898%, transparent 69.898%, transparent 70.569%, var(--bar, #0d0d0d) 70.569% 70.903%, transparent 70.903%, transparent 71.905%, var(--bar, #0d0d0d) 71.905% 72.574%, transparent 72.574%, transparent 73.245%, var(--bar, #0d0d0d) 73.245% 74.248%, transparent 74.248%, transparent 75.251%, var(--bar, #0d0d0d) 75.251% 75.585%, transparent 75.585%, transparent 76.587%, var(--bar, #0d0d0d) 76.587% 77.256%, transparent 77.256%, transparent 77.927%, var(--bar, #0d0d0d) 77.927% 78.261%, transparent 78.261%, transparent 79.263%, var(--bar, #0d0d0d) 79.263% 79.932%, transparent 79.932%, transparent 80.602%, var(--bar, #0d0d0d) 80.602% 81.606%, transparent 81.606%, transparent 82.609%, var(--bar, #0d0d0d) 82.609% 82.943%, transparent 82.943%, transparent 83.948%, var(--bar, #0d0d0d) 83.948% 84.617%, transparent 84.617%, transparent 85.284%, var(--bar, #0d0d0d) 85.284% 85.953%, transparent 85.953%, transparent 86.621%, var(--bar, #0d0d0d) 86.621% 86.955%, transparent 86.955%, transparent 87.960%, var(--bar, #0d0d0d) 87.960% 88.295%, transparent 88.295%, transparent 89.633%, var(--bar, #0d0d0d) 89.633% 89.968%, transparent 89.968%, transparent 90.969%, var(--bar, #0d0d0d) 90.969% 91.304%, transparent 91.304%, transparent 92.309%, var(--bar, #0d0d0d) 92.309% 92.978%, transparent 92.978%, transparent 93.645%, var(--bar, #0d0d0d) 93.645% 93.980%, transparent 93.980%, transparent 94.985%, var(--bar, #0d0d0d) 94.985% 95.319%, transparent 95.319%, transparent 96.321%, var(--bar, #0d0d0d) 96.321% 96.656%, transparent 96.656%, transparent 97.324%, var(--bar, #0d0d0d) 97.324% 97.659%, transparent 97.659%, transparent 98.664%, var(--bar, #0d0d0d) 98.664% 98.998%, transparent 98.998%, transparent 99.667%, var(--bar, #0d0d0d) 99.667% 100.000%, transparent 100.000%); }
-/* Back of the receipt */
-.eob__inner--back { --bar: var(--white); justify-content: space-between; height: calc(var(--u) * 814); color: var(--white); }
-.eob__group { display: flex; flex-direction: column; gap: calc(var(--u) * 20); }
-.eob__inner--back .eob__sub { color: #dbdbdb; }
-.eob__kicker { font-size: calc(var(--u) * 10); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
-.eob__inner--back .eob__headline { font: 400 calc(var(--u) * 40) / 1.1 var(--serif); text-box: trim-both cap alphabetic; }
-.eob__inner--back .eob__body { font-size: calc(var(--u) * 16); line-height: 1.4; }
-.eob__summary {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: calc(var(--u) * 12) calc(var(--u) * 21);
-  padding: calc(var(--u) * 12);
-  border-radius: calc(var(--u) * 8);
-  background: var(--purple-600);
-  white-space: nowrap;
+/* "Sarah isn't alone" stats */
+.sarah__problem { display: flex; flex-direction: column; gap: 48px; }
+.problem { display: flex; flex-direction: column; gap: 20px; }
+.problem__kicker { font: 400 16px/1.1 var(--serif); text-transform: uppercase; }
+.stat { display: flex; flex-direction: column; gap: 24px; }
+.stat__text { display: flex; flex-direction: column; gap: 24px; max-width: 400px; }
+
+/* Collage of other people's receipts, built by script.js. Each .piece is
+   placed in % of the collage (--x, --y, --w), so the whole picture scales. On
+   desktop script.js also moves the pieces (--dx, --dy, --r, --s). */
+.collage {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  aspect-ratio: 560 / 640;
 }
-.eob__summary dt { font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
-.eob__summary dd { font-weight: 500; }
-.eob__pill {
-  padding: calc(var(--u) * 12);
-  border-radius: calc(var(--u) * 8);
-  background: #5a238e;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-align: center;
-  text-transform: uppercase;
+.piece {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: calc(var(--w) * 1%);
+  z-index: var(--z, 1);
+  transform: translate(var(--dx, 0px), var(--dy, 0px)) rotate(var(--r, 0deg)) scale(var(--s, 1));
 }
-.eob__caption { font-size: calc(var(--u) * 9.5); color: var(--grey-600); text-align: center; }
+.piece .receipt__feed { filter: drop-shadow(0 calc(var(--u) * 10) calc(var(--u) * 26) rgba(42, 12, 78, 0.26)); }
+
+/* A receipt crumpled up: three pictures (folded, scrunched, ball) that
+   script.js paints on canvases and shows one after the other. Once it is a ball it moves to
+   .fall-layer, which covers the screen, and falls off the bottom of it:
+   in front of the panel's edge and of the next section. */
+.fall-layer { position: fixed; inset: 0; z-index: 90; overflow: hidden; pointer-events: none; }
+.crumple {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 40;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 5px rgb(42 12 78 / var(--ball-shadow, 0.24))); /* --ball-shadow: script.js */
+}
+.crumple[hidden] { display: none; }
+.crumple canvas { position: absolute; display: none; }
+.crumple[data-stage="a"] .crumple__a,
+.crumple[data-stage="b"] .crumple__b,
+.crumple[data-stage="c"] .crumple__c { display: block; }
 
 /* ==========================================================================
-   Section 3 — film
+   Section 3 — one intake, one care team, one record
    ========================================================================== */
 
-.film { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.connected { display: flex; flex-direction: column; gap: 48px; }
+.connected__copy { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; max-width: 431px; }
+.connected__copy > p:not(.eyebrow) { max-width: 410px; }
+.connected__kicker { color: #f00; } /* red in the design: likely a placeholder line */
+
+/* Sarah's card (Marketing Kit "Signal detected"). The kit card is 280px wide;
+   --k shows it a little larger here. */
+.signal-card {
+  --k: 1.25;
+  display: flex;
+  flex-direction: column;
+  gap: calc(12px * var(--k));
+  width: calc(280px * var(--k));
+  max-width: 100%;
+  margin-inline: auto;
+  padding: calc(16px * var(--k));
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: calc(16px * var(--k));
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 17px rgba(13, 13, 13, 0.07);
+}
+.signal-card :where(p, span, li) { text-box: none; }
+.signal-card__head { display: flex; align-items: center; gap: calc(10px * var(--k)); }
+.signal-card__photo { flex: none; width: calc(32px * var(--k)); height: calc(32px * var(--k)); border-radius: 50%; }
+.signal-card__who { display: flex; flex-direction: column; gap: calc(1px * var(--k)); }
+.signal-card__name { font: 500 calc(14px * var(--k)) / 1.2 var(--sans); }
+.signal-card__role { font: 400 calc(13px * var(--k)) / 1.4 var(--sans); color: #5e5e5e; }
+.signal-card__rule { height: 1px; margin-top: -1px; background: #dbdbdb; }
+.signal-card__eyebrow { font: 500 calc(11px * var(--k)) / 1.2 var(--sans); letter-spacing: calc(0.8px * var(--k)); color: #e05555; text-transform: uppercase; white-space: nowrap; }
+.signal-card__list { display: flex; flex-direction: column; gap: calc(6px * var(--k)); }
+.signal-card__list li { display: flex; align-items: center; gap: calc(8px * var(--k)); font: 400 calc(13px * var(--k)) / 1.4 var(--sans); }
+.signal-card__list li::before { content: ""; flex: none; width: calc(6px * var(--k)); height: calc(6px * var(--k)); border-radius: 50%; background: #ef6c6c; }
+
+/* The card fades up from below, slowly and smoothly: the opposite of the
+   stop-motion receipts above it. script.js adds .is-visible. */
+.js-reveal .signal-card {
+  opacity: 0;
+  transform: translateY(80px);
+  transition: opacity 1.2s cubic-bezier(0.22, 0.61, 0.36, 1), transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.js-reveal .signal-card.is-visible { opacity: 1; transform: none; }
+
+/* ==========================================================================
+   Section 4 — Meet Sword Women's Health
+   ========================================================================== */
+
+.meet { display: grid; gap: 40px; }
+.meet__card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 380px;
+  padding: 32px;
+  border-radius: var(--radius);
+  background: var(--white);
+}
+.meet__card > :not(.tex-bg) { position: relative; z-index: 1; }
+.meet__body { display: flex; flex-direction: column; gap: 40px; }
+
+.points li { display: flex; flex-direction: column; gap: 24px; padding-block: 32px; border-top: 1px solid var(--grey-500); }
+.points li:first-child { padding-top: 0; border-top: 0; }
+.points li:last-child { padding-bottom: 0; }
+.points h3 { font: 400 24px/1.1 var(--serif); }
+
+.callout { display: flex; justify-content: flex-end; align-items: center; min-height: 100px; padding: 32px; border-radius: var(--radius); }
+
+/* ==========================================================================
+   Section 5 — savings calculator
+   ========================================================================== */
+
+.calc__card {
+  display: grid;
+  border-radius: var(--radius);
+  background: radial-gradient(130% 120% at 65% 45%, var(--white) 60%, #f2f2f2);
+  box-shadow: inset 0 0 0 1px rgba(13, 13, 13, 0.03);
+}
+.calc__card :where(p, label, output, span) { text-box: none; }
+
+.calc__inputs { display: flex; flex-direction: column; gap: 48px; padding: 32px 24px; }
+.calc__slider-group { display: flex; flex-direction: column; gap: 24px; }
+.calc__question { font: 700 20px/26px var(--sans); }
+
+/* Slider: black track up to the thumb, white after it. --fill (0–100) is set
+   by script.js; the value label rides above the thumb. */
+.calc__slider {
+  --thumb: 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 16px;
+  height: 80px;
+}
+.calc__value {
+  position: absolute;
+  top: 0;
+  left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--fill) / 100);
+  transform: translateX(-50%);
+  font: 700 18px/30px var(--sans);
+  white-space: nowrap;
+}
+.calc__range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px; /* the track; the thumb overhangs it */
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.calc__range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--ink) calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--fill) / 100), var(--white) 0);
+}
+.calc__range::-moz-range-track {
+  height: 8px;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--ink) calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--fill) / 100), var(--white) 0);
+}
+.calc__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: var(--thumb);
+  height: var(--thumb);
+  margin-top: calc((8px - var(--thumb)) / 2);
+  border: 4px solid #42074e;
+  border-radius: 50%;
+  background: #f2f2f2;
+  box-shadow: 0 6px 17px rgba(0, 0, 0, 0.07);
+}
+.calc__range::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--thumb);
+  height: var(--thumb);
+  border: 4px solid #42074e;
+  border-radius: 50%;
+  background: #f2f2f2;
+  box-shadow: 0 6px 17px rgba(0, 0, 0, 0.07);
+}
+.calc__range:focus-visible { outline: none; }
+.calc__range:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--purple-600); outline-offset: 2px; }
+.calc__range:focus-visible::-moz-range-thumb { outline: 2px solid var(--purple-600); outline-offset: 2px; }
+.calc__bounds { display: flex; justify-content: space-between; font: 600 12px/18px var(--sans); color: #5e5e5e; }
+
+.calc__fields { display: flex; flex-direction: column; gap: 16px; }
+.calc__field { display: flex; flex-direction: column; gap: 8px; }
+.calc__field label { font: 600 14px/22px var(--sans); color: #2e2e2e; }
+.calc__field select {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 64px;
+  padding: 0 56px 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8) url("assets/ic-chevron-down.svg") right 16px center / 24px 24px no-repeat;
+  color: var(--ink);
+  font: 600 14px/22px var(--sans);
+  cursor: pointer;
+}
+
+.calc__results {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 48px;
+  padding: 32px 24px 48px;
+  text-align: center;
+}
+.calc__main { display: flex; flex-direction: column; gap: 8px; }
+.calc__total { font: 400 clamp(44px, 24px + 4.4vw, 80px)/1.075 var(--serif); letter-spacing: -0.2px; }
+.calc__label { font: 400 clamp(16px, 15px + 0.25vw, 18px)/24px var(--sans); }
+.calc__others {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.4);
+}
+.calc__others::before {
+  content: "";
+  grid-column: 2;
+  grid-row: 1;
+  background: rgba(255, 255, 255, 0.4);
+}
+.calc__other { grid-row: 1; display: flex; flex-direction: column; gap: 8px; padding-top: 32px; }
+.calc__other:first-child { grid-column: 1; }
+.calc__other:last-child { grid-column: 3; }
+.calc__num { font: 400 clamp(32px, 26px + 1.6vw, 42px)/48px var(--serif); }
+
+/* ==========================================================================
+   Section 6 — what changes (outcomes and economics)
+   ========================================================================== */
+
+.outcomes { display: flex; flex-direction: column; gap: 40px; }
+.outcomes__grid { display: grid; }
+.outcomes__item { display: flex; flex-direction: column; gap: 24px; }
+.outcomes__item + .outcomes__item { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--grey-500); }
+.outcomes__note { max-width: 470px; }
+
+/* ==========================================================================
+   Section 7 — the women behind the claims
+   ========================================================================== */
+
+.voices { display: flex; flex-direction: column; gap: 40px; }
+.voices__feature { display: flex; flex-direction: column; gap: 32px; }
+.voices__lead { display: flex; flex-direction: column; gap: 24px; }
+.byline { font-size: 14px; line-height: 1.4; }
+.byline strong { font-weight: 600; }
+
+.voices__quotes { display: grid; gap: 40px; }
+.quote { display: flex; flex-direction: column; gap: 24px; padding-left: 24px; border-left: 1px solid var(--grey-500); }
+.quote blockquote { font: italic 400 clamp(22px, 16px + 1.6vw, 28px)/1.2 var(--serif); }
 
 .video { position: relative; overflow: hidden; border-radius: var(--radius); background: #aaa; }
 .video__poster, .video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.video--film { aspect-ratio: 4 / 3; }
 .video--member { aspect-ratio: 724 / 500; }
 /* Same crop as the design: image zoomed to 124.7% of the frame, anchored left. */
 .video--member .video__poster { inset: -50.8% auto auto 0; width: 124.72%; height: auto; max-width: none; object-fit: fill; }
@@ -539,72 +741,62 @@ a { color: inherit; }
 .play:hover { transform: translate(-50%, -50%) scale(1.06); }
 .play img { width: 32px; height: 32px; }
 
-.film__band { padding-block: 32px; display: grid; gap: 40px; }
-.film__title, .film__ask { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
-
 /* ==========================================================================
-   Section 4 — sizing the problem
+   Section 8 — whitepaper feature
    ========================================================================== */
 
-.stats { display: flex; flex-direction: column; gap: 40px; }
-.stat { display: grid; gap: 24px; }
-.stat__text { display: flex; flex-direction: column; gap: 24px; max-width: 400px; }
-
-/* ==========================================================================
-   Section 5 — Meet Sword Women's Health
-   ========================================================================== */
-
-.meet { display: grid; gap: 40px; }
-.meet__card {
+.whitepaper {
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  min-height: 380px;
-  padding: 32px;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 32px 32px 0;
   border-radius: var(--radius);
-  background: var(--white);
 }
-.meet__card > :not(.tex-bg) { position: relative; z-index: 1; }
-.meet__body { display: flex; flex-direction: column; gap: 40px; }
+.whitepaper__text { display: flex; flex-direction: column; gap: 24px; max-width: 367px; }
+.whitepaper__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; width: 100%; }
 
-.points li { display: flex; flex-direction: column; gap: 24px; padding-block: 32px; border-top: 1px solid var(--grey-500); }
-.points li:first-child { padding-top: 0; border-top: 0; }
-.points li:last-child { padding-bottom: 0; }
-.points h3 { font: 400 24px/1.1 var(--serif); }
-
-.callout { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; padding: 32px; border-radius: var(--radius); }
-.callout__title { flex: 1; font: 400 clamp(24px, 20px + 1vw, 28px)/1.1 var(--serif); }
-
-/* ==========================================================================
-   Section 6 — 81%
-   ========================================================================== */
-
-.outcome {
-  overflow: hidden;
+/* Page carousel: a scroll-snapping row of pages; the next page peeks in.
+   script.js wires up the arrows, the counter and a slow autoplay. */
+.wp-carousel { width: calc(100% + 32px); margin-right: -32px; }
+.wp-carousel__track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding-right: 32px;
+}
+.wp-carousel__track::-webkit-scrollbar { display: none; }
+.wp-carousel__track:focus-visible { outline-offset: -2px; }
+.wp-carousel__slide {
+  flex: 0 0 78%;
+  scroll-snap-align: start;
+}
+.wp-carousel__slide img { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 28px rgba(42, 12, 78, 0.12); }
+.wp-carousel__controls { display: flex; align-items: center; gap: 12px; }
+.wp-carousel__btn {
   display: grid;
-  align-items: center;
-  gap: 40px;
-  padding-block: 64px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
   background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
-.outcome > :not(.tex-bg) { position: relative; z-index: 1; }
-.outcome__stat { display: flex; flex-direction: column; gap: 24px; }
-.outcome__num { font: 400 clamp(96px, 40px + 14vw, 160px)/1.1 var(--serif); white-space: nowrap; }
-.outcome__text { font-size: clamp(18px, 14px + 1.1vw, 24px); }
+.wp-carousel__btn:hover { background: var(--ink); color: var(--white); }
+.wp-carousel__count { min-width: 40px; font: 500 12px/1 var(--sans); letter-spacing: 0.6px; text-align: center; text-box: none; }
+@media (prefers-reduced-motion: reduce) { .wp-carousel__track { scroll-behavior: auto; } }
 
 /* ==========================================================================
-   Section 7 — the economics
-   ========================================================================== */
-
-.econ { display: flex; flex-direction: column; gap: 40px; }
-.econ__grid { display: grid; }
-.econ__item { display: flex; flex-direction: column; gap: 24px; }
-.econ__item + .econ__item { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--grey-500); }
-
-/* ==========================================================================
-   Section 8 — resources
+   Section 9 — resources
    ========================================================================== */
 
 .resources { display: grid; gap: 40px; }
@@ -623,39 +815,7 @@ a { color: inherit; }
 .card__title { font: 400 clamp(24px, 20px + 1vw, 28px)/1.1 var(--serif); }
 
 /* ==========================================================================
-   Section 9 — the women behind the claims
-   ========================================================================== */
-
-.voices { display: flex; flex-direction: column; gap: 40px; }
-.voices__feature { display: flex; flex-direction: column; gap: 32px; }
-.voices__lead { display: flex; flex-direction: column; gap: 24px; }
-.byline { font-size: 14px; line-height: 1.4; }
-.byline strong { font-weight: 600; }
-
-.voices__quotes { display: grid; gap: 40px; }
-.quote { display: flex; flex-direction: column; gap: 24px; padding-left: 24px; border-left: 1px solid var(--grey-500); }
-.quote blockquote { font: italic 400 clamp(22px, 16px + 1.6vw, 28px)/1.2 var(--serif); }
-
-/* ==========================================================================
-   Section 10 — five questions
-   ========================================================================== */
-
-.questions {
-  overflow: hidden;
-  display: grid;
-  align-items: start;
-  gap: 40px;
-  padding-block: clamp(48px, 5.47vw, 70px);
-  background: var(--white);
-}
-.questions > :not(.tex-bg) { position: relative; z-index: 1; }
-.questions__list { display: grid; gap: 40px; }
-.questions__list li { display: flex; flex-direction: column; gap: 24px; padding-top: 24px; border-top: 1px solid var(--grey-500); }
-.questions__n { font: 400 32px/1.4 var(--serif); }
-.questions__list p { font-weight: 500; }
-
-/* ==========================================================================
-   Section 11 — FAQ
+   Section 10 — FAQ
    ========================================================================== */
 
 .faq { display: flex; flex-direction: column; gap: 40px; }
@@ -682,12 +842,11 @@ a { color: inherit; }
 .faq__plus { transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.2, 1); }
 .faq__item.is-open .faq__plus,
 .faq__item[open]:not(.is-closing) .faq__plus { transform: rotate(45deg); }
-.faq__answer { overflow: hidden; }
-.faq__answer { padding: 0 20px 24px; }
+.faq__answer { overflow: hidden; padding: 0 20px 24px; }
 .faq__answer p { text-box: none; }
 
 /* ==========================================================================
-   Section 12 — closing CTA
+   Section 11 — closing CTA
    ========================================================================== */
 
 .closing {
@@ -695,8 +854,10 @@ a { color: inherit; }
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 40px;
-  padding-block: 40px;
+  min-height: clamp(420px, 44vw, 600px);
+  padding-block: 80px;
   background: var(--white);
   text-align: center;
 }
@@ -740,17 +901,14 @@ a { color: inherit; }
 
 @media (min-width: 640px) {
   .play { width: 64px; height: 64px; }
-  .video--film { aspect-ratio: 1260 / 708; }
 
   .resources__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .card { min-height: 281px; }
 
-  .questions__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
-  .econ__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
-  .econ__item + .econ__item { margin-top: 0; padding-top: 0; border-top: 0; }
-  .econ__item { padding-right: 40px; }
-  .econ__item:nth-child(even) { padding-left: 40px; border-left: 1px solid var(--grey-500); }
+  .outcomes__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
+  .outcomes__item + .outcomes__item { margin-top: 0; padding-top: 0; border-top: 0; }
+  .outcomes__item { padding-right: 40px; }
+  .outcomes__item:nth-child(even) { padding-left: 40px; border-left: 1px solid var(--grey-500); }
 
   .faq__item summary { padding: 24px 40px; }
   .faq__answer { padding: 0 40px 24px; }
@@ -763,21 +921,28 @@ a { color: inherit; }
    ========================================================================== */
 
 @media (min-width: 760px) {
-  .hero { padding-block: 140px 80px; }
+  .md-up { display: inline; }
 
-  /* Text on the left, receipt on the right, no overlap yet. */
-  .sarah {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) min(371px, 50%);
-    grid-template-rows: auto 1fr;
-    column-gap: 40px;
-  }
-  .sarah__intro { grid-area: 1 / 1; }
-  .sarah__outro { grid-area: 2 / 1; align-self: end; }
-  .eob { grid-area: 1 / 2 / 3 / 3; align-self: start; }
+  .hero { padding-block: 140px 160px; }
 
-  .film__band, .stat { grid-template-columns: minmax(0, 572fr) minmax(0, 548fr); gap: 0; }
-  .film__title { max-width: 240px; }
+  /* Text on the left, receipt on the right. */
+  .sarah__top { display: grid; grid-template-columns: minmax(0, 1fr) min(371px, 48%); column-gap: 40px; align-items: start; }
+  .receipt-window { height: min(78svh, 640px); }
+
+  .connected { display: grid; grid-template-columns: minmax(0, 431px) minmax(0, 350px); justify-content: space-between; align-items: center; column-gap: 40px; }
+
+  .calc__card { grid-template-columns: minmax(0, 416fr) minmax(0, 698fr); }
+  .calc__inputs { padding: 48px 0 48px 40px; }
+  .calc__results { padding: 48px 40px; }
+  .calc__others { gap: 32px; }
+  .calc__other { padding-top: 48px; }
+
+  /* Text and controls on the left; the pages run off the right and bottom edges. */
+  .whitepaper { min-height: 594px; padding-bottom: 32px; justify-content: space-between; }
+  .whitepaper__text, .whitepaper__actions { position: relative; z-index: 1; max-width: min(400px, 40%); }
+  .wp-carousel { position: absolute; left: 46.76%; top: 84px; right: 0; width: auto; margin: 0; }
+  .wp-carousel__track { gap: 24px; padding-right: 0; }
+  .wp-carousel__slide { flex-basis: min(530px, 82%); }
 
   .voices__quotes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
   .quote { min-height: 196px; padding-inline: clamp(24px, 3.1vw, 40px); }
@@ -793,94 +958,188 @@ a { color: inherit; }
 @media (min-width: 1024px) {
   .lg-only { display: inline; }
 
-  /* Hero + "Meet Sarah" scroll interaction:
-     1. the hero scrolls away normally and section 2 follows it up,
-     2. the receipt holds its on-screen position (and unrolls) until section 2
-        reaches the top of the viewport,
-     3. section 2 then stays pinned for --pin while the receipt turns over. */
-  .intro {
-    --hero-h: 600px;       /* hero height                                   */
-    --sarah-h: var(--hero-h); /* section 2 height: same as the hero        */
-    --pin: 400px;          /* extra scroll while section 2 stays pinned and the receipt flips */
-    --eob-top: 159px;      /* receipt offset from the top of the hero at page load */
-    --eob-rest: 70px;      /* receipt offset from the top of section 2 once it comes to rest:
-                              the same as section 2's top padding, so it lines up with "Meet Sarah" */
-    --eob-h: 902px;        /* receipt height at 371px wide                  */
-    position: relative;
-    /* room for the part of the receipt that hangs below section 2 */
-    margin-bottom: calc(var(--eob-rest) + var(--eob-h) - var(--sarah-h) + 40px);
-  }
-  /* Spacer: gives section 2 room to stay pinned for --pin of scrolling. */
-  .intro::after { content: ""; display: block; height: var(--pin); }
-  .hero { height: var(--hero-h); padding-block: 110px; }
+  .hero { padding-block: 140px 160px; }
 
-  /* The "click to flip" cue only shows once the receipt has lined up with
-     "Meet Sarah" (script.js adds .is-aligned). */
-  .eob__cue { opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0s 0.4s; }
-  .eob.is-aligned .eob__cue { opacity: 1; visibility: visible; transition: opacity 0.4s ease; }
+  /* Section 2 (in flow; see the pinned version below): copy on the left,
+     the receipts in a column of --visual-w on the right. */
+  .sarah { padding-block: 70px 82px; gap: 81px; }
+  .sarah__top { grid-template-columns: 310px var(--visual-w); justify-content: space-between; }
+  .sarah__copy { gap: 75px; }
+  .sarah__outro { gap: 28px; }
+  .sarah__outro .rule { margin-bottom: -4px; }
+  .sarah__problem { display: grid; grid-template-columns: minmax(0, 564px) var(--visual-w); justify-content: space-between; align-items: center; }
+  .problem .stat__num { font-size: min(64px, 4.6vw); }
 
-  /* Same height as the hero. The receipt is longer, so it hangs out of the
-     bottom of the panel; .intro's bottom margin reserves room for it. */
-  .sarah {
-    position: sticky;      /* pins once it reaches the top of the viewport */
-    top: var(--edge);
-    z-index: 1;
-    display: block;
-    height: var(--sarah-h);
-    padding-block: var(--eob-rest) 0;   /* first text block sits 70px below the top, level with the resting receipt */
-  }
-  .sarah__intro, .sarah__outro { max-width: 310px; }
-  /* Closing copy: inside the panel, 70px from its left and bottom edges. */
-  .sarah__outro {
-    position: absolute;
-    left: var(--gutter);
-    bottom: 70px;
-    width: 310px;
-  }
-
-  /* The track starts at the top of the hero and ends where the receipt comes
-     to rest inside section 2; the receipt is sticky inside it. */
-  .eob-track {
-    display: block;
-    position: absolute;
-    top: calc(-1 * (var(--hero-h) + 10px));
-    left: calc(50% + 69px);
-    width: 371px;
-    height: calc(var(--hero-h) + 10px + var(--eob-rest) + var(--eob-h));
-    pointer-events: none;
-  }
-  .eob {
-    position: sticky;
-    /* scrolls up with the page from --eob-top until it reaches --eob-rest, then holds */
-    top: calc(var(--edge) + var(--eob-rest));
-    width: 371px;
-    margin: var(--eob-top) 0 0;
-    pointer-events: auto;
-  }
+  /* The card sits in the same column as the receipts above it. */
+  .connected { grid-template-columns: 431px var(--visual-w); }
 
   .meet { grid-template-columns: minmax(0, 480fr) minmax(0, 600fr); }
   .meet__card { min-height: 0; }
 
-  .outcome { grid-template-columns: minmax(0, 572fr) minmax(0, 548fr); gap: 0; min-height: 472px; }
+  .calc__inputs { padding: 64px 0 64px 64px; gap: 64px; }
+  .calc__results { padding: 64px; gap: 64px; }
+  .calc__other { padding-top: 64px; }
 
-  .econ__grid { grid-template-columns: 260fr 300fr 300fr 260fr; }
-  .econ__item:nth-child(n) { padding-inline: 40px; border-left: 1px solid var(--grey-500); }
-  .econ__item:first-child { padding-left: 0; border-left: 0; }
-  .econ__item:last-child { padding-right: 0; }
-  .econ__item--note { justify-content: center; }
+  .outcomes__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .outcomes__item:nth-child(n) { padding-inline: 40px; border-left: 1px solid var(--grey-500); }
+  .outcomes__item:first-child { padding-left: 0; border-left: 0; }
+  .outcomes__item:last-child { padding-right: 0; }
 
-  .resources { grid-template-columns: minmax(0, 245px) minmax(0, 726px); justify-content: space-between; align-items: center; }
+  .resources { grid-template-columns: minmax(0, 280px) minmax(0, 830px); justify-content: space-between; align-items: center; }
 
   .voices__feature { flex-direction: row; align-items: center; gap: 64px; }
-  .voices__lead { flex: 0 0 330px; }
+  .voices__lead { flex: 0 0 380px; }
   .voices__feature .video { flex: 1; min-width: 0; }
 
-  .questions { grid-template-columns: minmax(0, 500fr) minmax(0, 620fr); gap: 0; }
-  .questions h2 { max-width: 320px; }
-
   .faq { flex-direction: row; align-items: flex-start; justify-content: space-between; }
-  .faq__group { flex: 0 1 600px; }
+  .faq__group { flex: 0 1 690px; }
+
+  .closing { min-height: 600px; }
 }
+
+/* ==========================================================================
+   Section 2 pinned: two moments in one frame (desktop with enough height)
+   The panel sticks just under the navbar while .sarah-track scrolls past, and
+   script.js moves between the moments one swipe at a time. Text cross-fades
+   smoothly; the receipts are moved by script.js in stop-motion.
+   Needs script.js, so it only applies once the page has the `js` class.
+   ========================================================================== */
+
+@media (min-width: 1024px) and (min-height: 720px) {
+  .js .sarah-track {
+    --pin-top: 92px;                                   /* below the navbar */
+    --panel-h: calc(100svh - var(--pin-top) - var(--wide-inset)); /* 20px clear of the screen bottom */
+    --pin-length: 1400px;                              /* scroll spent inside the frame */
+    --pad: clamp(40px, 7svh, 70px);                    /* space above and below the content */
+    position: relative;
+    height: calc(var(--panel-h) + var(--pin-length));
+    margin-top: var(--wide-inset);
+  }
+  .js .sarah {
+    position: sticky;
+    top: var(--pin-top);
+    height: var(--panel-h);
+    margin-top: 0;
+    padding: 0;
+    overflow: hidden;
+    display: block;
+  }
+  .js .sarah__moment {
+    position: absolute;
+    inset: 0 var(--bleed);   /* back to the page's content edges */
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+    padding: var(--pad) var(--gutter);
+  }
+
+  /* Moment 1 sits on top (the receipt travels over moment 2), but only its
+     own content takes clicks. */
+  .js .sarah__top { z-index: 2; grid-template-columns: 310px var(--visual-w); pointer-events: none; }
+  .js .sarah__copy { pointer-events: auto; transition: opacity 0.45s ease, transform 0.45s ease, visibility 0s; }
+  .js .sarah.is-m2 .sarah__copy {
+    opacity: 0;
+    transform: translateY(-24px);
+    visibility: hidden;
+    transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s 0.35s;
+  }
+  /* The panel is the window here: the receipt hangs down from above it. */
+  .js .receipt-window {
+    align-self: stretch;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .js .sarah__problem { z-index: 1; grid-template-columns: minmax(0, 564px) var(--visual-w); }
+  .js .problem {
+    gap: min(20px, 2.2svh);
+    opacity: 0;
+    transform: translateY(24px);
+    visibility: hidden;
+    transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s 0.35s;
+  }
+  .js .sarah.is-m2 .problem {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    transition: opacity 0.6s ease 0.3s, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s, visibility 0s 0.3s;
+  }
+  .js .problem .stat { gap: min(24px, 2.4svh); }
+  .js .problem .stat__num { font-size: min(64px, 7svh, 4.6vw); }
+  .js .problem .stat__text { gap: min(24px, 2.4svh); }
+
+  /* As large as the column and the panel allow, keeping its shape. */
+  .js .collage {
+    width: min(var(--visual-w), calc((var(--panel-h) - 2 * var(--pad)) * 560 / 640));
+    max-width: none;
+    margin: 0;
+    justify-self: center;
+  }
+  .js .piece { visibility: hidden; } /* script.js deals them out */
+}
+
+/* ==========================================================================
+   Receipt controls (design tool: only built when the address has ?controls)
+   ========================================================================== */
+
+.tune {
+  position: fixed;
+  z-index: 200;
+  left: 16px;
+  bottom: 16px;
+  width: 316px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: rgba(22, 18, 30, 0.94);
+  color: #fff;
+  font: 400 12px/1.3 var(--sans);
+  box-shadow: 0 12px 40px rgba(13, 13, 13, 0.3);
+}
+.tune button { font: inherit; color: inherit; cursor: pointer; }
+.tune__title {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-align: left;
+}
+.tune__title::after { content: "–"; }
+.tune.is-closed .tune__title::after { content: "+"; }
+.tune.is-closed .tune__body { display: none; }
+.tune__body { overflow-y: auto; padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.tune__group { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 5px; }
+.tune__group legend { padding: 0 0 4px; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #c9a8ee; }
+.tune__row { display: grid; grid-template-columns: 118px 1fr 50px; gap: 8px; align-items: center; }
+.tune__row output { order: 3; font-variant-numeric: tabular-nums; text-align: right; color: #d9d2e6; }
+.tune__row input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: #af7bdf; }
+.tune__row--switch { grid-template-columns: 118px auto; justify-content: start; }
+.tune__row--switch input { margin: 0; accent-color: #af7bdf; }
+/* The three crumple drawings as they look now: folded, scrunched, ball. */
+.tune__preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-bottom: 4px;
+  padding: 10px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #e7daf5 60%, #fff 60%); /* on the panel's lilac, and on a white section */
+}
+.tune__preview canvas { flex: none; filter: drop-shadow(0 3px 5px rgb(42 12 78 / var(--ball-shadow, 0.24))); }
+.tune__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tune__actions button { padding: 8px 6px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; background: none; }
+.tune__actions button:hover { background: rgba(255, 255, 255, 0.12); }
 
 /* ==========================================================================
    Scroll fade-ins

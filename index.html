@@ -3,11 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>The hidden cost of menopause | Sword Health</title>
+  <title>The hidden costs of menopause | Sword Health</title>
   <meta name="description" content="Menopause doesn't have a line item. It has dozens. It hides in sleep, anxiety, and pain claims across separate providers, so no one sees the full picture. Our guide does.">
   <link rel="preload" href="assets/fonts/figtree-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/lora-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <script>
+    // `js`: layouts that need script.js (the pinned section 2) only apply with it.
+    document.documentElement.classList.add('js');
     // Enable scroll fade-ins only when they can actually run (keeps content visible otherwise).
     if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       document.documentElement.classList.add('js-reveal');
@@ -27,177 +29,281 @@
   </header>
 
   <main>
-    <!-- Sections 1–2 share a wrapper: on desktop the hero pins while section 2 slides over it. -->
-    <div class="intro">
     <!-- Section 1 — hero -->
-    <section class="panel hero" aria-labelledby="hero-title">
+    <section class="panel panel--bleed hero" aria-labelledby="hero-title">
       <div class="tex-bg" aria-hidden="true">
         <div class="tex tex--offset" style="--cx:80.2;--cy:111.67;--w:250.67cqh;--h:86.59cqw;--t:rotate(-90deg)"><img src="assets/texture.png" alt=""></div>
         <div class="tex" style="--cx:-14.44;--cy:128.83;--w:476cqh;--h:164.44cqw;--t:rotate(90deg) scaleY(-1)"><img src="assets/texture.png" alt=""></div>
       </div>
 
       <div class="hero__copy" data-reveal="children">
-        <p class="eyebrow">The hidden cost of menopause</p>
-        <h1 class="display" id="hero-title">Menopause doesn't have a line item.<br>It has dozens.</h1>
-        <p class="hero__lead">It hides in sleep, anxiety, and pain claims across separate providers, so no one sees the full picture. Our guide does.</p>
+        <h1 class="hero__title" id="hero-title">The hidden costs of menopause</h1>
         <div class="hero__cta">
           <a class="btn" href="#download">Download the guide</a>
           <p class="note">For employers, health plans and consultants.</p>
         </div>
       </div>
+
+      <a class="scroll-cue" href="#sarah" aria-label="Scroll to Meet Sarah">
+        <span class="scroll-cue__label">Scroll</span>
+        <span class="scroll-cue__line" aria-hidden="true"></span>
+      </a>
     </section>
 
-    <!-- Section 2 — Meet Sarah + explanation of benefits receipt -->
-    <section class="panel panel--lilac sarah" aria-labelledby="sarah-title">
-      <div class="sarah__intro" data-reveal="children">
-        <p class="eyebrow">Meet Sarah</p>
-        <h2 class="display" id="sarah-title">One year.<br>Seven claims. Still no answer.</h2>
-        <p>She's 46. Her plan paid every claim, <br class="lg-only">month after month. Here's what her employer saw.</p>
-      </div>
-
-      <!-- Track the receipt travels in while it stays pinned on desktop -->
-      <div class="eob-track">
-      <figure class="eob" data-reveal aria-label="Sarah's explanation of benefits: seven claims across six specialties, no perimenopause diagnosis">
-        <!-- "Click to flip" cue: switched off for now. Remove the `hidden` attribute to bring it back. -->
-        <button class="eob__cue" hidden type="button" aria-pressed="false" aria-label="Flip the receipt to see the connected version">
-          <span>click to flip</span>
-          <img src="assets/ic-refresh-circle.svg" alt="" width="20" height="20">
-        </button>
-        <div class="eob__tilt">
-          <div class="eob__card">
-            <div class="eob__face eob__face--front">
-            <div class="eob__sheet">
-            <div class="eob__inner">
-              <div class="eob__head">
-                <p class="eob__title">Explanation of benefits</p>
-                <p class="eob__sub">This is not a bill</p>
-                <p class="eob__who"><b>SARAH, AGE 46 ·</b> 12 months plan</p>
-              </div>
-              <img class="eob__rule" src="assets/rule-327.svg" alt="">
-
-              <ul class="eob__visits">
-                <li><span class="eob__month">FEB</span><span class="eob__desc"><b>PRIMARY CARE</b><span>Fatigue, sleep complaint</span><i>Visit, labs</i></span><span class="eob__cost">$</span></li>
-                <li><span class="eob__month">MAR</span><span class="eob__desc"><b>BEHAVIORAL HEALTH</b><span>New onset anxiety</span><i>Visit</i></span><span class="eob__cost">$</span></li>
-                <li><span class="eob__month">APR</span><span class="eob__desc"><b>ORTHOPEDICS</b><span>Hip and knee pain</span><i>Visit, imaging</i></span><span class="eob__cost">$</span></li>
-                <li><span class="eob__month">JUN</span><span class="eob__desc"><b>NEUROLOGY</b><span>Memory, concentration</span><i>Visit, cognitive screen</i></span><span class="eob__cost">$</span></li>
-                <li><span class="eob__month">AUG</span><span class="eob__desc"><b>GYNECOLOGY</b><span>Irregular bleeding</span><i>Visit, ultrasound</i></span><span class="eob__cost">$</span></li>
-                <li><span class="eob__month">OCT</span><span class="eob__desc"><b>PHYSICAL THERAPY</b><span>Ongoing joint pain</span><i>Course of visits</i></span><span class="eob__cost">$</span></li>
-                <li><span class="eob__month">NOV</span><span class="eob__desc"><b>BEHAVIORAL HEALTH</b><span>Anxiety</span><i>Visit, prescription</i></span><span class="eob__cost">$</span></li>
-              </ul>
-
-              <p class="eob__reason">Reason for visit: not specified</p>
-
-              <dl class="eob__totals">
-                <div><dt>Claims processed</dt><dd>7</dd></div>
-                <div><dt>Specialties</dt><dd>6</dd></div>
-                <div><dt>Perimenopause diagnosis</dt><dd>NONE</dd></div>
-              </dl>
-              <img class="eob__rule" src="assets/rule-327.svg" alt="">
-              <p class="eob__paid"><span>TOTAL PLAN PAID</span><span>$$$$$$</span></p>
-              <div class="eob__barcode" aria-hidden="true"></div>
-              <figcaption class="eob__caption">Illustrative composite, not an actual member record.</figcaption>
-            </div>
-      
-            </div>
-            </div>
-            <div class="eob__face eob__face--back" aria-hidden="true" inert>
-            <div class="eob__sheet">
-              <div class="eob__inner eob__inner--back">
-                <div class="eob__group">
-                  <div class="eob__head">
-                    <p class="eob__title">Explanation of benefits</p>
-                    <p class="eob__sub">This is not a bill</p>
-                  </div>
-                  <img class="eob__rule" src="assets/rule-327-white.svg" alt="">
-                  <p class="eob__kicker">The same year, connected</p>
-                  <p class="eob__headline">One intake.<br>One care team.<br>One record.</p>
-                  <p class="eob__body">A dedicated Women’s Health Specialist who sees the whole picture, treats across her symptoms and stays with her between visits.</p>
-                  <dl class="eob__summary">
-                    <dt>Care team</dt><dd>One Women’s Health Specialist</dd>
-                    <dt>Record</dt><dd>One connected record</dd>
-                    <dt>Pattern</dt><dd>Recognized at intake</dd>
-                    <dt>Fee</dt><dd>One capped program fee</dd>
-                  </dl>
-                </div>
-                <div class="eob__group">
-                  <p class="eob__pill">Treated as one connected case</p>
-                  <div class="eob__barcode" aria-hidden="true"></div>
-                </div>
-              </div>
-            </div>
-            </div>
+    <!-- Section 2 — Meet Sarah + her receipt, then "Sarah isn't alone" with
+         a collage of other people's receipts. -->
+    <div class="sarah-track">
+    <section class="panel panel--lilac panel--bleed sarah" id="sarah" aria-labelledby="sarah-title">
+      <!-- Moment 1: Meet Sarah + her receipt -->
+      <div class="sarah__moment sarah__top">
+        <div class="sarah__copy">
+          <div class="sarah__intro" data-reveal="children">
+            <p class="eyebrow">Meet Sarah</p>
+            <h2 class="display" id="sarah-title">One year.<br>Seven claims.<br>Still no answer.</h2>
+            <p>Her plan paid every claim, <br class="lg-only">month after month. Here's what her employer saw.</p>
           </div>
-          <!-- 3D paper roll, built by script.js -->
-          <div class="eob__roll" aria-hidden="true"></div>
-        </div>
-      </figure>
-      </div>
-
-      <div class="sarah__outro" data-reveal="children">
-        <img class="rule" data-reveal src="assets/rule-310.svg" alt="">
-        <!-- Copy swaps when the receipt is flipped -->
-        <div class="sarah__outro-copy" aria-live="polite">
-          <div class="sarah__outro-side" data-side="front">
+          <div class="sarah__outro" data-reveal="children">
+            <img class="rule" src="assets/rule-310.svg" alt="">
             <p>Each visit made sense on its own. Together, they pointed somewhere no one looked. Nothing in her file said menopause.</p>
             <p>The gap between the story she lived and the record the system kept is where women's health spend hides.</p>
           </div>
-          <div class="sarah__outro-side" data-side="back" hidden>
-            <p>Same member, now legible as one story instead of seven. Visits and adjustments handled inside the program do not generate separate claims. Referrals, imaging or procedures that are clinically needed still do, and they are better targeted because someone has read the whole story.</p>
+        </div>
+
+        <!-- Sarah's receipt. script.js unrolls it (it feeds upward like a till
+             printer and rests on the claims summary), then shrinks it into the
+             collage of other people's receipts in moment 2. -->
+        <div class="receipt-window">
+          <div class="receipt-morph">
+            <figure class="receipt receipt--sarah" aria-label="Sarah Lawrence's explanation of benefits for 2026: nine claims across six specialties, no perimenopause diagnosis, $2,532.57 paid by her plan">
+              <div class="receipt__feed">
+                <div class="receipt__paper">
+                  <div class="receipt__sheet" aria-hidden="true"></div>
+                  <div class="receipt__body">
+                    <div class="receipt__head">
+                      <p class="receipt__date" data-f="date">11/27/2026</p>
+                      <p class="receipt__issuer">Health plan</p>
+                      <p class="receipt__title">Explanation of benefits</p>
+                      <p class="receipt__sub">This is not a bill</p>
+                    </div>
+                    <div class="receipt__rule"></div>
+
+                    <div class="receipt__member">
+                      <p class="receipt__heading" data-f="name">Sarah Lawrence</p>
+                      <dl class="receipt__plan">
+                        <div><dt>Age</dt><dd data-f="age">46</dd></div>
+                        <div><dt>Member ID</dt><dd data-f="member-id">SL482761903</dd></div>
+                        <div><dt>Group number</dt><dd data-f="group">084216</dd></div>
+                        <div><dt>Plan</dt><dd data-f="plan">Choice Plus PPO</dd></div>
+                        <div><dt>Plan ID</dt><dd data-f="plan-id">PPO-26018</dd></div>
+                        <div><dt>Coverage period</dt><dd data-f="coverage">01/01/26–12/31/26</dd></div>
+                      </dl>
+                    </div>
+                    <div class="receipt__rule"></div>
+
+                    <div class="receipt__claims">
+                      <p class="receipt__heading">2026 claims</p>
+                      <ol class="receipt__visits" data-f="visits">
+                        <li class="visit">
+                          <p class="visit__date" data-f="visit-date">Feb 12, 2026</p>
+                          <div class="visit__row">
+                            <div class="visit__info">
+                              <p class="visit__specialty" data-f="visit-specialty">Primary care</p>
+                              <p class="visit__line"><span>Reason for visit:</span> <span data-f="visit-reason">Fatigue, sleep complaint</span></p>
+                              <p class="visit__line"><span>Services:</span> <span data-f="visit-services">Visit, labs</span></p>
+                            </div>
+                            <p class="visit__amount" data-f="visit-amount">$184.62</p>
+                          </div>
+                        </li>
+                        <li class="visit">
+                          <p class="visit__date" data-f="visit-date">Mar 10, 2026</p>
+                          <div class="visit__row">
+                            <div class="visit__info">
+                              <p class="visit__specialty" data-f="visit-specialty">Behavioral health</p>
+                              <p class="visit__line"><span>Reason for visit:</span> <span data-f="visit-reason">New onset anxiety</span></p>
+                              <p class="visit__line"><span>Services:</span> <span data-f="visit-services">Visit</span></p>
+                            </div>
+                            <p class="visit__amount" data-f="visit-amount">$142.50</p>
+                          </div>
+                        </li>
+                        <li class="visit">
+                          <p class="visit__date" data-f="visit-date">Apr 16, 2026</p>
+                          <div class="visit__row">
+                            <div class="visit__info">
+                              <p class="visit__specialty" data-f="visit-specialty">Orthopedics</p>
+                              <p class="visit__line"><span>Reason for visit:</span> <span data-f="visit-reason">Hip and knee pain</span></p>
+                              <p class="visit__line"><span>Services:</span> <span data-f="visit-services">Visit, imaging</span></p>
+                            </div>
+                            <p class="visit__amount" data-f="visit-amount">$386.40</p>
+                          </div>
+                        </li>
+                        <li class="visit">
+                          <p class="visit__date" data-f="visit-date">May 7, 2026</p>
+                          <div class="visit__row">
+                            <div class="visit__info">
+                              <p class="visit__specialty" data-f="visit-specialty">Primary care</p>
+                              <p class="visit__line"><span>Reason for visit:</span> <span data-f="visit-reason">Persistent fatigue</span></p>
+                              <p class="visit__line"><span>Services:</span> <span data-f="visit-services">Follow-up, lab review</span></p>
+                            </div>
+                            <p class="visit__amount" data-f="visit-amount">$126.85</p>
+                          </div>
+                        </li>
+                        <li class="visit">
+                          <p class="visit__date" data-f="visit-date">Jun 9, 2026</p>
+                          <div class="visit__row">
+                            <div class="visit__info">
+                              <p class="visit__specialty" data-f="visit-specialty">Neurology</p>
+                              <p class="visit__line"><span>Reason for visit:</span> <span data-f="visit-reason">Memory, concentration</span></p>
+                              <p class="visit__line"><span>Services:</span> <span data-f="visit-services">Visit, cognitive screen</span></p>
+                            </div>
+                            <p class="visit__amount" data-f="visit-amount">$428.75</p>
+                          </div>
+                        </li>
+                        <li class="visit">
+                          <p class="visit__date" data-f="visit-date">Aug 13, 2026</p>
+                          <div class="visit__row">
+                            <div class="visit__info">
+                              <p class="visit__specialty" data-f="visit-specialty">Gynecology</p>
+                              <p class="visit__line"><span>Reason for visit:</span> <span data-f="visit-reason">Irregular bleeding</span></p>
+                              <p class="visit__line"><span>Services:</span> <span data-f="visit-services">Visit, ultrasound</span></p>
+                            </div>
+                            <p class="visit__amount" data-f="visit-amount">$312.80</p>
+                          </div>
+                        </li>
+                        <li class="visit">
+                          <p class="visit__date" data-f="visit-date">Sep 10, 2026</p>
+                          <div class="visit__row">
+                            <div class="visit__info">
+                              <p class="visit__specialty" data-f="visit-specialty">Gynecology</p>
+                              <p class="visit__line"><span>Reason for visit:</span> <span data-f="visit-reason">Irregular bleeding</span></p>
+                              <p class="visit__line"><span>Services:</span> <span data-f="visit-services">Follow-up, results review</span></p>
+                            </div>
+                            <p class="visit__amount" data-f="visit-amount">$168.40</p>
+                          </div>
+                        </li>
+                        <li class="visit">
+                          <p class="visit__date" data-f="visit-date">Oct 6, 2026</p>
+                          <div class="visit__row">
+                            <div class="visit__info">
+                              <p class="visit__specialty" data-f="visit-specialty">Physical therapy</p>
+                              <p class="visit__line"><span>Reason for visit:</span> <span data-f="visit-reason">Ongoing joint pain</span></p>
+                              <p class="visit__line"><span>Services:</span> <span data-f="visit-services">Course of visits</span></p>
+                            </div>
+                            <p class="visit__amount" data-f="visit-amount">$624.00</p>
+                          </div>
+                        </li>
+                        <li class="visit">
+                          <p class="visit__date" data-f="visit-date">Nov 12, 2026</p>
+                          <div class="visit__row">
+                            <div class="visit__info">
+                              <p class="visit__specialty" data-f="visit-specialty">Behavioral health</p>
+                              <p class="visit__line"><span>Reason for visit:</span> <span data-f="visit-reason">Anxiety</span></p>
+                              <p class="visit__line"><span>Services:</span> <span data-f="visit-services">Visit, prescription</span></p>
+                            </div>
+                            <p class="visit__amount" data-f="visit-amount">$158.25</p>
+                          </div>
+                        </li>
+                      </ol>
+                    </div>
+
+                    <div class="receipt__summary">
+                      <p class="receipt__heading">Claims summary</p>
+                      <dl class="receipt__totals">
+                        <div><dt>Claims processed</dt><dd data-f="claims">9</dd></div>
+                        <div><dt>Specialties</dt><dd data-f="specialties">6</dd></div>
+                        <div><dt>Perimenopause diagnosis</dt><dd data-f="diagnosis">NONE</dd></div>
+                        <div><dt>Service period</dt><dd data-f="period">12/02/26—12/11/26</dd></div>
+                        <div><dt>Network status</dt><dd data-f="network">IN-NETWORK</dd></div>
+                        <div><dt>Claims status</dt><dd data-f="status">PROCESSED</dd></div>
+                        <div><dt>Submitted charges</dt><dd data-f="submitted">$3,248.00</dd></div>
+                        <div><dt>Network savings</dt><dd data-f="savings">$410.43</dd></div>
+                        <div><dt>Member responsibility</dt><dd data-f="member">$305.00</dd></div>
+                      </dl>
+                      <div class="receipt__rule"></div>
+                      <p class="receipt__grand"><span>Member responsibility</span><b data-f="member">$305.00</b></p>
+                      <p class="receipt__grand"><span>Total paid by plan</span><b data-f="paid">$2,532.57</b></p>
+                    </div>
+
+                    <div class="receipt__barcode" aria-hidden="true"></div>
+                    <p class="receipt__caption">Illustrative composite, not an actual member record.</p>
+                  </div>
+                </div>
+                <div class="receipt__roll" aria-hidden="true"></div>
+              </div>
+            </figure>
           </div>
         </div>
       </div>
-    </section>
 
+      <!-- Moment 2: Sarah isn't alone. On desktop the panel stays pinned: her
+           receipt shrinks into the collage and the other receipts deal out
+           around it. Leaving this moment, they crumple into balls and fall. -->
+      <div class="sarah__moment sarah__problem">
+        <div class="problem" aria-labelledby="problem-title">
+          <p class="problem__kicker" data-reveal>The problem</p>
+          <h2 class="display" id="problem-title" data-reveal>Sarah isn't alone in this</h2>
+          <img class="rule" data-reveal src="assets/rule-1120.svg" alt="">
+          <div class="stat" data-reveal>
+            <p class="stat__num">$26.6B</p>
+            <div class="stat__text">
+              <p>Estimated annual US cost of menopause symptoms, medical expenses plus lost work time.</p>
+              <p class="note">Source: Mayo Clinic Proceedings, 2023.</p>
+            </div>
+          </div>
+          <img class="rule" data-reveal src="assets/rule-1120.svg" alt="">
+          <div class="stat" data-reveal>
+            <p class="stat__num">$216M vs $1.68B</p>
+            <div class="stat__text">
+              <p>Women's and maternal health spend when claims are grouped by specialty versus by condition.</p>
+              <p class="note">Source: Purple Labs commercial claims, 2024, descriptive, not matched.</p>
+            </div>
+          </div>
+          <img class="rule" data-reveal src="assets/rule-1120.svg" alt="">
+          <div class="stat" data-reveal>
+            <p class="stat__num">175 days</p>
+            <div class="stat__text">
+              <p>Median time from a woman's first symptom claim to the diagnosis that explains it. One in four women under 40 waits more than a year.</p>
+              <p class="note">Source: Purple Labs.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Other people's receipts: built by script.js from OTHER_RECEIPTS -->
+        <div class="collage" aria-hidden="true"></div>
+      </div>
+    </section>
     </div>
 
-    <!-- Section 3 — film -->
-    <section class="film" aria-labelledby="film-title">
-      <div class="video video--film" data-reveal>
-        <img class="video__poster" src="assets/video-eob.png" alt="A woman sitting on her bed in morning light, looking at her phone" loading="lazy">
-        <button class="play" type="button" aria-label="Play video: Explanation of benefits"><img src="assets/ic-play.svg" alt="" width="32" height="32"></button>
+    <!-- Section 3 — one intake, one care team, one record -->
+    <section class="wrap section connected" aria-labelledby="connected-title">
+      <div class="connected__copy" data-reveal="children">
+        <p class="eyebrow connected__kicker">What if there is a single solution that...</p>
+        <h2 class="display" id="connected-title">One intake.<br>One care team.<br>One record.</h2>
+        <p>A dedicated Women’s Health Specialist who sees the whole picture, treats across her symptoms and stays with her between visits.</p>
+        <div><a class="btn btn--outline" href="#download">Download the guide</a></div>
       </div>
-      <div class="panel panel--lilac film__band">
-        <div class="film__title" data-reveal>
-          <h2 class="display" id="film-title">Explanation of benefits</h2>
-          <p>Watch what it never explained.</p>
+
+      <!-- Fades up smoothly once the receipts above have crumpled and fallen -->
+      <figure class="signal-card" aria-label="Sarah Lawrence, 46: her eight reasons for visit, read together">
+        <div class="signal-card__head">
+          <img class="signal-card__photo" src="assets/avatar-sarah.png" alt="" width="32" height="32">
+          <p class="signal-card__who"><span class="signal-card__name">Sarah Lawrence</span><span class="signal-card__role">46yo</span></p>
         </div>
-        <div class="film__ask" data-reveal>
-          <p class="display display--italic">How many Sarahs <br>are in your claims?</p>
-          <a class="btn" href="#contact">See what’s behind your spend</a>
-        </div>
-      </div>
+        <div class="signal-card__rule"></div>
+        <p class="signal-card__eyebrow">Reason for visit:</p>
+        <ul class="signal-card__list">
+          <li>Fatigue, sleep complaint</li>
+          <li>New onset anxiety</li>
+          <li>Hip and knee pain</li>
+          <li>Persistent fatigue</li>
+          <li>Memory, concentration</li>
+          <li>Irregular bleeding</li>
+          <li>Ongoing joint pain</li>
+          <li>Anxiety</li>
+        </ul>
+      </figure>
     </section>
 
-    <!-- Section 4 — sizing the problem -->
-    <section class="wrap section stats" aria-labelledby="stats-title">
-      <h2 class="display" id="stats-title" data-reveal>Sizing the problem</h2>
-      <img class="rule" data-reveal src="assets/rule-1120.svg" alt="">
-      <div class="stat" data-reveal>
-        <p class="stat__num">$26.6B</p>
-        <div class="stat__text">
-          <p>Estimated annual US cost of menopause symptoms, medical expenses plus lost work time. A national estimate, not what any one employer pays.</p>
-          <p class="note">Source: Mayo Clinic Proceedings, 2023.</p>
-        </div>
-      </div>
-      <img class="rule" data-reveal src="assets/rule-1120.svg" alt="">
-      <div class="stat" data-reveal>
-        <p class="stat__num">$216M vs $1.68B</p>
-        <div class="stat__text">
-          <p>Women's and maternal health spend when claims are grouped by specialty versus by condition.</p>
-          <p class="note">Source: Purple Labs commercial claims, 2024, descriptive, not matched.</p>
-        </div>
-      </div>
-      <img class="rule" data-reveal src="assets/rule-1120.svg" alt="">
-      <div class="stat" data-reveal>
-        <p class="stat__num">175 days</p>
-        <div class="stat__text">
-          <p>Median time from a woman's first symptom claim to the diagnosis that explains it. One in four women under 40 waits more than a year.</p>
-          <p class="note">Source: Purple Labs.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 5 — Meet Sword Women's Health -->
+    <!-- Section 4 — Meet Sword Women's Health -->
     <section class="wrap section meet" aria-labelledby="meet-title">
       <div class="meet__card" data-reveal>
         <div class="tex-bg" aria-hidden="true">
@@ -228,77 +334,104 @@
           </li>
         </ul>
         <div class="panel--lilac callout" data-reveal>
-          <p class="callout__title">Where it stops</p>
           <a class="btn" href="#learn-more">Learn more</a>
         </div>
       </div>
     </section>
 
-    <!-- Section 6 — 81% -->
-    <section class="panel section outcome" aria-labelledby="outcome-title">
-      <div class="tex-bg" aria-hidden="true">
-        <div class="tex tex--offset" style="--cx:98.77;--cy:26.9;--w:318.65cqh;--h:86.59cqw;--t:rotate(90deg)"><img src="assets/texture.png" alt=""></div>
-        <div class="tex" style="--cx:-14.2;--cy:163.8;--w:605.2cqh;--h:164.44cqw;--t:rotate(90deg) scaleY(-1)"><img src="assets/texture.png" alt=""></div>
-      </div>
-      <h2 class="display" id="outcome-title" data-reveal>What changes <br>when someone <br>connects the dots</h2>
-      <div class="outcome__stat" data-reveal="children">
-        <p class="outcome__num">81%</p>
-        <p class="outcome__text">of menopause program members <br class="lg-only">report feeling better or much better.</p>
-        <p class="note">Sword program data. Self reported. Not a matched comparison and not a claims result.</p>
+    <!-- Section 5 — savings calculator.
+         Placeholder maths and options for now: see CALCULATOR in script.js. -->
+    <section class="wrap section calc" aria-label="Savings calculator">
+      <div class="calc__card" data-reveal>
+        <form class="calc__inputs" onsubmit="return false">
+          <div class="calc__slider-group">
+            <label class="calc__question" for="calc-patients">How many patients could you reach?</label>
+            <div class="calc__slider" style="--fill:9.09">
+              <output class="calc__value" for="calc-patients">10,000</output>
+              <input class="calc__range" type="range" id="calc-patients" min="1000" max="100000" step="1000" value="10000">
+              <div class="calc__bounds" aria-hidden="true"><span>1,000</span><span>100,000</span></div>
+            </div>
+          </div>
+
+          <div class="calc__fields">
+            <div class="calc__field">
+              <label for="calc-location">Location</label>
+              <select id="calc-location">
+                <option>National</option>
+                <option>Northeast</option>
+                <option>Midwest</option>
+                <option>South</option>
+                <option>West</option>
+              </select>
+            </div>
+            <div class="calc__field">
+              <label for="calc-industry">Industry</label>
+              <select id="calc-industry">
+                <option>Finance</option>
+                <option>Technology</option>
+                <option>Healthcare</option>
+                <option>Manufacturing</option>
+                <option>Retail</option>
+                <option>Public sector</option>
+              </select>
+            </div>
+            <div class="calc__field">
+              <label for="calc-solution">Solution</label>
+              <select id="calc-solution">
+                <option>Musculoskeletal Health</option>
+                <option>Women's Health</option>
+                <option>Pelvic Health</option>
+              </select>
+            </div>
+          </div>
+        </form>
+
+        <div class="calc__results" aria-live="polite">
+          <div class="calc__main">
+            <p class="calc__total" data-calc="total">$12,955,270</p>
+            <p class="calc__label">Estimated total yearly savings</p>
+          </div>
+          <div class="calc__others">
+            <div class="calc__other">
+              <p class="calc__num" data-calc="perPatient">$2,578</p>
+              <p class="calc__label">Savings per patient</p>
+            </div>
+            <div class="calc__other">
+              <p class="calc__num" data-calc="reached">5,025</p>
+              <p class="calc__label">Patients reached</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Section 7 — the economics -->
-    <section class="wrap section section--tight econ" aria-labelledby="econ-title">
-      <h2 class="display" id="econ-title" data-reveal>The economics</h2>
+    <!-- Section 6 — what changes (outcomes and economics) -->
+    <section class="wrap section outcomes" aria-labelledby="outcomes-title">
+      <h2 class="display" id="outcomes-title" data-reveal>What changes when someone <br class="md-up">connects the dots</h2>
       <img class="rule" data-reveal src="assets/rule-1120.svg" alt="">
-      <div class="econ__grid">
-        <div class="econ__item" data-reveal>
+      <div class="outcomes__grid">
+        <div class="outcomes__item" data-reveal>
           <p class="stat__num">3.2x</p>
           <p class="small">Gross ROI in medical claims.</p>
         </div>
-        <div class="econ__item" data-reveal>
+        <div class="outcomes__item" data-reveal>
           <p class="stat__num">$2,484</p>
           <p class="small">Women's health-related savings per member per year.</p>
         </div>
-        <div class="econ__item" data-reveal>
+        <div class="outcomes__item" data-reveal>
+          <p class="stat__num">81%</p>
+          <p class="small">of menopause program members <br class="lg-only">report feeling better or much better.</p>
+        </div>
+        <div class="outcomes__item" data-reveal>
           <p class="stat__num">65%</p>
           <p class="small">Fewer surgical encounters <br class="lg-only">against matched controls.</p>
         </div>
-        <div class="econ__item econ__item--note" data-reveal>
-          <p class="note">Matched study of 42,516 members, full women’s health program, medical claims only. Methodology reviewed by Milliman. The review did not audit the data, validate savings or ROI, or recalculate results.</p>
-        </div>
       </div>
       <img class="rule" data-reveal src="assets/rule-1120.svg" alt="">
+      <p class="note outcomes__note" data-reveal>Sword program data. Self reported. Not a matched comparison and not a claims result.</p>
     </section>
 
-    <!-- Section 8 — resources -->
-    <section class="wrap section resources" id="download" aria-labelledby="resources-title">
-      <div class="resources__intro" data-reveal="children">
-        <h2 class="display" id="resources-title">Everything in one place</h2>
-        <p>Start with the guide. Then hear the research, check your own visibility, and bring the tools to your next vendor meeting.</p>
-      </div>
-      <div class="resources__cards">
-        <article class="panel--lilac card" data-reveal>
-          <div class="card__text">
-            <p class="eyebrow">Whitepaper</p>
-            <h3 class="card__title">The hidden cost <br>of menopause</h3>
-            <p class="small">What healthcare claims miss, why fragmented care costs more, and what employers and health plans can do about it.</p>
-          </div>
-          <a class="btn" href="#download">Download the guide</a>
-        </article>
-        <article class="panel--lilac card" data-reveal>
-          <div class="card__text">
-            <p class="eyebrow">Webinar on demand</p>
-            <h3 class="card__title">Who pays for menopause?</h3>
-            <p class="small">A conversation with Sera-Leigh Ghouralal, PhD, Director of Research at the Integrated Benefits Institute.</p>
-          </div>
-          <a class="btn" href="#webinar">Watch now</a>
-        </article>
-      </div>
-    </section>
-
-    <!-- Section 9 — the women behind the claims -->
+    <!-- Section 7 — the women behind the claims -->
     <section class="wrap section voices" aria-labelledby="voices-title">
       <h2 class="display" id="voices-title" data-reveal>The women behind the claims</h2>
       <img class="rule" data-reveal src="assets/rule-1120.svg" alt="">
@@ -325,24 +458,64 @@
       </div>
     </section>
 
-    <!-- Section 10 — five questions -->
-    <section class="panel section questions" aria-labelledby="questions-title">
-      <div class="tex-bg" aria-hidden="true">
-        <div class="tex tex--offset" style="--cx:98.82;--cy:34.29;--w:213.46cqh;--h:68.08cqw;--t:rotate(90deg)"><img src="assets/texture.png" alt=""></div>
-        <div class="tex" style="--cx:-6.31;--cy:21.08;--w:405.35cqh;--h:129.28cqw;--t:rotate(90deg) scaleY(-1)"><img src="assets/texture.png" alt=""></div>
-        <div class="tex" style="--cx:-6.31;--cy:21.08;--w:405.35cqh;--h:129.28cqw;--t:rotate(90deg) scaleY(-1)"><img src="assets/texture.png" alt=""></div>
+    <!-- Section 8 — whitepaper feature -->
+    <section class="wrap section" id="download" aria-labelledby="whitepaper-title">
+      <div class="panel--lilac whitepaper" data-reveal>
+        <div class="whitepaper__text">
+          <p class="eyebrow">Whitepaper</p>
+          <h2 class="card__title" id="whitepaper-title">The hidden cost <br>of menopause</h2>
+          <p class="small">What healthcare claims miss, why fragmented care costs more, and what employers and health plans can do about it.</p>
+        </div>
+
+        <!-- Page carousel. Slides 2–4 reuse the one page we have: swap in real
+             page images (612 × 792) when they exist. -->
+        <div class="wp-carousel" aria-roledescription="carousel" aria-label="Pages from the whitepaper">
+          <div class="wp-carousel__track" tabindex="0">
+            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 1 of 4"><img src="assets/whitepaper-preview.png" alt="Whitepaper page: Part 2, a different model" width="612" height="792" loading="lazy"></figure>
+            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 2 of 4"><img src="assets/whitepaper-preview.png" alt="" width="612" height="792" loading="lazy"></figure>
+            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 3 of 4"><img src="assets/whitepaper-preview.png" alt="" width="612" height="792" loading="lazy"></figure>
+            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 4 of 4"><img src="assets/whitepaper-preview.png" alt="" width="612" height="792" loading="lazy"></figure>
+          </div>
+        </div>
+
+        <div class="whitepaper__actions">
+          <a class="btn btn--outline" href="#download">Download the guide</a>
+          <div class="wp-carousel__controls">
+            <button class="wp-carousel__btn" type="button" data-dir="-1" aria-label="Previous page"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <p class="wp-carousel__count" aria-live="polite"><span data-current>1</span> / <span data-total>4</span></p>
+            <button class="wp-carousel__btn" type="button" data-dir="1" aria-label="Next page"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+        </div>
       </div>
-      <h2 class="display" id="questions-title" data-reveal>Five questions to ask before your next renewal</h2>
-      <ol class="questions__list" data-reveal="children">
-        <li><span class="questions__n">01</span><p>Does this shorten the diagnostic journey, or add another specialist to it?</p></li>
-        <li><span class="questions__n">02</span><p>Does it reduce avoidable ER visits and duplicated specialist visits, measured in your own claims?</p></li>
-        <li><span class="questions__n">03</span><p>Is payment tied to her getting better, <br class="lg-only">or to each visit and prescription?</p></li>
-        <li><span class="questions__n">04</span><p>Who independently reviewed the ROI method, and can we verify it on our own claims?</p></li>
-        <li><span class="questions__n">05</span><p>Who carries the risk if spend rises?</p></li>
-      </ol>
     </section>
 
-    <!-- Section 11 — FAQ -->
+    <!-- Section 9 — resources -->
+    <section class="wrap section resources" aria-labelledby="resources-title">
+      <div class="resources__intro" data-reveal="children">
+        <h2 class="display" id="resources-title">Everything in one place</h2>
+        <p>Start with the guide. Then hear the research, check your own visibility, and bring the tools to your next vendor meeting.</p>
+      </div>
+      <div class="resources__cards">
+        <article class="panel--lilac card" data-reveal>
+          <div class="card__text">
+            <p class="eyebrow">Whitepaper</p>
+            <h3 class="card__title">The hidden cost <br>of menopause</h3>
+            <p class="small">What healthcare claims miss, why fragmented care costs more, and what employers and health plans can do about it.</p>
+          </div>
+          <a class="btn btn--outline" href="#download">Download the guide</a>
+        </article>
+        <article class="panel--lilac card" data-reveal>
+          <div class="card__text">
+            <p class="eyebrow">Webinar on demand</p>
+            <h3 class="card__title">Who pays for menopause?</h3>
+            <p class="small">A conversation with Sera-Leigh Ghouralal, PhD, Director of Research at the Integrated Benefits Institute.</p>
+          </div>
+          <a class="btn btn--outline" href="#webinar">Watch now</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- Section 10 — FAQ -->
     <section class="wrap section faq" aria-labelledby="faq-title">
       <h2 class="display" id="faq-title" data-reveal>Frequently <br>asked questions</h2>
       <div class="faq__group" data-reveal>
@@ -369,7 +542,7 @@
       </div>
     </section>
 
-    <!-- Section 12 — closing CTA -->
+    <!-- Section 11 — closing CTA -->
     <section class="panel section closing" id="contact" aria-labelledby="closing-title">
       <div class="tex-bg" aria-hidden="true">
         <div class="tex tex--offset" style="--cx:-11.35;--cy:-18.9;--w:2029.5cqh;--h:253.5cqw;--t:rotate(-90deg)"><img src="assets/texture.png" alt=""></div>

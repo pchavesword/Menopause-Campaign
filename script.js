@@ -18,6 +18,13 @@ document.querySelectorAll('.video').forEach((frame) => {
   });
 });
 
+// Viewport width without the scrollbar, for the full-bleed panels (--vw in styles.css).
+(() => {
+  const setVw = () => document.documentElement.style.setProperty('--vw', `${document.documentElement.clientWidth}px`);
+  setVw();
+  window.addEventListener('resize', setVw);
+})();
+
 // Scroll fade-ins. The `js-reveal` class is set in <head> only when
 // IntersectionObserver exists and the visitor hasn't asked for reduced motion.
 if (document.documentElement.classList.contains('js-reveal')) {
@@ -54,313 +61,1155 @@ if (document.documentElement.classList.contains('js-reveal')) {
   revealRest();
 }
 
-// Hero + receipt interactions.
-// Desktop scroll story (section 2 is position: sticky there):
-//   1. the hero scrolls away and section 2 rises to the top of the viewport;
-//      the receipt holds its place on screen and unrolls as this happens;
-//   2. once the receipt lines up with section 2 the "click to flip" cue shows;
-//   3. section 2 stays pinned for --pin px of scrolling, and the receipt flips
-//      in one go a quarter of the way through (and back when scrolling up).
-// The receipt only flips with scroll (on tablet and mobile: once it has fully
-// unrolled and travelled a little further up the screen). The copy beside it swaps.
+// ---------------------------------------------------------------------------
+// Section 2: the receipts
+// ---------------------------------------------------------------------------
+// The paper is meant to look hand-made. Everything the receipts do runs at a
+// low frame rate (stop-motion), and once a second every receipt shifts a hair.
+// Text, and the card in section 3, stay smooth.
+//
+//   moment 1   Sarah's receipt unrolls: it feeds upward like a till printer
+//              and comes to rest on its claims summary.
+//   moment 2   her receipt shrinks into a collage, and other people's
+//              receipts deal out around it.
+//   leaving    every receipt crumples into a ball and falls out of the panel.
+//
+// Moment 2 and "leaving" only happen where the panel is pinned (desktop).
+// Elsewhere the receipt unrolls when it scrolls into view and the collage is
+// a still picture.
+
+// Everything about how the receipts move. Open the page with ?controls in the
+// address (for example http://localhost:8080/?controls) for a panel that
+// changes these live; its "Copy values" button gives this object back.
+const RECEIPT_SETTINGS = {
+  fps: 7,              // frames per second of everything the receipts do
+  shiftEvery: 1.5,     // seconds between the paper's small shifts
+  shiftAmount: 2,      // size of those shifts (1 = up to 0.8px and 0.65 degrees either way)
+  creaseFlip: true,    // mirror the paper's creases at random when it shifts
+  wobble: 1,           // stop-motion imperfection while receipts move (0 = none)
+  unrollSeconds: 4,    // on the roll -> fully out
+  moveSeconds: 1,      // moment 1 <-> moment 2
+  landShare: 0.6,      // share of that move Sarah's receipt takes to reach the pile
+  dealShare: 0.15,     // share each other receipt takes to slide out of the pile
+  crumpleAfter: 110,   // px scrolled past moment 2 before the receipts crumple
+  stageFrames: 1,      // frames each crumple drawing is held (folded, scrunched, ball)
+  staggerFrames: 2,    // receipts start crumpling up to this many frames apart
+  gravity: 5800,       // falling balls: px per second, per second
+  hop: 2.7,            // the little jump before the fall (1 = 110 to 260 px/s upward)
+  drift: 2.6,          // sideways drift (1 = up to 100 px/s either way)
+  spin: 2.1,           // tumbling (1 = up to 400 degrees/s either way)
+  ballSize: 0.75,      // ball diameter, as a share of the receipt's width
+  // The look of the crumpled paper (folded sheet, scrunched sheet and ball):
+  ballFacets: 7,       // facets across the ball: more = a finer crumple
+  ballRough: 0.24,     // how dented the outline is (0 = smooth)
+  ballShading: 1.5,    // contrast between the lit and the shaded facets
+  ballSoft: 0.35,      // how rounded the folds are (0 = sharp)
+  ballCrease: 0.6,     // strength of the crease lines between facets
+  ballPrint: 1,        // how strongly the receipt's print shows (0 = blank paper)
+  ballShade: '#857aa3', // colour of the shadows
+  ballShadow: 0.16,    // opacity of the shadow under the paper
+};
+
+// Other people's receipts. ILLUSTRATIVE, like Sarah's: invented people and
+// claims, there to show that she is one of many. They are drawn too small to
+// read. Each claim: [date, specialty, reason for visit, services, plan paid].
+// `slot` places the receipt in the collage, in px of a 560 × 640 box:
+// [centre x, top, width, rotation in degrees, stacking order].
+const SARAH_SLOT = [292, 34, 122, 2, 8];
+const OTHER_RECEIPTS = [
+  {
+    name: 'Maria Alvarez', age: 49, id: 'MA730145528', group: '061907', plan: 'Select HMO', planId: 'HMO-26104',
+    member: 240, savings: 268.35, slot: [54, 150, 96, -9, 2],
+    claims: [
+      ['Jan 22', 'Primary care', 'Heart palpitations', 'Visit, ECG', 212.4],
+      ['Mar 3', 'Cardiology', 'Palpitations, chest tightness', 'Visit, Holter monitor', 486.75],
+      ['Apr 28', 'Behavioral health', 'Panic symptoms', 'Visit', 148],
+      ['Jul 14', 'Sleep medicine', 'Insomnia, night sweats', 'Visit, sleep study', 612.3],
+      ['Sep 9', 'Primary care', 'Fatigue', 'Follow-up, labs', 131.6],
+      ['Nov 5', 'Cardiology', 'Palpitations', 'Follow-up', 174.25],
+    ],
+  },
+  {
+    name: 'Denise Carter', age: 52, id: 'DC518304776', group: '112750', plan: 'Choice Plus PPO', planId: 'PPO-26018',
+    member: 420, savings: 512.6, slot: [124, 40, 104, 5, 4],
+    claims: [
+      ['Jan 8', 'Primary care', 'Joint stiffness', 'Visit, labs', 176.9],
+      ['Feb 19', 'Rheumatology', 'Joint pain, both hands', 'Visit, antibody panel', 398.2],
+      ['Mar 26', 'Orthopedics', 'Frozen shoulder', 'Visit, imaging', 402.15],
+      ['May 12', 'Physical therapy', 'Shoulder mobility', 'Course of visits', 588],
+      ['Jun 30', 'Dermatology', 'Dry, itchy skin', 'Visit', 139.45],
+      ['Aug 4', 'Behavioral health', 'Low mood', 'Visit', 146],
+      ['Sep 22', 'Primary care', 'Weight gain, fatigue', 'Visit, thyroid panel', 203.75],
+      ['Nov 10', 'Rheumatology', 'Joint pain', 'Follow-up', 162.3],
+    ],
+  },
+  {
+    name: 'Priya Nair', age: 44, id: 'PN906217345', group: '084216', plan: 'Core EPO', planId: 'EPO-26233',
+    member: 185, savings: 204.1, slot: [186, 306, 92, -5, 6],
+    claims: [
+      ['Feb 5', 'Primary care', 'Migraines', 'Visit', 128.5],
+      ['Apr 9', 'Neurology', 'Migraines, brain fog', 'Visit, MRI', 742.6],
+      ['Jul 21', 'Gynecology', 'Irregular periods', 'Visit, labs', 236.85],
+      ['Oct 15', 'Behavioral health', 'Trouble concentrating', 'Visit', 144],
+    ],
+  },
+  {
+    name: 'Angela Brooks', age: 47, id: 'AB245968103', group: '039481', plan: 'Open Access POS', planId: 'POS-26077',
+    member: 310, savings: 356.9, slot: [222, 12, 100, -3, 3],
+    claims: [
+      ['Jan 15', 'Urgent care', 'Urinary symptoms', 'Visit, urinalysis', 164.2],
+      ['Mar 12', 'Urology', 'Recurrent UTIs', 'Visit, cystoscopy', 538.9],
+      ['Apr 30', 'Primary care', 'Night sweats, poor sleep', 'Visit', 124.75],
+      ['Jun 18', 'Gynecology', 'Heavy bleeding', 'Visit, ultrasound', 318.4],
+      ['Aug 7', 'Urgent care', 'Urinary symptoms', 'Visit, urinalysis', 164.2],
+      ['Sep 24', 'Behavioral health', 'Irritability, low mood', 'Visit', 146],
+      ['Nov 19', 'Urology', 'Recurrent UTIs', 'Follow-up', 171.35],
+    ],
+  },
+  {
+    name: 'Mei-Ling Chen', age: 51, id: 'MC671420958', group: '207365', plan: 'Premier PPO', planId: 'PPO-26341',
+    member: 260, savings: 298.45, slot: [372, 262, 96, 8, 9],
+    claims: [
+      ['Feb 24', 'Primary care', 'Dizziness, flushing', 'Visit, labs', 189.3],
+      ['Apr 14', 'Cardiology', 'Dizziness', 'Visit, echocardiogram', 564.8],
+      ['Jun 2', 'Endocrinology', 'Weight changes', 'Visit, hormone panel', 342.15],
+      ['Aug 27', 'Sleep medicine', 'Insomnia', 'Visit', 218.6],
+      ['Oct 29', 'Primary care', 'Fatigue', 'Follow-up', 118.45],
+    ],
+  },
+  {
+    name: 'Tamika Johnson', age: 45, id: 'TJ384750216', group: '061907', plan: 'Select HMO', planId: 'HMO-26104',
+    member: 385, savings: 441.75, slot: [400, 8, 104, -4, 5],
+    claims: [
+      ['Jan 27', 'Primary care', 'Anxiety, poor sleep', 'Visit', 126.8],
+      ['Feb 23', 'Behavioral health', 'New onset anxiety', 'Visit', 148],
+      ['Apr 6', 'Gastroenterology', 'Bloating, reflux', 'Visit, endoscopy', 684.25],
+      ['May 19', 'Behavioral health', 'Anxiety', 'Follow-up, prescription', 156.4],
+      ['Jul 8', 'Dermatology', 'Hair thinning', 'Visit, labs', 198.7],
+      ['Aug 25', 'Primary care', 'Fatigue', 'Follow-up, labs', 133.95],
+      ['Oct 13', 'Gynecology', 'Irregular bleeding', 'Visit, ultrasound', 309.6],
+      ['Nov 23', 'Behavioral health', 'Anxiety', 'Follow-up', 148],
+    ],
+  },
+  {
+    name: 'Laura Bennett', age: 54, id: 'LB159836420', group: '112750', plan: 'Value HDHP', planId: 'HDHP-26009',
+    member: 330, savings: 372.2, slot: [458, 236, 92, 4, 7],
+    claims: [
+      ['Feb 11', 'Primary care', 'Knee and hip pain', 'Visit', 121.3],
+      ['Mar 31', 'Orthopedics', 'Knee pain', 'Visit, imaging', 376.5],
+      ['May 26', 'Physical therapy', 'Knee pain', 'Course of visits', 612],
+      ['Jul 29', 'Primary care', 'Poor sleep', 'Visit', 121.3],
+      ['Sep 16', 'Sleep medicine', 'Insomnia', 'Visit, sleep study', 598.45],
+      ['Nov 2', 'Orthopedics', 'Hip pain', 'Follow-up, injection', 284.1],
+    ],
+  },
+  {
+    name: 'Fatima Rahman', age: 48, id: 'FR820594137', group: '039481', plan: 'Core EPO', planId: 'EPO-26233',
+    member: 295, savings: 334.8, slot: [506, 58, 100, 9, 1],
+    claims: [
+      ['Jan 20', 'Primary care', 'Fatigue, low mood', 'Visit, labs', 182.15],
+      ['Mar 9', 'Behavioral health', 'Low mood', 'Visit', 146],
+      ['Apr 22', 'Neurology', 'Brain fog, headaches', 'Visit, cognitive screen', 431.2],
+      ['Jun 11', 'Endocrinology', 'Fatigue, weight gain', 'Visit, thyroid panel', 327.65],
+      ['Aug 18', 'Gynecology', 'Irregular bleeding', 'Visit', 214.9],
+      ['Oct 1', 'Behavioral health', 'Low mood', 'Follow-up, prescription', 158.75],
+      ['Nov 17', 'Primary care', 'Fatigue', 'Follow-up', 118.45],
+    ],
+  },
+  {
+    name: "Karen O'Neill", age: 50, id: 'KO467201895', group: '207365', plan: 'Premier PPO', planId: 'PPO-26341',
+    member: 215, savings: 247.3, slot: [108, 296, 96, 7, 10],
+    claims: [
+      ['Mar 4', 'Primary care', 'Chest tightness', 'Visit, ECG', 208.35],
+      ['Mar 18', 'Cardiology', 'Chest tightness, palpitations', 'Visit, stress test', 692.4],
+      ['Jun 23', 'Behavioral health', 'Panic symptoms', 'Visit', 148],
+      ['Sep 2', 'Gynecology', 'Irregular bleeding', 'Visit', 196.2],
+      ['Nov 11', 'Primary care', 'Poor sleep', 'Follow-up', 118.45],
+    ],
+  },
+];
+
 (() => {
-  const intro = document.querySelector('.intro');
-  const hero = document.querySelector('.hero');
-  const panel = document.querySelector('.sarah');
-  const eob = document.querySelector('.eob');
-  if (!intro || !hero || !panel || !eob) return;
+  const track = document.querySelector('.sarah-track');
+  if (!track) return;
+  const panel = track.querySelector('.sarah');
+  const windowEl = track.querySelector('.receipt-window');
+  const morph = track.querySelector('.receipt-morph');
+  const sarah = track.querySelector('.receipt--sarah');
+  const collage = track.querySelector('.collage');
+  if (!panel || !windowEl || !morph || !sarah || !collage) return;
 
-  const card = eob.querySelector('.eob__card');
-  const cue = eob.querySelector('.eob__cue');
-  const front = eob.querySelector('.eob__face--front');
-  const back = eob.querySelector('.eob__face--back');
-  const copy = document.querySelector('.sarah__outro-copy');
+  const pinned = matchMedia('(min-width: 1024px) and (min-height: 720px)');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const FLIP_AT = 0.25; // fraction of the pinned scroll at which the receipt flips
+  const MOMENT_2_AT = 0.85; // where moment 2 rests, as a share of the pinned scroll
+  const S = RECEIPT_SETTINGS;
 
-  // ---- Flip ----
-  // The turn is a damped spring rather than a fixed-length transition: it eases
-  // in and out naturally, settles with a hint of overshoot, and if the visitor
-  // reverses direction mid-turn it carries its momentum instead of restarting.
-  const STIFFNESS = 40;
-  const DAMPING = 10.5;
-  let angle = 0;
-  let velocity = 0;
-  let target = 0;
-  let spinning = false;
-  let turnDim = 0;
-  let lastTime = 0;
+  const clamp01 = (v) => Math.min(1, Math.max(0, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const easeInOut = (v) => v * v * (3 - 2 * v);
+  const easeOut = (v) => 1 - (1 - v) * (1 - v);
+  // Seeded random numbers, so the collage and the crumples look the same on every visit.
+  let seed = 7;
+  const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 
-  const paint = () => {
-    card.style.setProperty('--flip', `${angle.toFixed(2)}deg`);
-    // --lift: 0 when flat, 1 when edge-on (lifts the paper, deepens its shadow, dims it).
-    // --turn: how wide the paper looks from the front (narrows its shadow as it turns).
-    turnDim = Math.abs(Math.sin((angle * Math.PI) / 180));
-    eob.style.setProperty('--lift', turnDim.toFixed(3));
-    eob.style.setProperty('--turn', Math.abs(Math.cos((angle * Math.PI) / 180)).toFixed(3));
+  // ---- Build the collage ----
+  const COLLAGE_W = 560;
+  const COLLAGE_H = 640;
+  const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+  const shortDate = (label) => {
+    const [month, day] = label.split(' ');
+    return `${String(MONTHS.indexOf(month.toLowerCase()) + 1).padStart(2, '0')}/${day.padStart(2, '0')}/26`;
   };
-  const spin = (now) => {
-    const dt = Math.min(0.032, (now - lastTime) / 1000);
-    lastTime = now;
-    velocity += (STIFFNESS * (target - angle) - DAMPING * velocity) * dt;
-    angle += velocity * dt;
-    if (Math.abs(target - angle) < 0.05 && Math.abs(velocity) < 0.5) {
-      angle = target;
-      velocity = 0;
-      spinning = false;
+
+  // A copy of Sarah's receipt, filled in with someone else's claims.
+  const receiptFor = (person) => {
+    const el = sarah.cloneNode(true);
+    el.classList.remove('receipt--sarah');
+    el.removeAttribute('aria-label');
+    if (!person) return el;
+    const set = (key, value) => el.querySelectorAll(`[data-f="${key}"]`).forEach((node) => { node.textContent = value; });
+    const paid = person.claims.reduce((sum, claim) => sum + claim[4], 0);
+    set('name', person.name);
+    set('age', person.age);
+    set('member-id', person.id);
+    set('group', person.group);
+    set('plan', person.plan);
+    set('plan-id', person.planId);
+    set('claims', person.claims.length);
+    set('specialties', new Set(person.claims.map((claim) => claim[1])).size);
+    set('period', `${shortDate(person.claims[0][0])}—${shortDate(person.claims[person.claims.length - 1][0])}`);
+    set('submitted', usd.format(paid + person.member + person.savings));
+    set('savings', usd.format(person.savings));
+    set('member', usd.format(person.member));
+    set('paid', usd.format(paid));
+    const list = el.querySelector('[data-f="visits"]');
+    const template = list.firstElementChild;
+    list.replaceChildren(...person.claims.map(([date, specialty, reason, services, amount]) => {
+      const item = template.cloneNode(true);
+      const put = (key, value) => { item.querySelector(`[data-f="${key}"]`).textContent = value; };
+      put('visit-date', `${date}, 2026`);
+      put('visit-specialty', specialty);
+      put('visit-reason', reason);
+      put('visit-services', services);
+      put('visit-amount', usd.format(amount));
+      return item;
+    }));
+    return el;
+  };
+
+  // ---- Crumpled paper, painted pixel by pixel on a canvas ----
+  // The sheet is broken into irregular facets. Each facet leans its own way
+  // and is lit from the top left, so some catch the light and some fall into
+  // shadow; creases darken where facets meet; and the receipt's print runs
+  // across each facet at its own angle, the way it does on a real crumpled
+  // receipt. Three versions per receipt: a = folded, b = scrunched, c = ball.
+  const STAGES = {
+    //   squareness: 1 = sheet-shaped, 0 = round   crumple: how far the facets lean
+    //   bulge: how ball-like the volume is        facets: facet count, as a share of S.ballFacets
+    a: { squareness: 0.86, crumple: 0.4, bulge: 0.15, facets: 0.42, dent: 0.5 },
+    b: { squareness: 0.5, crumple: 0.75, bulge: 0.55, facets: 0.7, dent: 0.85 },
+    c: { squareness: 0.1, crumple: 1, bulge: 0.95, facets: 1, dent: 1 },
+  };
+  const hash = (a, b) => {
+    let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  };
+  const smooth = (from, to, x) => {
+    const t = clamp01((x - from) / (to - from));
+    return t * t * (3 - 2 * t);
+  };
+  const channels = (hex) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
+  // Is there print at this point of the receipt? Rows of "words": some rows
+  // blank, some bold.
+  const printAt = (x, y) => {
+    const row = Math.floor(y / 7);
+    const kind = hash(row, 11);
+    if (kind < 0.3 || y / 7 - row > (kind > 0.9 ? 0.55 : 0.34)) return 0;
+    const along = x / 12 + kind * 9;
+    const word = Math.floor(along);
+    return hash(row, word + 100) > 0.45 && along - word < 0.78 ? 1 : 0;
+  };
+
+  const LIGHT = [-0.42, -0.62, 0.66];
+  // Paint one version of the crumpled receipt, `width` × `height` CSS px.
+  // `id` keeps each receipt's shape the same however the look settings change.
+  const paintCrumple = (canvas, stage, id, width, height) => {
+    const look = STAGES[stage];
+    const density = Math.min(2, window.devicePixelRatio || 1);
+    const W = Math.max(2, Math.round(width * density));
+    const H = Math.max(2, Math.round(height * density));
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const image = ctx.createImageData(W, H);
+    const data = image.data;
+    const shade = channels(S.ballShade);
+
+    // Outline: an irregular polygon. `edge[i]` is how far out it reaches at each
+    // of 720 angles (1 = touching the box).
+    const corners = 15 + (id % 5);
+    const points = Array.from({ length: corners }, (_, i) => {
+      const angle = ((i + (hash(id, i) - 0.5) * 0.6) / corners) * Math.PI * 2;
+      const boxy = 1 / Math.max(Math.abs(Math.cos(angle)), Math.abs(Math.sin(angle)));
+      return [angle, (1 + (boxy - 1) * look.squareness) * (1 - S.ballRough * look.dent * hash(id, i + 50))];
+    });
+    const edge = new Float32Array(720);
+    for (let i = 0; i < 720; i += 1) {
+      const angle = (i / 720) * Math.PI * 2;
+      let k = 0;
+      while (k < corners - 1 && points[k + 1][0] <= angle) k += 1;
+      if (angle < points[0][0]) k = corners - 1;
+      const [a1, r1] = points[k];
+      let [a2, r2] = points[(k + 1) % corners];
+      if (a2 <= a1) a2 += Math.PI * 2;
+      const at = angle < a1 ? angle + Math.PI * 2 : angle;
+      edge[i] = (r1 * r2 * Math.sin(a2 - a1)) / (r1 * Math.sin(at - a1) + r2 * Math.sin(a2 - at));
     }
-    paint();
-    if (spinning) requestAnimationFrame(spin);
-  };
-  const spinTo = (next) => {
-    target = next;
-    if (reducedMotion) {
-      angle = next;
-      return paint();
+
+    const cell = Math.max(6, W / Math.max(1, S.ballFacets * look.facets)); // facet size, px
+    const lean = 1.15 * look.crumple;
+    const turn = Math.PI * 2 * look.crumple ** 3;   // how far the print turns from facet to facet
+    const slip = 70 * look.crumple * density;       // and how far it slips
+    const seedX = id * 31 + 7;
+    const seedY = id * 17 + 3;
+    const softness = S.ballSoft * 0.6 + 0.001;
+    const fade = 3 / Math.min(W, H);                // soft edge, about 1.5px
+
+    for (let py = 0; py < H; py += 1) {
+      for (let px = 0; px < W; px += 1) {
+        const o = (py * W + px) * 4;
+        const nx = (px + 0.5 - W / 2) / (W / 2);
+        const ny = (py + 0.5 - H / 2) / (H / 2);
+        const r = Math.hypot(nx, ny);
+        let angle = Math.atan2(ny, nx);
+        if (angle < 0) angle += Math.PI * 2;
+        const reach = edge[Math.min(719, Math.floor((angle / (Math.PI * 2)) * 720))];
+        if (r >= reach) continue;
+
+        // Which facet is this, and which is its nearest neighbour?
+        const gx = px / cell;
+        const gy = py / cell;
+        const cx = Math.floor(gx);
+        const cy = Math.floor(gy);
+        let d1 = 1e9;
+        let d2 = 1e9;
+        let f1x = 0; let f1y = 0; let f2x = 0; let f2y = 0;
+        for (let j = -1; j <= 1; j += 1) {
+          for (let i = -1; i <= 1; i += 1) {
+            const sx = cx + i;
+            const sy = cy + j;
+            const d = Math.hypot(sx + hash(sx + seedX, sy + seedY) - gx, sy + hash(sx - seedY, sy + seedX) - gy);
+            if (d < d1) { d2 = d1; f2x = f1x; f2y = f1y; d1 = d; f1x = sx; f1y = sy; } else if (d < d2) { d2 = d; f2x = sx; f2y = sy; }
+          }
+        }
+        const gap = d2 - d1; // 0 on the crease between the two facets
+
+        // Each facet leans its own way; near a crease it blends into its neighbour.
+        const blend = 0.5 * (1 - smooth(0, softness, gap));
+        const tx = lerp(hash(f1x + seedX, f1y - seedX) - 0.5, hash(f2x + seedX, f2y - seedX) - 0.5, blend) * 2 * lean;
+        const ty = lerp(hash(f1x - seedY, f1y + seedY * 3) - 0.5, hash(f2x - seedY, f2y + seedY * 3) - 0.5, blend) * 2 * lean;
+        const bx = (nx / reach) * look.bulge * 0.9 + tx;
+        const by = (ny / reach) * look.bulge * 0.9 + ty;
+        const diffuse = (bx * LIGHT[0] + by * LIGHT[1] + LIGHT[2]) / Math.hypot(bx, by, 1);
+        let value = 0.95 + (diffuse - LIGHT[2]) * 0.72 * S.ballShading;
+        value -= (1 - smooth(0, 0.08, gap)) * 0.16 * S.ballCrease * look.crumple;  // crease line
+        value -= smooth(0.7, 1, r / reach) * 0.12 * look.bulge;                     // rounder: darker at the rim
+        value += (hash(px, py) - 0.5) * 0.035;                                      // paper grain
+        value = Math.min(1, Math.max(0.3, value));
+
+        // The receipt's print, turned and slipped by this facet.
+        const spin = (hash(f1x + 91, f1y + seedX) - 0.5) * turn;
+        const ox = px - W / 2 + (hash(f1x + seedY, f1y + 57) - 0.5) * slip;
+        const oy = py - H / 2 + (hash(f1x + 23, f1y - seedY) - 0.5) * slip;
+        const ink = printAt((ox * Math.cos(spin) - oy * Math.sin(spin)) / density * 2.1 + 400, (ox * Math.sin(spin) + oy * Math.cos(spin)) / density * 2.1 + 400) * 0.4 * S.ballPrint;
+
+        data[o] = lerp(lerp(shade[0], 255, value), 62 * value, ink);
+        data[o + 1] = lerp(lerp(shade[1], 255, value), 56 * value, ink);
+        data[o + 2] = lerp(lerp(shade[2], 255, value), 74 * value, ink);
+        data[o + 3] = 255 * (1 - smooth(reach - fade, reach, r));
+      }
     }
-    if (spinning) return;
-    spinning = true;
-    lastTime = performance.now();
-    requestAnimationFrame(spin);
+    ctx.putImageData(image, 0, 0);
   };
 
-  let flipped = false;
-  let swapTimer;
+  // Each receipt's three canvases are painted when first needed (or shortly
+  // after the page settles), and again whenever their size or the look changes.
+  let lookVersion = 0;
+  const ensurePainted = (canvas) => {
+    const key = `${lookVersion}:${canvas.dataset.w}x${canvas.dataset.h}`;
+    if (canvas.dataset.painted === key || !canvas.dataset.w) return;
+    canvas.dataset.painted = key;
+    paintCrumple(canvas, canvas.dataset.stage, Number(canvas.dataset.id), Number(canvas.dataset.w), Number(canvas.dataset.h));
+  };
+  const crumpleCanvases = (index) => ['a', 'b', 'c']
+    .map((stage, k) => `<canvas class="crumple__${stage}" data-stage="${stage}" data-id="${index * 3 + k + 1}"></canvas>`).join('');
 
-  const showCopy = (side) => {
-    if (!copy) return;
-    const swap = () => {
-      copy.querySelectorAll('.sarah__outro-side').forEach((el) => { el.hidden = el.dataset.side !== side; });
-      copy.classList.remove('is-swapping');
+  // Falling paper balls are drawn in a layer that covers the whole screen, so
+  // they drop out of the panel, in front of the next section and off the
+  // bottom of the screen.
+  const fallLayer = document.createElement('div');
+  fallLayer.className = 'fall-layer';
+  fallLayer.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(fallLayer);
+
+  const blank = sarah.cloneNode(true); // taken before anything is styled
+  const topZ = Math.max(SARAH_SLOT[4], ...OTHER_RECEIPTS.map((person) => person.slot[4]));
+  const pieces = [];
+  const addPiece = (receipt, [cx, top, width, rotation, z], isSarah) => {
+    const el = document.createElement('div');
+    el.className = isSarah ? 'piece piece--sarah' : 'piece';
+    el.style.setProperty('--x', (((cx - width / 2) / COLLAGE_W) * 100).toFixed(2));
+    el.style.setProperty('--y', ((top / COLLAGE_H) * 100).toFixed(2));
+    el.style.setProperty('--w', ((width / COLLAGE_W) * 100).toFixed(2));
+    el.style.setProperty('--z', z);
+    el.style.setProperty('--r', `${rotation}deg`);
+    receipt.style.setProperty('--shade', ((topZ - z) * 0.011).toFixed(3));
+    el.appendChild(receipt);
+    collage.appendChild(el);
+
+    const crumple = document.createElement('div');
+    crumple.className = 'crumple';
+    crumple.hidden = true;
+    collage.appendChild(crumple);
+
+    pieces.push({
+      el, receipt, crumple, rotation, isSarah,
+      launch: null,                       // where on screen it lets go of the pile and starts to fall
+      order: 0,                           // set below: its turn to leave the pile, 0 (first) to 1 (last)
+      popAt: Math.floor(rand() * 3),      // frame it reappears on, coming back from below
+      wait: rand(),                       // how long it waits before crumpling (share of S.staggerFrames)
+      hop: -(110 + rand() * 150),         // falling: first a little hop (px/s),
+      drift: (rand() - 0.5) * 200,        // some sideways drift (px/s),
+      spin: (rand() - 0.5) * 800,         // and a tumble (degrees/s)
+      tilt: (rand() - 0.5) * 26,
+    });
+  };
+  blank.classList.remove('receipt--sarah');
+  blank.removeAttribute('aria-label');
+  addPiece(blank, SARAH_SLOT, true);
+  OTHER_RECEIPTS.forEach((person) => addPiece(receiptFor(person), person.slot, false));
+  const sarahPiece = pieces[0];
+  const others = pieces.slice(1);
+  pieces.forEach((piece, i) => { piece.crumple.innerHTML = crumpleCanvases(i); });
+  // Paint whatever is out of date, one canvas at a time so the page never stalls.
+  let paintTimer;
+  const paintSoon = () => {
+    clearTimeout(paintTimer);
+    const next = () => {
+      const stale = [...track.querySelectorAll('.crumple canvas'), ...fallLayer.querySelectorAll('canvas')]
+        .find((canvas) => canvas.dataset.w && canvas.dataset.painted !== `${lookVersion}:${canvas.dataset.w}x${canvas.dataset.h}`);
+      if (!stale) return;
+      ensurePainted(stale);
+      paintTimer = setTimeout(next, 30);
     };
-    clearTimeout(swapTimer);
-    if (reducedMotion) return swap();
-    copy.classList.add('is-swapping'); // fade out, swap, fade back in
-    swapTimer = setTimeout(swap, 250);
+    paintTimer = setTimeout(next, 400);
   };
+  const styleCrumples = () => [collage, fallLayer].forEach((el) => el.style.setProperty('--ball-shadow', S.ballShadow));
+  styleCrumples();
+  // Deal the others out one after another, lowest in the pile first.
+  [...others].sort((a, b) => a.el.style.getPropertyValue('--z') - b.el.style.getPropertyValue('--z'))
+    .forEach((piece, i) => { piece.order = i / (others.length - 1); });
 
-  const setFlipped = (next) => {
-    if (next === flipped) return;
-    flipped = next;
-    eob.classList.toggle('is-flipped', flipped);
-    cue.setAttribute('aria-pressed', String(flipped));
-    front.toggleAttribute('inert', flipped);
-    front.setAttribute('aria-hidden', String(flipped));
-    back.toggleAttribute('inert', !flipped);
-    back.setAttribute('aria-hidden', String(!flipped));
-    showCopy(flipped ? 'back' : 'front');
+  // ---- The model: four numbers, each stepped towards its target at S.fps ----
+  const POP_FRAMES = 4;
+  const framesFor = (seconds) => Math.max(1, Math.round(seconds * S.fps));
+  // Frames a ball needs to clear the screen from anywhere on it, hop included.
+  const fallFrames = () => {
+    const up = 260 * S.hop;
+    return Math.ceil(((up + Math.sqrt(up * up + 2 * S.gravity * (window.innerHeight + 200))) / S.gravity) * S.fps) + 1;
   };
+  // Longest wait + folded, scrunched, ball + the fall.
+  const crumpleFrames = () => S.staggerFrames + 3 * S.stageFrames + fallFrames();
 
-  // Flip to the back (true) or the front (false) in one continuous turn.
-  const flipTo = (toBack) => {
-    setFlipped(toBack);
-    spinTo(toBack ? 180 : 0);
-  };
-  // The "click to flip" cue is hidden for now; if it comes back, it still works.
-  cue.addEventListener('click', () => flipTo(!flipped));
+  let unroll = 0;            // 0 = on the roll, 1 = fully out
+  let move = 0;              // 0 = moment 1, 1 = moment 2
+  let crumple = 0;           // frames into the crumple-and-fall (0 = flat)
+  let pop = POP_FRAMES;      // frames into popping back flat
+  const target = { unroll: 0, move: 0, gone: false };
+  let onScreen = false;
+  let previewGone = false;   // the controls panel playing the crumple on its own
 
-  // ---- Paper roll ----
-  // Build the 3D roll: a ring of flat strips. Each strip knows its angle (--a),
-  // how far round the roll it sits (--arc, radians) and how shaded it is.
-  const roll = eob.querySelector('.eob__roll');
-  const SEGMENTS = 24;
-  if (roll && !reducedMotion) {
-    roll.insertAdjacentHTML('beforeend', '<div class="eob__roll-shadow"></div><div class="eob__roll-contact"></div>');
-    for (let i = 0; i < SEGMENTS; i += 1) {
-      const angle = (i / SEGMENTS) * Math.PI * 2;
-      const half = Math.PI / SEGMENTS;
-      // Light comes from above: surfaces facing down or turned away are darker.
-      const rollShade = (a) => (0.03 + 0.1 * (1 - Math.max(0, Math.cos(a))) + 0.3 * Math.max(0, -Math.sin(a))).toFixed(3);
-      const strip = document.createElement('div');
-      strip.className = 'eob__roll-strip';
-      strip.style.setProperty('--a', `${((angle * 180) / Math.PI).toFixed(2)}deg`);
-      strip.style.setProperty('--arc', angle.toFixed(4));
-      strip.style.setProperty('--shade', rollShade(angle + half));   // shade at the strip's upper edge
-      strip.style.setProperty('--shade2', rollShade(angle - half));  // ...and at its lower edge, matching its neighbours
-      roll.appendChild(strip);
-    }
-  }
+  const feed = sarah.querySelector('.receipt__feed');
+  const paper = sarah.querySelector('.receipt__paper');
+  const roll = sarah.querySelector('.receipt__roll');
 
-  // Unroll `length` px of the receipt (out of `full`) and size the roll to the
-  // paper still wound on it.
-  const START = 0.33;       // share of the receipt already unrolled at the start
-  const THICKNESS = 3.2;    // how fast the roll thins as paper leaves it
-  let unrolled = null; // px of paper out, or null once it is all out
-  const setUnroll = (length, full) => {
-    if (!roll || reducedMotion) return;
-    const left = Math.max(0, full - length);
-    unrolled = left < 0.5 ? null : length;
-    if (left < 0.5) {
-      eob.classList.remove('is-rolled');
-      eob.style.removeProperty('--unroll');
-      eob.style.removeProperty('--roll-r');
+  // ---- Unroll ----
+  const renderUnroll = () => {
+    if (unroll >= 1) {
+      if (sarah.classList.contains('is-rolled')) {
+        sarah.classList.remove('is-rolled');
+        feed.style.transform = '';
+        paper.style.removeProperty('--hidden');
+      }
       return;
     }
-    eob.classList.add('is-rolled');
-    eob.style.setProperty('--unroll', `${length.toFixed(1)}px`);
-    eob.style.setProperty('--roll-r', `${Math.sqrt(4 + (left * THICKNESS) / Math.PI).toFixed(2)}px`);
-    eob.style.setProperty('--roll-o', Math.min(1, left / 30).toFixed(2)); // fades as the last of it unwinds
+    const full = paper.offsetHeight;
+    const view = Math.min(full, windowEl.clientHeight - (parseFloat(getComputedStyle(windowEl).paddingBottom) || 0));
+    const start = Math.min(full, sarah.offsetWidth * 0.3);
+    const out = lerp(start, full, 1 - Math.pow(1 - unroll, 1.6)); // px of paper off the roll
+    const left = full - out;
+    // The roll travels down the window; once it reaches the bottom it stays
+    // there and the paper feeds upward instead.
+    const shake = unroll > 0 ? (rand() - 0.5) * 2 * S.wobble : 0;
+    sarah.classList.add('is-rolled');
+    feed.style.transform = `translate(${shake.toFixed(1)}px, ${Math.max(0, Math.min(left, full - view)).toFixed(1)}px)`;
+    paper.style.setProperty('--hidden', `${left.toFixed(1)}px`);
+    roll.style.setProperty('--roll-y', `${out.toFixed(1)}px`);
+    roll.style.setProperty('--roll-r', `${Math.sqrt(9 + left * 0.5).toFixed(1)}px`);
   };
 
-  // ---- Living paper ----
-  // The receipt is cut into horizontal strips, each a window onto a copy of the
-  // sheet. Every frame the strips are tilted to follow a curve: a little
-  // permanent curl (paper that has been rolled never lies flat), a light breeze
-  // that travels down the sheet in waves and comes in gusts, and a swing when
-  // the page scrolls or the mouse brushes past. The top edge is held; the
-  // movement grows towards the free bottom edge.
-  const STRIPS = 16;
-  const strips = [];
-  let scrollSwing = 0;      // degrees, eased towards the scroll speed
-  let scrollSwingV = 0;
-  let lastScrollY = window.scrollY;
-  let breezeBoost = 0;      // 0-1, bumped by mouse movement over the receipt
-  let paperOnScreen = true;
-
-  if (!reducedMotion) {
-    const holder = document.createElement('div');
-    holder.className = 'eob__strips';
-    holder.setAttribute('aria-hidden', 'true');
-    holder.inert = true;
-    holder.style.setProperty('--strips', STRIPS);
-    const frontSheet = front.querySelector('.eob__sheet');
-    const backSheet = back.querySelector('.eob__sheet');
-    for (let i = 0; i < STRIPS; i += 1) {
-      const strip = document.createElement('div');
-      strip.className = 'eob__strip';
-      strip.style.setProperty('--i', i);
-      [['front', frontSheet], ['back', backSheet]].forEach(([side, sheet]) => {
-        const slice = document.createElement('div');
-        slice.className = `eob__slice eob__slice--${side}`;
-        slice.appendChild(sheet.cloneNode(true));
-        strip.appendChild(slice);
-      });
-      holder.appendChild(strip);
-      strips.push(strip);
-    }
-    card.appendChild(holder);
-    eob.classList.add('is-live');
-
-    new IntersectionObserver(([entry]) => { paperOnScreen = entry.isIntersecting; }).observe(eob);
-    eob.addEventListener('pointermove', (event) => {
-      breezeBoost = Math.min(1, breezeBoost + (Math.abs(event.movementX) + Math.abs(event.movementY)) / 400);
-    });
-
-    const DEG = Math.PI / 180;
-    // Tilt of the paper (degrees, + = leaning towards the viewer) at s = 0 (top) to 1 (bottom).
-    const tiltAt = (s, t, gust) =>
-      1.9 * Math.sin(s * 4.7 + 0.6) + 4.6 * s * s * s                       // permanent curl
-      + gust * Math.pow(s, 1.2) * (2.6 * Math.sin(1.1 * t - 3.2 * s) + 1.3 * Math.sin(1.9 * t - 5.5 * s + 1.3)) // breeze
-      + scrollSwing * s * s;                                                 // swing from scrolling
-    const shadeFor = (deg) => Math.min(0.22, Math.max(0, 0.05 - deg * 0.026)); // facing down = darker
-
-    let previous = performance.now();
-    const animatePaper = (now) => {
-      requestAnimationFrame(animatePaper);
-      const dt = Math.min(0.05, (now - previous) / 1000);
-      previous = now;
-      if (!paperOnScreen) return;
-      const t = now / 1000;
-
-      // Scroll speed -> a damped swing of the free end.
-      const speed = (window.scrollY - lastScrollY) / Math.max(dt, 0.001);
-      lastScrollY = window.scrollY;
-      const swingTarget = Math.max(-4.5, Math.min(4.5, -speed / 350));
-      scrollSwingV += (60 * (swingTarget - scrollSwing) - 9 * scrollSwingV) * dt;
-      scrollSwing += scrollSwingV * dt;
-      breezeBoost *= Math.exp(-dt * 1.4);
-
-      // Gusts: the breeze swells and dies away; it is calmer while the heavy roll is still attached.
-      const gust = (0.55 + 0.45 * Math.sin(t * 0.31) * Math.sin(t * 0.17 + 1) + 1.6 * breezeBoost) * (unrolled === null ? 1 : 0.35);
-
-      const stripH = eob.offsetHeight / STRIPS;
-      let z = 0;
-      let lift = 0;   // how much shorter the bent paper is than the flat sheet so far
-      let rollZ = 0;
-      for (let i = 0; i < STRIPS; i += 1) {
-        const top = tiltAt(i / STRIPS, t, gust);
-        const bottom = tiltAt((i + 1) / STRIPS, t, gust);
-        const tilt = (top + bottom) / 2;
-        const s = (i + 0.5) / STRIPS;
-        const twist = gust * Math.pow(s, 1.5) * 1.5 * Math.sin(0.8 * t - 2.2 * s + 0.5);
-        const strip = strips[i];
-        // Each strip sits a hair behind the one above it, so where they overlap
-        // the drawing order is always the same (no flicker along the joins).
-        strip.style.transform = `translate3d(0, ${(-lift).toFixed(2)}px, ${(z - i * 0.15).toFixed(2)}px) rotateX(${tilt.toFixed(3)}deg) rotateY(${twist.toFixed(3)}deg)`;
-        const dim = turnDim * 0.2; // the whole sheet dims a little mid-flip
-        strip.style.setProperty('--f0', (shadeFor(top) + dim).toFixed(3));
-        strip.style.setProperty('--f1', (shadeFor(bottom) + dim).toFixed(3));
-        strip.style.setProperty('--b0', (shadeFor(-top) + dim).toFixed(3));
-        strip.style.setProperty('--b1', (shadeFor(-bottom) + dim).toFixed(3));
-        if (unrolled !== null && unrolled >= i * stripH) rollZ = z + (unrolled - i * stripH) * Math.sin(tilt * DEG);
-        z += stripH * Math.sin(tilt * DEG);
-        lift += stripH * (1 - Math.cos(tilt * DEG));
-      }
-      roll.style.setProperty('--roll-z', `${rollZ.toFixed(2)}px`);
+  // ---- Collage (pinned only) ----
+  // Where things have to travel, measured with nothing transformed.
+  let geo = null;
+  const centreOf = (el) => [el.offsetLeft + el.offsetWidth / 2, el.offsetTop + el.offsetHeight / 2];
+  const measure = () => {
+    morph.style.transform = '';
+    const rest = morph.getBoundingClientRect();    // Sarah's receipt, at rest in moment 1
+    const box = collage.getBoundingClientRect();
+    const [sx, sy] = centreOf(sarahPiece.el);       // her place in the collage
+    geo = {
+      dx: box.left + sx - (rest.left + rest.width / 2),
+      dy: box.top + sy - (rest.top + rest.height / 2),
+      scale: sarahPiece.el.offsetWidth / rest.width,
+      from: pieces.map((piece) => { const [px, py] = centreOf(piece.el); return [sx - px, sy - py]; }),
+      at: pieces.map((piece) => centreOf(piece.el)),
     };
-    requestAnimationFrame(animatePaper);
-  }
+    // Size each receipt's three crumple pictures from the receipt itself.
+    pieces.forEach((piece) => {
+      const w = piece.el.offsetWidth;
+      const h = piece.el.offsetHeight;
+      [['a', 0.98 * w, 0.6 * h], ['b', 0.86 * w, 0.33 * h], ['c', S.ballSize * w, S.ballSize * w]].forEach(([stage, sw, sh]) => {
+        const canvas = piece.crumple.querySelector(`.crumple__${stage}`);
+        canvas.dataset.w = Math.round(sw);
+        canvas.dataset.h = Math.round(sh);
+        canvas.style.width = `${Math.round(sw)}px`;
+        canvas.style.height = `${Math.round(sh)}px`;
+        canvas.style.left = `${Math.round(-sw / 2)}px`;
+        canvas.style.top = `${Math.round(-sh / 2)}px`;
+      });
+    });
+    paintSoon();
+  };
 
-  // ---- Scroll: unroll, cue, scroll-flip ----
-  let queued = false;
+  const renderCollage = () => {
+    if (!geo) measure();
+    const moving = move > 0 && move < 1 && !reducedMotion;
+    const wobble = (amount) => (moving ? (rand() - 0.5) * amount * S.wobble : 0); // stop-motion imperfection
+    const landing = easeInOut(clamp01(move / S.landShare));
+    const landed = landing >= 1;
+
+    // Sarah's own receipt flies to her place in the collage; once there, the
+    // copy that sits in the collage (and in its stacking order) takes over.
+    morph.style.transform = landing > 0
+      ? `translate(${(geo.dx * landing + wobble(3)).toFixed(1)}px, ${(geo.dy * landing + wobble(3)).toFixed(1)}px) rotate(${(SARAH_SLOT[3] * landing + wobble(1.6)).toFixed(2)}deg) scale(${lerp(1, geo.scale, landing).toFixed(4)})`
+      : '';
+    morph.style.visibility = landed ? 'hidden' : '';
+
+    const fallen = crumple >= crumpleFrames();
+    // The others leave the pile one after another, starting as Sarah's receipt arrives.
+    const firstDeal = S.landShare * 0.6;
+    const dealSpread = Math.max(0, 0.98 - S.dealShare - firstDeal);
+    pieces.forEach((piece, i) => {
+      const dealt = piece.isSarah ? (landed ? 1 : 0) : easeOut(clamp01((move - firstDeal - piece.order * dealSpread) / S.dealShare));
+      const frame = crumple - Math.round(piece.wait * S.staggerFrames); // this receipt's own frame of the crumple
+      const popping = pop - piece.popAt;               // <= 0: not back yet, 1: just popped in
+      const flat = dealt > 0 && frame <= 0 && popping > 0;
+      const style = piece.el.style;
+      style.visibility = flat ? 'visible' : 'hidden';
+      if (flat) {
+        const [fx, fy] = geo.from[i];
+        const settling = dealt < 1;
+        style.setProperty('--dx', `${(fx * (1 - dealt) + (settling ? wobble(3) : 0)).toFixed(1)}px`);
+        style.setProperty('--dy', `${(fy * (1 - dealt) + (settling ? wobble(3) : 0)).toFixed(1)}px`);
+        style.setProperty('--r', `${(lerp(SARAH_SLOT[3], piece.rotation, dealt) + (settling ? wobble(4) : 0) + (popping === 1 ? 4 : 0)).toFixed(2)}deg`);
+        style.setProperty('--s', (lerp(0.85, 1, dealt) * (popping === 1 ? 0.92 : 1)).toFixed(3));
+      }
+
+      // Crumpled: folded, scrunched, ball, then a hop and a fall off the screen.
+      const fall = Math.max(0, frame - 3 * S.stageFrames) / S.fps; // seconds spent falling
+      let [x, y] = geo.at[i];
+      let show = frame > 0 && !fallen;
+      if (show && fall > 0) {
+        // Letting go of the pile. From here the ball is drawn in the layer
+        // over the whole screen, falling from where the pile was at that moment.
+        if (!piece.launch) {
+          const box = collage.getBoundingClientRect();
+          piece.launch = [box.left + x, box.top + y, box.bottom > 0 && box.top < window.innerHeight];
+          fallLayer.appendChild(piece.crumple);
+        }
+        [x, y, show] = piece.launch; // not shown if the pile was off screen: no balls out of nowhere
+      } else if (piece.launch) {
+        piece.launch = null;
+        collage.appendChild(piece.crumple);
+      }
+      piece.crumple.hidden = !show;
+      if (show) {
+        const stage = Math.min(2, Math.floor((frame - 1) / S.stageFrames));
+        piece.crumple.dataset.stage = 'abc'[stage];
+        ensurePainted(piece.crumple.querySelector(`.crumple__${'abc'[stage]}`));
+        piece.crumple.style.zIndex = 40 + i;
+        piece.crumple.style.transform = `translate(${(x + piece.drift * S.drift * fall).toFixed(1)}px, ${(y + piece.hop * S.hop * fall + 0.5 * S.gravity * fall * fall).toFixed(1)}px) rotate(${(piece.rotation + piece.tilt * (stage + 1) + piece.spin * S.spin * fall).toFixed(1)}deg)`;
+      }
+    });
+  };
+
+  const render = () => {
+    renderUnroll();
+    if (pinned.matches) renderCollage();
+  };
+
+  // ---- Stepping ----
+  // One frame closer to the targets. Returns true while there is more to do.
+  const advance = () => {
+    let busy = false;
+    const wantMove = target.gone ? 1 : target.move;
+
+    if (unroll > target.unroll) unroll = target.unroll;              // rolled back up out of sight
+    else if (wantMove && unroll < 1) unroll = 1;                      // skipped ahead: no time to unroll
+    else if (unroll < target.unroll) {
+      unroll = reducedMotion ? 1 : Math.min(1, unroll + 1 / framesFor(S.unrollSeconds));
+      busy = busy || unroll < 1;
+    }
+
+    if (target.gone && move < 1) move = 1;                            // skipped ahead
+    else if (move !== wantMove) {
+      const step = reducedMotion ? 1 : 1 / framesFor(S.moveSeconds);
+      move = move < wantMove ? Math.min(wantMove, move + step) : Math.max(wantMove, move - step);
+      busy = busy || move !== wantMove;
+    }
+
+    if (target.gone) {
+      const end = crumpleFrames();
+      if (crumple < end) {
+        crumple = reducedMotion ? end : crumple + 1;
+        busy = busy || crumple < end;
+      }
+    } else if (crumple > 0) {
+      crumple = 0;                                                    // back up: flat again, popping in
+      pop = reducedMotion ? POP_FRAMES : 0;
+    }
+    if (pop < POP_FRAMES) {
+      pop += 1;
+      busy = busy || pop < POP_FRAMES;
+    }
+    return busy;
+  };
+
+  let running = false;
+  let lastFrame = 0;
+  const loop = (now) => {
+    if (now - lastFrame >= 1000 / S.fps - 4) {
+      lastFrame = now;
+      const busy = advance();
+      render();
+      if (!busy) { running = false; return; }
+    }
+    requestAnimationFrame(loop);
+  };
+  const run = () => {
+    if (running) return;
+    running = true;
+    requestAnimationFrame(loop);
+  };
+
+  // ---- Reading the scroll position ----
+  // 0 when the panel first pins, 1 when it is about to scroll away.
+  const progress = () => {
+    const box = track.getBoundingClientRect();
+    const top = parseFloat(getComputedStyle(panel).top) || 0;
+    return (top - box.top) / Math.max(1, box.height - panel.offsetHeight);
+  };
+  let syncQueued = false;
+  const sync = () => {
+    syncQueued = false;
+    const view = windowEl.getBoundingClientRect();
+    const frameBox = panel.getBoundingClientRect();
+    onScreen = frameBox.bottom > 0 && frameBox.top < window.innerHeight;
+
+    // Unroll once a good part of the window is on screen; roll back up when
+    // the page is scrolled back above it, so it plays again next time.
+    const seen = Math.min(view.bottom, window.innerHeight) - Math.max(view.top, 0);
+    let unrollTo = target.unroll;
+    if (reducedMotion || seen >= Math.min(view.height, window.innerHeight) * 0.3) unrollTo = 1;
+    else if (view.top >= window.innerHeight) unrollTo = 0;
+
+    let moveTo = 0;
+    let gone = false;
+    if (pinned.matches) {
+      const p = progress();
+      // A little stickiness, so each moment starts as soon as the page moves towards it.
+      moveTo = p > (target.move ? 0.5 : 0.2) ? 1 : 0;
+      // Past moment 2 the page scrolls freely: the receipts crumple once it has
+      // moved on by S.crumpleAfter px, and come back if it returns.
+      const past = (p - MOMENT_2_AT) * (track.offsetHeight - panel.offsetHeight);
+      gone = previewGone || past > S.crumpleAfter * (target.gone ? 0.4 : 1);
+    }
+    if (unrollTo === target.unroll && moveTo === target.move && gone === target.gone) return;
+    target.unroll = unrollTo;
+    target.move = moveTo;
+    target.gone = gone;
+    panel.classList.toggle('is-m2', moveTo === 1);
+    run();
+  };
+  const requestSync = () => {
+    if (syncQueued) return;
+    syncQueued = true;
+    requestAnimationFrame(sync);
+  };
+
+  // ---- Paper shifting, once a second ----
+  const papers = [paper, ...pieces.map((piece) => piece.receipt.querySelector('.receipt__paper'))];
+  const shiftPaper = () => {
+    setTimeout(shiftPaper, Math.max(0.05, S.shiftEvery) * 1000);
+    if (!onScreen || document.hidden) return;
+    papers.forEach((sheet, i) => {
+      const size = i === 0 ? 0.25 : 1; // Sarah's full-size receipt turns less
+      sheet.style.setProperty('--jx', `${((Math.random() - 0.5) * 1.6 * S.shiftAmount).toFixed(2)}px`);
+      sheet.style.setProperty('--jy', `${((Math.random() - 0.5) * 1.6 * S.shiftAmount).toFixed(2)}px`);
+      sheet.style.setProperty('--jr', `${((Math.random() - 0.5) * 1.3 * size * S.shiftAmount).toFixed(2)}deg`);
+      sheet.style.setProperty('--flip', S.creaseFlip && Math.random() < 0.5 ? -1 : 1);
+    });
+  };
+  if (!reducedMotion) shiftPaper();
+
+  // Step-by-step scrolling into and between the two moments: one swipe (wheel,
+  // trackpad, key press or touch swipe) glides from the hero to moment 1, and
+  // from moment 1 to moment 2 (and back the same way). The rest of that swipe,
+  // including trackpad momentum, is swallowed so it can't carry past a moment.
+  // From moment 2 on, the page scrolls normally: nothing snaps on the way out,
+  // and coming back up it only catches on moment 2.
+  const steps = () => {
+    const box = track.getBoundingClientRect();
+    const top = parseFloat(getComputedStyle(panel).top) || 0;
+    const start = window.scrollY + box.top - top;          // moment 1 (the panel has just pinned)
+    const length = box.height - panel.offsetHeight;        // scroll spent pinned
+    return [start, start + MOMENT_2_AT * length];
+  };
+
+  let animating = false;
+  let locked = false;      // true from a step until a new swipe starts (its momentum is ignored)
+  let glideStart = 0;
+  let pendingDir = 0;      // a swipe made while gliding: taken as soon as the glide ends
+
+  const glide = (to) => {
+    locked = true;
+    animating = true;
+    glideStart = performance.now();
+    const from = window.scrollY;
+    const distance = to - from;
+    const duration = reducedMotion ? 0 : 700;
+    const t0 = performance.now();
+    const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+    const frame = (now) => {
+      const k = duration ? Math.min(1, (now - t0) / duration) : 1;
+      window.scrollTo({ top: from + distance * ease(k), behavior: 'instant' });
+      if (k < 1) requestAnimationFrame(frame);
+      else {
+        animating = false;
+        if (pendingDir) {
+          const dir = pendingDir;
+          pendingDir = 0;
+          const next = targetFor(window.scrollY, dir, dir * 100);
+          if (next !== null) glide(next);
+          else locked = false; // moving on past moment 2, or back up past moment 1: scroll normally
+        }
+      }
+    };
+    requestAnimationFrame(frame);
+  };
+  // Where one swipe in direction `dir` from scroll position `y` should go, or
+  // null to let the page scroll normally.
+  const targetFor = (y, dir, delta) => {
+    const [s0, s1] = steps();
+    if (y < s0 - 2) return dir > 0 && y + delta >= s0 ? s0 : null;      // arriving from the hero
+    if (y > s1 + 2) return dir < 0 && y + delta <= s1 ? s1 : null;      // arriving from below
+    if (dir > 0) return y < s1 - 2 ? s1 : null;                         // at moment 2 going down: scroll normally
+    return y > s0 + 2 ? s0 : null;                                      // at moment 1 going up: scroll normally
+  };
+  const inside = (y) => { const [s0, s1] = steps(); return y >= s0 - 2 && y <= s1 + 2; };
+
+  // Telling a new swipe from the momentum of the last one: momentum only ever
+  // fades, so a new swipe shows up as a pause in the events or a sudden jump
+  // in their size.
+  let lastWheel = 0;
+  const recent = [];
+  window.addEventListener('wheel', (event) => {
+    if (!pinned.matches || event.ctrlKey) return; // ctrlKey = pinch zoom
+    const dy = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
+    const size = Math.abs(dy);
+    const now = performance.now();
+    const fresh = now - lastWheel > 160 || (size > 10 && size > 1.6 * Math.max(0, ...recent.slice(-2)));
+    lastWheel = now;
+    recent.push(size);
+    if (recent.length > 4) recent.shift();
+
+    if (animating) {
+      // A new swipe while gliding is remembered, not lost. The first moments of
+      // the swipe that started this glide are still ramping up, so skip those.
+      if (fresh && now - glideStart > 300) pendingDir = Math.sign(dy);
+      event.preventDefault();
+      return;
+    }
+    if (locked) {
+      if (!fresh) { event.preventDefault(); return; } // still the old swipe's momentum
+      locked = false;
+    }
+    if (size < 1) return;
+    const y = window.scrollY;
+    const dir = Math.sign(dy);
+    const to = targetFor(y, dir, dy);
+    if (to === null) return; // scroll normally
+    event.preventDefault();
+    glide(to);
+  }, { passive: false });
+
+  window.addEventListener('keydown', (event) => {
+    if (!pinned.matches || animating || event.target.closest?.('input, select, textarea, [contenteditable]')) return;
+    const down = ['ArrowDown', 'PageDown', ' '].includes(event.key) && !event.shiftKey;
+    const up = ['ArrowUp', 'PageUp'].includes(event.key) || (event.key === ' ' && event.shiftKey);
+    if (!down && !up) return;
+    const y = window.scrollY;
+    const to = targetFor(y, down ? 1 : -1, down ? window.innerHeight * 0.8 : -window.innerHeight * 0.8);
+    if (to === null) return;
+    event.preventDefault();
+    glide(to);
+  });
+
+  // Touch (large tablets): a swipe inside the pinned stretch is one step.
+  let touchY = null;
+  window.addEventListener('touchstart', (event) => { touchY = event.touches[0].clientY; }, { passive: true });
+  window.addEventListener('touchmove', (event) => {
+    if (!pinned.matches || touchY === null) return;
+    const y = window.scrollY;
+    const dir = Math.sign(touchY - event.touches[0].clientY);
+    if (animating || (inside(y) && targetFor(y, dir, 0) !== null)) event.preventDefault();
+  }, { passive: false });
+  window.addEventListener('touchend', (event) => {
+    if (!pinned.matches || touchY === null || animating) return;
+    const dy = touchY - event.changedTouches[0].clientY;
+    touchY = null;
+    if (Math.abs(dy) < 30 || !inside(window.scrollY)) return;
+    const to = targetFor(window.scrollY, Math.sign(dy), dy);
+    if (to !== null) glide(to);
+  });
+
+  // Scrollbar drags and anything else: if scrolling stops between two steps,
+  // glide on to the nearer one.
+  let restTimer;
+  window.addEventListener('scroll', () => {
+    if (animating) return;
+    clearTimeout(restTimer);
+    restTimer = setTimeout(() => {
+      if (!pinned.matches || animating) return;
+      const y = window.scrollY;
+      if (!inside(y)) return;
+      const pts = steps();
+      if (pts.some((p) => Math.abs(p - y) <= 2)) return;
+      glide(pts.reduce((a, p) => (Math.abs(p - y) < Math.abs(a - y) ? p : a)));
+    }, 180);
+  }, { passive: true });
+
+  // ---- Layout changes ----
+  const onLayout = () => {
+    geo = null;
+    if (!pinned.matches) {
+      // In flow: the collage is a still picture and nothing is pinned.
+      move = 0;
+      crumple = 0;
+      pop = POP_FRAMES;
+      target.move = 0;
+      target.gone = false;
+      panel.classList.remove('is-m2');
+      morph.style.transform = '';
+      morph.style.visibility = '';
+      pieces.forEach((piece) => {
+        ['visibility', '--dx', '--dy', '--s'].forEach((name) => piece.el.style.removeProperty(name));
+        piece.el.style.setProperty('--r', `${piece.rotation}deg`);
+        piece.crumple.hidden = true;
+        piece.launch = null;
+        collage.appendChild(piece.crumple);
+      });
+    }
+    sync();
+    render();
+  };
+  window.addEventListener('scroll', requestSync, { passive: true });
+  window.addEventListener('resize', onLayout);
+  pinned.addEventListener('change', onLayout);
+  document.fonts?.ready.then(onLayout);
+  onLayout();
+
+  // ---- Controls (open the page with ?controls in the address) ----
+  // A panel for tuning RECEIPT_SETTINGS live. A design tool: visitors never see it.
+  if (!new URLSearchParams(window.location.search).has('controls')) return;
+  const defaults = { ...S };
+  // [setting, label, min, max, step, unit]; no range = an on/off switch; 'color' = a colour picker.
+  const groups = [
+    ['Paper', [
+      ['fps', 'Frame rate', 2, 30, 1, ' fps'],
+      ['shiftEvery', 'Shift every', 0.1, 3, 0.1, ' s'],
+      ['shiftAmount', 'Shift amount', 0, 4, 0.1, '×'],
+      ['creaseFlip', 'Flip the creases'],
+      ['wobble', 'Wobble while moving', 0, 4, 0.1, '×'],
+    ]],
+    ['Unroll', [
+      ['unrollSeconds', 'Duration', 0.3, 8, 0.1, ' s'],
+    ]],
+    ['Into the pile', [
+      ['moveSeconds', 'Duration', 0.3, 5, 0.1, ' s'],
+      ['landShare', 'Sarah’s receipt lands by', 0.1, 1, 0.05, ''],
+      ['dealShare', 'Each receipt’s slide', 0.05, 0.7, 0.05, ''],
+    ]],
+    ['Crumple and fall', [
+      ['crumpleAfter', 'Starts after scrolling', 0, 400, 10, ' px'],
+      ['stageFrames', 'Frames per drawing', 1, 6, 1, ''],
+      ['staggerFrames', 'Stagger', 0, 8, 1, ' frames'],
+      ['gravity', 'Gravity', 300, 9000, 100, ''],
+      ['hop', 'Hop', 0, 4, 0.1, '×'],
+      ['drift', 'Sideways drift', 0, 4, 0.1, '×'],
+      ['spin', 'Spin', 0, 4, 0.1, '×'],
+      ['ballSize', 'Ball size', 0.3, 1.4, 0.05, '×'],
+    ]],
+    ['Crumple look', [
+      ['ballFacets', 'Facets', 3, 22, 1, ''],
+      ['ballRough', 'Rough outline', 0, 0.4, 0.01, ''],
+      ['ballShading', 'Light and shade', 0, 2.5, 0.05, '×'],
+      ['ballSoft', 'Soft folds', 0, 1, 0.05, ''],
+      ['ballCrease', 'Crease lines', 0, 3, 0.1, '×'],
+      ['ballPrint', 'Print', 0, 2, 0.05, '×'],
+      ['ballShade', 'Shadow colour', 'color'],
+      ['ballShadow', 'Shadow', 0, 0.7, 0.02, ''],
+    ]],
+  ];
+  const tune = document.createElement('aside');
+  tune.className = 'tune';
+  tune.setAttribute('aria-label', 'Receipt animation controls');
+  tune.innerHTML = `
+    <button class="tune__title" type="button" aria-expanded="true">Receipt controls</button>
+    <div class="tune__body">
+      ${groups.map(([title, rows]) => `
+        <fieldset class="tune__group">
+          <legend>${title}</legend>
+          ${title === 'Crumple look' ? '<div class="tune__preview" title="Folded, scrunched, ball"></div>' : ''}
+          ${rows.map(([key, label, min, max, step]) => (typeof min !== 'number'
+    ? `<label class="tune__row tune__row--switch"><span>${label}</span><input type="${min === 'color' ? 'color' : 'checkbox'}" data-key="${key}"></label>`
+    : `<label class="tune__row"><span>${label}</span><output data-out="${key}"></output><input type="range" data-key="${key}" min="${min}" max="${max}" step="${step}"></label>`)).join('')}
+        </fieldset>`).join('')}
+      <div class="tune__actions">
+        <button type="button" data-do="unroll">Replay unroll</button>
+        <button type="button" data-do="crumple">Play crumple</button>
+        <button type="button" data-do="reset">Reset</button>
+        <button type="button" data-do="copy">Copy values</button>
+      </div>
+    </div>`;
+  document.body.appendChild(tune);
+
+  const units = Object.fromEntries(groups.flatMap(([, rows]) => rows.map(([key, , , , , unit]) => [key, unit || ''])));
+  const show = () => {
+    tune.querySelectorAll('[data-key]').forEach((input) => {
+      const value = S[input.dataset.key];
+      if (input.type === 'checkbox') input.checked = value;
+      else if (input.type === 'color') input.value = value;
+      else {
+        input.value = value;
+        tune.querySelector(`[data-out="${input.dataset.key}"]`).textContent = `${value}${units[input.dataset.key]}`;
+      }
+    });
+  };
+  const preview = tune.querySelector('.tune__preview');
+  preview.innerHTML = crumpleCanvases(100);
+  [[30, 86], [44, 56], [72, 72]].forEach(([w, h], k) => {
+    const canvas = preview.children[k];
+    canvas.dataset.w = w;
+    canvas.dataset.h = h;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+  });
+  const apply = () => {
+    lookVersion += 1;                                   // repaint everything with the new look
+    [...preview.children].forEach(ensurePainted);       // the three pictures, as they look now
+    preview.style.setProperty('--ball-shadow', S.ballShadow);
+    styleCrumples();
+    geo = null; // sizes may have changed (ball size)
+    show();
+    render();
+    paintSoon();
+  };
+  tune.addEventListener('input', (event) => {
+    const input = event.target.closest('[data-key]');
+    if (!input) return;
+    S[input.dataset.key] = input.type === 'checkbox' ? input.checked : input.type === 'color' ? input.value : Number(input.value);
+    apply();
+  });
+  tune.querySelector('.tune__title').addEventListener('click', (event) => {
+    const open = tune.classList.toggle('is-closed') === false;
+    event.currentTarget.setAttribute('aria-expanded', String(open));
+  });
+  let previewTimer;
+  tune.querySelector('.tune__actions').addEventListener('click', (event) => {
+    const action = event.target.dataset.do;
+    if (action === 'unroll') {
+      // Back to moment 1 if need be, then roll the receipt up and let it go again.
+      if (pinned.matches) window.scrollTo({ top: steps()[0], behavior: 'instant' });
+      else windowEl.scrollIntoView({ block: 'center', behavior: 'instant' });
+      sync();
+      move = 0;
+      unroll = 0;
+      target.unroll = 1;
+      run();
+    }
+    if (action === 'crumple' && pinned.matches) {
+      // At moment 2: crumple and fall, then put the receipts back.
+      const atMoment2 = Math.abs(window.scrollY - steps()[1]) < 4;
+      if (!atMoment2) window.scrollTo({ top: steps()[1], behavior: 'instant' });
+      clearTimeout(previewTimer);
+      previewGone = false;
+      sync();
+      previewTimer = setTimeout(() => {
+        previewGone = true;
+        sync();
+        previewTimer = setTimeout(() => { previewGone = false; sync(); }, (crumpleFrames() / S.fps) * 1000 + 700);
+      }, atMoment2 ? 0 : S.moveSeconds * 1000 + 500);
+    }
+    if (action === 'reset') {
+      Object.assign(S, defaults);
+      apply();
+    }
+    if (action === 'copy') {
+      const text = `const RECEIPT_SETTINGS = ${JSON.stringify(S, null, 2).replace(/"(\w+)":/g, '$1:')};`;
+      const done = () => { event.target.textContent = 'Copied'; setTimeout(() => { event.target.textContent = 'Copy values'; }, 1200); };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => window.prompt('Copy these values:', text));
+      else window.prompt('Copy these values:', text);
+    }
+  });
+  apply();
+})();
+
+// Section 3 card: fades up smoothly (styles.css) once most of it is on screen,
+// and resets when it drops back below the screen, so it plays again.
+(() => {
+  const card = document.querySelector('.signal-card');
+  if (!card || !document.documentElement.classList.contains('js-reveal')) return;
+  new IntersectionObserver(([entry]) => {
+    if (entry.intersectionRatio >= 0.45) card.classList.add('is-visible');
+    else if (!entry.isIntersecting && entry.boundingClientRect.top > 0) card.classList.remove('is-visible');
+  }, { threshold: [0, 0.45] }).observe(card);
+})();
+
+// Whitepaper page carousel: arrows, a page counter and a slow autoplay that
+// pauses while the visitor hovers, focuses or has scrolled the pages themselves.
+(() => {
+  const carousel = document.querySelector('.wp-carousel');
+  if (!carousel) return;
+  const trackEl = carousel.querySelector('.wp-carousel__track');
+  const slides = [...trackEl.children];
+  const card = carousel.closest('.whitepaper');
+  const current = card.querySelector('[data-current]');
+  const total = card.querySelector('[data-total]');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  total.textContent = slides.length;
+
+  const index = () => {
+    const left = trackEl.scrollLeft;
+    let best = 0;
+    slides.forEach((slide, i) => {
+      if (Math.abs(slide.offsetLeft - trackEl.offsetLeft - left) < Math.abs(slides[best].offsetLeft - trackEl.offsetLeft - left)) best = i;
+    });
+    // At the very end of the row the last page may not reach the start edge.
+    if (left + trackEl.clientWidth >= trackEl.scrollWidth - 2) best = slides.length - 1;
+    return best;
+  };
+  const go = (i) => {
+    const next = (i + slides.length) % slides.length;
+    trackEl.scrollTo({ left: slides[next].offsetLeft - trackEl.offsetLeft });
+  };
+
+  card.querySelectorAll('.wp-carousel__btn').forEach((btn) => {
+    btn.addEventListener('click', () => go(index() + Number(btn.dataset.dir)));
+  });
+  trackEl.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowRight') { event.preventDefault(); go(index() + 1); }
+    if (event.key === 'ArrowLeft') { event.preventDefault(); go(index() - 1); }
+  });
+  let settle;
+  trackEl.addEventListener('scroll', () => {
+    clearTimeout(settle);
+    settle = setTimeout(() => { current.textContent = index() + 1; }, 60);
+  }, { passive: true });
+
+  if (reducedMotion) return;
+  let paused = false;
+  let onScreen = false;
+  card.addEventListener('pointerenter', () => { paused = true; });
+  card.addEventListener('pointerleave', () => { paused = false; });
+  card.addEventListener('focusin', () => { paused = true; });
+  card.addEventListener('focusout', () => { paused = false; });
+  new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; }, { threshold: 0.4 }).observe(card);
+  setInterval(() => {
+    if (!paused && onScreen && !document.hidden) go(index() + 1);
+  }, 4500);
+})();
+
+// Savings calculator.
+// PLACEHOLDER MATHS: the real model will come from the Excel sheet. Everything
+// the calculation depends on lives in CALCULATOR, so swapping it in should only
+// mean changing this object and, if needed, calculate().
+const CALCULATOR = {
+  reachRate: 0.5025,        // share of the patients entered who are reached
+  savingsPerPatient: 2578,  // base yearly savings per patient reached, USD
+  // Multipliers on savingsPerPatient per dropdown option (all 1 for now).
+  location: { National: 1, Northeast: 1, Midwest: 1, South: 1, West: 1 },
+  industry: { Finance: 1, Technology: 1, Healthcare: 1, Manufacturing: 1, Retail: 1, 'Public sector': 1 },
+  solution: { 'Musculoskeletal Health': 1, "Women's Health": 1, 'Pelvic Health': 1 },
+};
+
+(() => {
+  const form = document.querySelector('.calc__inputs');
+  if (!form) return;
+  const range = form.querySelector('#calc-patients');
+  const slider = form.querySelector('.calc__slider');
+  const value = form.querySelector('.calc__value');
+  const selects = {
+    location: form.querySelector('#calc-location'),
+    industry: form.querySelector('#calc-industry'),
+    solution: form.querySelector('#calc-solution'),
+  };
+  const out = {};
+  document.querySelectorAll('[data-calc]').forEach((el) => { out[el.dataset.calc] = el; });
+
+  const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+  const calculate = (patients, choice) => {
+    const factor = ['location', 'industry', 'solution']
+      .reduce((f, key) => f * (CALCULATOR[key][choice[key]] ?? 1), 1);
+    const perPatient = CALCULATOR.savingsPerPatient * factor;
+    const reached = Math.round(patients * CALCULATOR.reachRate);
+    return { reached, perPatient, total: reached * perPatient };
+  };
 
   const update = () => {
-    queued = false;
-    if (getComputedStyle(panel).position !== 'sticky') {
-      // Tablet and mobile: nothing is pinned, the cue is always visible.
-      eob.classList.remove('is-aligned');
-      // The receipt unrolls as it travels up the screen: the roll stays about
-      // 80% of the way down the viewport until the paper runs out.
-      const box = eob.getBoundingClientRect();
-      const rollLine = window.innerHeight * 0.8;
-      setUnroll(Math.min(box.height, Math.max(box.height * START, rollLine - box.top)), box.height);
-      // Flip once it is fully unrolled and has moved up a further 120px.
-      flipTo(box.bottom <= rollLine - 120);
-      return;
-    }
-    const gap = 10; // space between the two panels
-    const stickyTop = parseFloat(getComputedStyle(panel).top) || 0;
-    // 0 = page at the top (section 2 still a full hero-height below its resting
-    // place); 1 = section 2 has reached the top of the viewport.
-    const travel = hero.offsetHeight + gap;
-    const cover = Math.min(1, Math.max(0, 1 - (panel.getBoundingClientRect().top - stickyTop) / travel));
-    eob.classList.toggle('is-aligned', cover > 0.995);
-    // Unrolls while section 2 rises; fully out once it reaches the top.
-    const full = eob.offsetHeight;
-    setUnroll(full * (START + (1 - START) * cover), full);
+    const patients = Number(range.value);
+    const min = Number(range.min);
+    const max = Number(range.max);
+    slider.style.setProperty('--fill', (((patients - min) / (max - min)) * 100).toFixed(2));
+    value.textContent = number.format(patients);
 
-    // How far through the pinned stretch we are (0 = just pinned, 1 = released).
-    const pin = parseFloat(getComputedStyle(intro).getPropertyValue('--pin')) || 0;
-    const scrolledPastPin = stickyTop - (intro.getBoundingClientRect().top + hero.offsetHeight + gap);
-    // Down past the flip point: show the back; back up above it: show the front.
-    flipTo(pin > 0 && scrolledPastPin / pin >= FLIP_AT);
+    const result = calculate(patients, {
+      location: selects.location.value,
+      industry: selects.industry.value,
+      solution: selects.solution.value,
+    });
+    out.total.textContent = money.format(result.total);
+    out.perPatient.textContent = money.format(result.perPatient);
+    out.reached.textContent = number.format(result.reached);
   };
-  const request = () => {
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(update);
-  };
-  window.addEventListener('scroll', request, { passive: true });
-  window.addEventListener('resize', request);
+
+  form.addEventListener('input', update);
+  form.addEventListener('change', update);
   update();
-
-  // ---- Floating tilt that follows the mouse (mouse/trackpad only) ----
-  if (reducedMotion || !matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  const tilt = eob.querySelector('.eob__tilt');
-  eob.addEventListener('pointermove', (event) => {
-    const box = eob.getBoundingClientRect();
-    const x = (event.clientX - box.left) / box.width - 0.5;  // -0.5 (left) to 0.5 (right)
-    const y = (event.clientY - box.top) / box.height - 0.5;  // -0.5 (top) to 0.5 (bottom)
-    eob.classList.add('is-tilting');
-    tilt.style.setProperty('--ry', `${(x * 14).toFixed(2)}deg`);
-    tilt.style.setProperty('--rx', `${(-y * 8).toFixed(2)}deg`);
-    tilt.style.setProperty('--tx', `${(x * 12).toFixed(1)}px`);
-    tilt.style.setProperty('--ty', `${(y * 12).toFixed(1)}px`);
-  });
-  eob.addEventListener('pointerleave', () => {
-    eob.classList.remove('is-tilting'); // ease back to rest
-    ['--rx', '--ry', '--tx', '--ty'].forEach((name) => tilt.style.removeProperty(name));
-  });
 })();
 
 // Navbar: switch its frosted bar on once the page has scrolled a little.

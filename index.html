@@ -341,7 +341,7 @@
 
     <!-- Section 5 — cost of menopause calculator.
          The Excel model "Cost of menopause: Sword vs traditional cost", rebuilt
-         field for field: client inputs, low/base/high results and key messages.
+         client inputs, the base case with its low and high range, and key messages.
          The maths and the assumptions behind it live in script.js. -->
     <section class="wrap section calc" aria-labelledby="calc-title">
       <h2 class="display calc__title" id="calc-title" data-reveal>How much is menopause costing your plan? <br>See the Sarahs on your plan.</h2>
@@ -416,85 +416,17 @@
         </div>
       </div>
 
-      <!-- The whole model: low, base and high cases, then the key messages. -->
-      <div class="calc__detail" data-reveal>
-        <div class="calc__table" role="table" aria-label="Cost of menopause: low, base and high cases">
-          <div class="calc__group" role="rowgroup">
-            <div class="calc__row calc__row--head" role="row">
-              <span role="columnheader">Population</span>
-              <span role="columnheader">Low</span><span role="columnheader">Base</span><span role="columnheader">High</span>
-            </div>
-            <div class="calc__row" role="row">
-              <span role="rowheader">Women in perimenopause and menopause</span>
-              <span role="cell" data-calc="women" data-case="low">11,000</span><span role="cell" data-calc="women">11,000</span><span role="cell" data-calc="women" data-case="high">11,000</span>
-            </div>
-            <div class="calc__row" role="row">
-              <span role="rowheader">Share of women included in the cost</span>
-              <span role="cell" data-calc="share" data-case="low">7.6%</span><span role="cell" data-calc="share">11.7%</span><span role="cell" data-calc="share" data-case="high">15.0%</span>
-            </div>
-            <div class="calc__row calc__row--strong" role="row">
-              <span role="rowheader">Women included in the cost</span>
-              <span role="cell" data-calc="included" data-case="low">836</span><span role="cell" data-calc="included">1,287</span><span role="cell" data-calc="included" data-case="high">1,650</span>
-            </div>
-          </div>
-
-          <div class="calc__group" role="rowgroup">
-            <div class="calc__row calc__row--head" role="row">
-              <span role="columnheader">Cost of menopause today (Path A)</span>
-              <span role="columnheader">Low</span><span role="columnheader">Base</span><span role="columnheader">High</span>
-            </div>
-            <div class="calc__row" role="row">
-              <span role="rowheader">Path A cost per woman</span>
-              <span role="cell" data-calc="pathA" data-case="low">$3,250</span><span role="cell" data-calc="pathA">$3,250</span><span role="cell" data-calc="pathA" data-case="high">$3,250</span>
-            </div>
-            <div class="calc__row calc__row--strong" role="row">
-              <span role="rowheader">Estimated cost of menopause care</span>
-              <span role="cell" data-calc="costToday" data-case="low">$2,717,000</span><span role="cell" data-calc="costToday">$4,182,750</span><span role="cell" data-calc="costToday" data-case="high">$5,362,500</span>
-            </div>
-            <div class="calc__row" role="row">
-              <span role="rowheader">Cost per eligible life</span>
-              <span role="cell" data-calc="perLife" data-case="low">$54.34</span><span role="cell" data-calc="perLife">$83.66</span><span role="cell" data-calc="perLife" data-case="high">$107.25</span>
-            </div>
-          </div>
-
-          <div class="calc__group" role="rowgroup">
-            <div class="calc__row calc__row--head" role="row">
-              <span role="columnheader">With Sword (Path B)</span>
-              <span role="columnheader">Low</span><span role="columnheader">Base</span><span role="columnheader">High</span>
-            </div>
-            <div class="calc__row" role="row">
-              <span role="rowheader">Women using Sword</span>
-              <span role="cell" data-calc="swordUsers" data-case="low">836</span><span role="cell" data-calc="swordUsers">1,287</span><span role="cell" data-calc="swordUsers" data-case="high">1,650</span>
-            </div>
-            <div class="calc__row" role="row">
-              <span role="rowheader">Path B cost per woman</span>
-              <span role="cell" data-calc="pathB" data-case="low">$900</span><span role="cell" data-calc="pathB">$900</span><span role="cell" data-calc="pathB" data-case="high">$900</span>
-            </div>
-            <div class="calc__row" role="row">
-              <span role="rowheader">Estimated cost with Sword</span>
-              <span role="cell" data-calc="costSword" data-case="low">$752,400</span><span role="cell" data-calc="costSword">$1,158,300</span><span role="cell" data-calc="costSword" data-case="high">$1,485,000</span>
-            </div>
-            <div class="calc__row calc__row--strong" role="row">
-              <span role="rowheader">Estimated savings</span>
-              <span role="cell" data-calc="savings" data-case="low">$1,964,600</span><span role="cell" data-calc="savings">$3,024,450</span><span role="cell" data-calc="savings" data-case="high">$3,877,500</span>
-            </div>
-            <div class="calc__row" role="row">
-              <span role="rowheader">Savings (%)</span>
-              <span role="cell" data-calc="savingsPct" data-case="low">72.3%</span><span role="cell" data-calc="savingsPct">72.3%</span><span role="cell" data-calc="savingsPct" data-case="high">72.3%</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="calc__messages">
-          <p class="eyebrow">Key messages</p>
-          <ol>
-            <li><strong>Scale</strong><span data-calc-msg="scale">About 11,000 women are in perimenopause or menopause, out of 50,000 eligible lives.</span></li>
-            <li><strong>Cost today</strong><span data-calc-msg="today">In the base case, 1,287 of these women are seeking care at an estimated $3,250 each, which is $4,182,750 in total, or $83.66 per eligible life.</span></li>
-            <li><strong>With Sword</strong><span data-calc-msg="sword">The same women cost an estimated $1,158,300 with Sword, a difference of $3,024,450 (72%).</span></li>
-            <li><strong>Range</strong><span data-calc-msg="range">The estimated cost of menopause care today runs from $2,717,000 to $5,362,500 across the low and high cases, with savings of $1,964,600 to $3,877,500.</span></li>
-            <li><strong>Basis</strong><span>Path A uses an illustrative member scenario. Visit counts are assumptions and do not represent observed utilization.</span></li>
-          </ol>
-        </div>
+      <!-- Key messages: the base case in words. script.js fills in the numbers. -->
+      <div class="calc__messages" data-reveal>
+        <p class="eyebrow">Key messages</p>
+        <ol>
+          <li><strong>Scale</strong><span data-calc-msg="scale">About 11,000 women are in perimenopause or menopause, out of 50,000 eligible lives.</span></li>
+          <li><strong>Cost today</strong><span data-calc-msg="today">In the base case, 1,287 of these women are seeking care at an estimated $3,250 each, which is $4,182,750 in total, or $83.66 per eligible life.</span></li>
+          <li><strong>With Sword</strong><span data-calc-msg="sword">The same women cost an estimated $1,158,300 with Sword, a difference of $3,024,450 (72%).</span></li>
+          <li><strong>Range</strong><span data-calc-msg="range">The estimated cost of menopause care today runs from $2,717,000 to $5,362,500 across the low and high cases, with savings of $1,964,600 to $3,877,500.</span></li>
+          <li><strong>Basis</strong><span>Path A uses an illustrative member scenario. Visit counts are assumptions and do not represent observed utilization.</span></li>
+        </ol>
+      </div>
       </div>
     </section>
 

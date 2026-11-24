@@ -716,34 +716,10 @@ a { color: inherit; }
   .calc__other:last-child { grid-column: 3; }
 }
 
-/* ---- The whole model: low, base and high ---- */
-.calc__detail { display: grid; gap: 48px; margin-top: 24px; }
-.calc__table { display: flex; flex-direction: column; gap: 32px; font: 400 14px/20px var(--sans); }
-/* Phones: the label on its own line, the three cases under it. */
-.calc__row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px 12px;
-  padding-block: 12px;
-  border-bottom: 1px solid rgba(13, 13, 13, 0.12);
-  font-variant-numeric: tabular-nums;
-}
-.calc__row > :first-child { grid-column: 1 / -1; }
-.calc__row > :nth-child(3) { font-weight: 600; }   /* the base case */
-.calc__row--strong > * { font-weight: 600; }
-.calc__row--head {
-  border-bottom-color: var(--ink);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  color: #5e5e5e;
-}
-.calc__row--head > :first-child { color: var(--ink); }
-
-.calc__messages { display: flex; flex-direction: column; gap: 12px; }
-.calc__messages li { display: flex; flex-direction: column; gap: 4px; padding-block: 16px; border-bottom: 1px solid rgba(13, 13, 13, 0.12); }
-.calc__messages li:first-child { border-top: 1px solid var(--ink); }
+/* ---- Key messages: one column on phones, side by side where there is room ---- */
+.calc__messages { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
+.calc__messages ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px 32px; }
+.calc__messages li { display: flex; flex-direction: column; gap: 6px; padding-top: 16px; border-top: 1px solid var(--ink); }
 .calc__messages strong { font: 600 14px/20px var(--sans); }
 .calc__messages span { font: 400 14px/1.45 var(--sans); color: #2e2e2e; }
 
@@ -968,11 +944,6 @@ a { color: inherit; }
   .faq__item summary { padding: 24px 40px; }
   .faq__answer { padding: 0 40px 24px; }
 
-  /* The model as a table: label, then low, base and high in columns. */
-  .calc__row { grid-template-columns: minmax(0, 1fr) repeat(3, minmax(96px, 120px)); gap: 16px; }
-  .calc__row > :first-child { grid-column: auto; }
-  .calc__row > :not(:first-child) { text-align: right; }
-
   .footer { flex-direction: row; justify-content: space-between; text-align: left; }
 }
 
@@ -1036,7 +1007,6 @@ a { color: inherit; }
 
   .calc__inputs { padding: 56px 0 56px 64px; gap: 40px; }
   .calc__results { padding: 56px 64px; gap: 48px; }
-  .calc__detail { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); column-gap: 64px; align-items: start; }
 
   .outcomes__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .outcomes__item:nth-child(n) { padding-inline: 40px; border-left: 1px solid var(--grey-500); }

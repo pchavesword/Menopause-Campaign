@@ -38,7 +38,7 @@ Restructured on branch `bruno/updates` from the Figma frame "lp-lg v2" in the se
 3. Meet Sarah + her receipt, then "Sarah isn't alone" stats and a collage of other people's receipts — `.sarah`, receipt is `.receipt`, collage is `.collage`
 4. One intake, one care team, one record + Sarah's card — `.connected`, card is `.signal-card`
 5. Meet Sword Women's Health + four points — `.meet`
-6. Savings calculator — `.calc`
+6. Cost of menopause calculator — `.calc`
 7. What changes when someone connects the dots (four stats) — `.outcomes`
 8. The women behind the claims (quotes + member video) — `.voices`
 9. Whitepaper feature with page preview — `.whitepaper` (anchor `#download`)
@@ -64,7 +64,7 @@ All of these live in `script.js`; the matching styles are commented in `styles.c
   - The receipt is sized in `--u` (1/371 of its width), so the same markup draws Sarah's and the small ones.
 - **Sarah's card (section 3):** `.signal-card` fades up from below, slowly and smoothly, once most of it is on screen, and resets when it drops back below the screen. `--k` scales the card (the Marketing Kit card is 280px wide; it is shown at 1.25).
 - **Whitepaper carousel:** `.wp-carousel` is a scroll-snapping row of pages with arrows, a page counter and a slow autoplay (paused on hover or focus). Pages 2–4 reuse page 1 until real page images exist.
-- **Calculator:** the slider and dropdowns recalculate the three results live. The maths is a placeholder: everything it depends on is in the `CALCULATOR` object at the top of the calculator code (reach rate, savings per patient, a multiplier per dropdown option, all 1 for now). The real model will come from an Excel sheet.
+- **Calculator:** the Excel model "Cost of menopause: Sword vs traditional cost", rebuilt field for field. Client inputs (eligible lives, women included in the cost, optional women counts, funding type) recalculate the low, base and high cases, the key messages and the headline numbers live. The assumptions (Path A visit costs, Sword price, population shares, share who seek care, share who use Sword) are not shown on the page: they are the `CALCULATOR_ASSUMPTIONS` object in `script.js`. The formulas are in `calculate()` right below it, with the Excel cell each one stands for in a comment.
 - **Scroll fade-ins:** elements marked `data-reveal` fade in themselves; `data-reveal="children"` fades direct children in sequence.
 - **Navbar blur:** a frosted bar behind the navbar switches on once the page has scrolled (`.site-header.is-scrolled`).
 - **FAQ:** native `<details>` elements, all closed by default; answers slide open and the plus icon rotates into an x.

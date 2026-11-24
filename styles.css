@@ -571,55 +571,85 @@ a { color: inherit; }
    Section 5 — savings calculator
    ========================================================================== */
 
+.calc { display: flex; flex-direction: column; gap: 24px; }
 .calc__card {
   display: grid;
   border-radius: var(--radius);
   background: radial-gradient(130% 120% at 65% 45%, var(--white) 60%, #f2f2f2);
   box-shadow: inset 0 0 0 1px rgba(13, 13, 13, 0.03);
 }
-.calc__card :where(p, label, output, span) { text-box: none; }
+.calc :where(p, label, output, span, dt, dd, summary > span:first-child) { text-box: none; }
 
-.calc__inputs { display: flex; flex-direction: column; gap: 48px; padding: 32px 24px; }
-.calc__slider-group { display: flex; flex-direction: column; gap: 24px; }
-.calc__question { font: 700 20px/26px var(--sans); }
-
-/* Slider: black track up to the thumb, white after it. --fill (0–100) is set
-   by script.js; the value label rides above the thumb. */
-.calc__slider {
-  --thumb: 24px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 16px;
-  height: 80px;
-}
-.calc__value {
-  position: absolute;
-  top: 0;
-  left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--fill) / 100);
-  transform: translateX(-50%);
-  font: 700 18px/30px var(--sans);
-  white-space: nowrap;
-}
-.calc__range {
+/* ---- Client inputs ---- */
+.calc__inputs { display: flex; flex-direction: column; gap: 32px; padding: 32px 24px; }
+.calc__fields { display: flex; flex-direction: column; gap: 16px; }
+/* Two fields side by side where there is room; stacked where there isn't. */
+.calc__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; align-items: end; }
+.calc__field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.calc__field label { font: 600 14px/22px var(--sans); color: #2e2e2e; }
+.calc__field label span { font-weight: 400; color: #5e5e5e; }
+.calc__field :where(select, input) {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
+  height: 56px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(13, 13, 13, 0.08);
+  color: var(--ink);
+  font: 600 14px/22px var(--sans);
+}
+.calc__field select {
+  padding-right: 48px;
+  background: rgba(255, 255, 255, 0.8) url("assets/ic-chevron-down.svg") right 12px center / 24px 24px no-repeat;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+.calc__field input::placeholder { color: #8c8c8c; font-weight: 400; opacity: 1; }
+.calc__hint { margin-top: -4px; font: 400 12px/1.4 var(--sans); color: #5e5e5e; }
+
+/* Eligible lives: a number to type, and a slider for the same number. */
+.calc__slider-group { display: flex; flex-direction: column; gap: 20px; }
+.calc__lives { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.calc__question { font: 700 20px/26px var(--sans); }
+.calc__lives-input {
+  width: 132px;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(13, 13, 13, 0.08);
+  color: var(--ink);
+  font: 700 18px/30px var(--sans);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+/* Slider: black track up to the thumb, grey after it. --fill (0–100) is set
+   by script.js. */
+.calc__slider { --thumb: 24px; --track: #dedede; display: flex; flex-direction: column; gap: 12px; }
+.calc__range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
   height: 8px; /* the track; the thumb overhangs it */
-  margin: 0;
+  margin: 8px 0;
   background: transparent;
   cursor: pointer;
+  touch-action: pan-y; /* a sideways drag moves the thumb, not the page */
 }
 .calc__range::-webkit-slider-runnable-track {
   height: 8px;
   border-radius: 100px;
-  background: linear-gradient(90deg, var(--ink) calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--fill) / 100), var(--white) 0);
+  background: linear-gradient(90deg, var(--ink) calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--fill) / 100), var(--track) 0);
 }
 .calc__range::-moz-range-track {
   height: 8px;
   border-radius: 100px;
-  background: linear-gradient(90deg, var(--ink) calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--fill) / 100), var(--white) 0);
+  background: linear-gradient(90deg, var(--ink) calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--fill) / 100), var(--track) 0);
 }
 .calc__range::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -647,50 +677,75 @@ a { color: inherit; }
 .calc__range:focus-visible::-moz-range-thumb { outline: 2px solid var(--purple-600); outline-offset: 2px; }
 .calc__bounds { display: flex; justify-content: space-between; font: 600 12px/18px var(--sans); color: #5e5e5e; }
 
-.calc__fields { display: flex; flex-direction: column; gap: 16px; }
-.calc__field { display: flex; flex-direction: column; gap: 8px; }
-.calc__field label { font: 600 14px/22px var(--sans); color: #2e2e2e; }
-.calc__field select {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 64px;
-  padding: 0 56px 0 16px;
-  border: 0;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.8) url("assets/ic-chevron-down.svg") right 16px center / 24px 24px no-repeat;
-  color: var(--ink);
-  font: 600 14px/22px var(--sans);
-  cursor: pointer;
-}
-
+/* ---- The base case ---- */
+/* A container, so the numbers and the two smaller results are sized by the
+   room this column has, on any screen. */
 .calc__results {
+  container: calc-results / inline-size;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 48px;
+  gap: 40px;
   padding: 32px 24px 48px;
   text-align: center;
 }
+.calc__results > .eyebrow { color: #5e5e5e; }
 .calc__main { display: flex; flex-direction: column; gap: 8px; }
-.calc__total { font: 400 clamp(44px, 24px + 4.4vw, 80px)/1.075 var(--serif); letter-spacing: -0.2px; }
+.calc__total { font: 400 clamp(34px, 13.5cqw, 80px)/1.075 var(--serif); letter-spacing: -0.2px; white-space: nowrap; }
 .calc__label { font: 400 clamp(16px, 15px + 0.25vw, 18px)/24px var(--sans); }
-.calc__others {
+.calc__facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 24px; margin: 12px 0 0; font: 400 14px/22px var(--sans); }
+.calc__facts div { display: flex; gap: 6px; }
+.calc__facts dt { color: #5e5e5e; }
+.calc__facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Today's cost and the cost with Sword: one under the other in a narrow
+   column, side by side with a line between them in a wide one. */
+.calc__others { display: flex; flex-direction: column; }
+.calc__other { display: flex; flex-direction: column; gap: 8px; padding-block: 28px; border-top: 1px solid rgba(13, 13, 13, 0.12); }
+.calc__other:last-child { padding-bottom: 0; }
+.calc__num { font: 400 clamp(30px, 7cqw, 42px)/1.15 var(--serif); white-space: nowrap; }
+@container calc-results (min-width: 480px) {
+  .calc__others {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+    gap: 32px;
+    border-top: 1px solid rgba(13, 13, 13, 0.12);
+  }
+  .calc__others::before { content: ""; grid-column: 2; grid-row: 1; background: rgba(13, 13, 13, 0.12); }
+  .calc__other { grid-row: 1; padding-block: 44px 0; border-top: 0; }
+  .calc__other:first-child { grid-column: 1; }
+  .calc__other:last-child { grid-column: 3; }
+}
+
+/* ---- The whole model: low, base and high ---- */
+.calc__detail { display: grid; gap: 48px; margin-top: 24px; }
+.calc__table { display: flex; flex-direction: column; gap: 32px; font: 400 14px/20px var(--sans); }
+/* Phones: the label on its own line, the three cases under it. */
+.calc__row {
   display: grid;
-  grid-template-columns: 1fr 1px 1fr;
-  gap: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.4);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 12px;
+  padding-block: 12px;
+  border-bottom: 1px solid rgba(13, 13, 13, 0.12);
+  font-variant-numeric: tabular-nums;
 }
-.calc__others::before {
-  content: "";
-  grid-column: 2;
-  grid-row: 1;
-  background: rgba(255, 255, 255, 0.4);
+.calc__row > :first-child { grid-column: 1 / -1; }
+.calc__row > :nth-child(3) { font-weight: 600; }   /* the base case */
+.calc__row--strong > * { font-weight: 600; }
+.calc__row--head {
+  border-bottom-color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #5e5e5e;
 }
-.calc__other { grid-row: 1; display: flex; flex-direction: column; gap: 8px; padding-top: 32px; }
-.calc__other:first-child { grid-column: 1; }
-.calc__other:last-child { grid-column: 3; }
-.calc__num { font: 400 clamp(32px, 26px + 1.6vw, 42px)/48px var(--serif); }
+.calc__row--head > :first-child { color: var(--ink); }
+
+.calc__messages { display: flex; flex-direction: column; gap: 12px; }
+.calc__messages li { display: flex; flex-direction: column; gap: 4px; padding-block: 16px; border-bottom: 1px solid rgba(13, 13, 13, 0.12); }
+.calc__messages li:first-child { border-top: 1px solid var(--ink); }
+.calc__messages strong { font: 600 14px/20px var(--sans); }
+.calc__messages span { font: 400 14px/1.45 var(--sans); color: #2e2e2e; }
 
 /* ==========================================================================
    Section 6 — what changes (outcomes and economics)
@@ -913,6 +968,11 @@ a { color: inherit; }
   .faq__item summary { padding: 24px 40px; }
   .faq__answer { padding: 0 40px 24px; }
 
+  /* The model as a table: label, then low, base and high in columns. */
+  .calc__row { grid-template-columns: minmax(0, 1fr) repeat(3, minmax(96px, 120px)); gap: 16px; }
+  .calc__row > :first-child { grid-column: auto; }
+  .calc__row > :not(:first-child) { text-align: right; }
+
   .footer { flex-direction: row; justify-content: space-between; text-align: left; }
 }
 
@@ -931,11 +991,9 @@ a { color: inherit; }
 
   .connected { display: grid; grid-template-columns: minmax(0, 431px) minmax(0, 350px); justify-content: space-between; align-items: center; column-gap: 40px; }
 
-  .calc__card { grid-template-columns: minmax(0, 416fr) minmax(0, 698fr); }
+  .calc__card { grid-template-columns: minmax(0, 478fr) minmax(0, 636fr); }
   .calc__inputs { padding: 48px 0 48px 40px; }
   .calc__results { padding: 48px 40px; }
-  .calc__others { gap: 32px; }
-  .calc__other { padding-top: 48px; }
 
   /* Text and controls on the left; the pages run off the right and bottom edges. */
   .whitepaper { min-height: 594px; padding-bottom: 32px; justify-content: space-between; }
@@ -976,9 +1034,9 @@ a { color: inherit; }
   .meet { grid-template-columns: minmax(0, 480fr) minmax(0, 600fr); }
   .meet__card { min-height: 0; }
 
-  .calc__inputs { padding: 64px 0 64px 64px; gap: 64px; }
-  .calc__results { padding: 64px; gap: 64px; }
-  .calc__other { padding-top: 64px; }
+  .calc__inputs { padding: 56px 0 56px 64px; gap: 40px; }
+  .calc__results { padding: 56px 64px; gap: 48px; }
+  .calc__detail { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); column-gap: 64px; align-items: start; }
 
   .outcomes__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .outcomes__item:nth-child(n) { padding-inline: 40px; border-left: 1px solid var(--grey-500); }

@@ -1152,60 +1152,144 @@ const OTHER_RECEIPTS = [
   }, 4500);
 })();
 
-// Savings calculator.
-// PLACEHOLDER MATHS: the real model will come from the Excel sheet. Everything
-// the calculation depends on lives in CALCULATOR, so swapping it in should only
-// mean changing this object and, if needed, calculate().
-const CALCULATOR = {
-  reachRate: 0.5025,        // share of the patients entered who are reached
-  savingsPerPatient: 2578,  // base yearly savings per patient reached, USD
-  // Multipliers on savingsPerPatient per dropdown option (all 1 for now).
-  location: { National: 1, Northeast: 1, Midwest: 1, South: 1, West: 1 },
-  industry: { Finance: 1, Technology: 1, Healthcare: 1, Manufacturing: 1, Retail: 1, 'Public sector': 1 },
-  solution: { 'Musculoskeletal Health': 1, "Women's Health": 1, 'Pelvic Health': 1 },
+// Cost of menopause calculator.
+// The Excel model "Cost of menopause: Sword vs traditional cost" (Client Model
+// and Assumptions sheets), formula for formula. The comments name the cell
+// each line stands for.
+// The Assumptions sheet. Not shown on the page: change the model here.
+const CALCULATOR_ASSUMPTIONS = {
+  specialtyVisits: 1500, // Path A: specialty visits (6 specialties x $250)
+  initialVisit: 250,     // Path A: initial visit and labs
+  followUps: 600,        // Path A: follow-up visits (4 visits)
+  pelvicFloor: 900,      // Path A: external pelvic floor sessions (6 x $150)
+  swordAso: 900,         // Path B: Sword price per woman, ASO (to confirm)
+  swordInsured: 900,     // Path B: Sword price per woman, fully insured (to confirm)
+  share45: 0.17,         // women 45+ as share of eligible lives (default)
+  share40: 0.05,         // women 40-44 as share of eligible lives (default)
+  seekLow: 0.076,        // share of women who seek care, low case
+  seekBase: 0.117,       // share of women who seek care, base case
+  seekHigh: 0.15,        // share of women who seek care, high case
+  swordUse: 1,           // share of care-seeking women who use Sword
 };
 
 (() => {
-  const form = document.querySelector('.calc__inputs');
+  const form = document.querySelector('#calc-inputs');
   if (!form) return;
-  const range = form.querySelector('#calc-patients');
-  const slider = form.querySelector('.calc__slider');
-  const value = form.querySelector('.calc__value');
-  const selects = {
-    location: form.querySelector('#calc-location'),
-    industry: form.querySelector('#calc-industry'),
-    solution: form.querySelector('#calc-solution'),
-  };
-  const out = {};
-  document.querySelectorAll('[data-calc]').forEach((el) => { out[el.dataset.calc] = el; });
+  const section = form.closest('.calc');
+  const field = (id) => section.querySelector(`#${id}`);
+  const funding = field('calc-funding');
+  const lives = field('calc-lives');
+  const livesRange = field('calc-lives-range');
+  const slider = section.querySelector('.calc__slider');
+  const women40 = field('calc-women-40');
+  const women45 = field('calc-women-45');
+  const included = field('calc-included');
 
-  const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
-  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-
-  const calculate = (patients, choice) => {
-    const factor = ['location', 'industry', 'solution']
-      .reduce((f, key) => f * (CALCULATOR[key][choice[key]] ?? 1), 1);
-    const perPatient = CALCULATOR.savingsPerPatient * factor;
-    const reached = Math.round(patients * CALCULATOR.reachRate);
-    return { reached, perPatient, total: reached * perPatient };
+  // Excel number formats: #,##0   $#,##0   $#,##0.00   0.0%   0%
+  const count = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+  const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  const usdCents = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pct1 = new Intl.NumberFormat('en-US', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const pct0 = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 });
+  // Round the way Excel does (on the decimal value: 83.655 is $83.66), not on
+  // the binary fraction behind it.
+  const round = (value, digits) => {
+    const tidy = Number(value.toPrecision(15));
+    if (!Number.isFinite(tidy) || Math.abs(tidy) < 1e-6) return 0;
+    return Number(`${Math.round(Number(`${tidy}e${digits}`))}e-${digits}`);
   };
+  const FORMAT = {
+    women: (v) => count.format(round(v, 0)),
+    included: (v) => count.format(round(v, 0)),
+    swordUsers: (v) => count.format(round(v, 0)),
+    share: (v) => pct1.format(round(v, 3)),
+    savingsPct: (v) => pct1.format(round(v, 3)),
+    pathA: (v) => usd.format(round(v, 0)),
+    pathB: (v) => usd.format(round(v, 0)),
+    costToday: (v) => usd.format(round(v, 0)),
+    costSword: (v) => usd.format(round(v, 0)),
+    savings: (v) => usd.format(round(v, 0)),
+    perLife: (v) => usdCents.format(round(v, 2)),
+  };
+
+  // A whole number typed with or without commas. Blank (or no digits) = null.
+  const wholeNumber = (input) => {
+    const digits = input.value.replace(/[^\d]/g, '');
+    return digits ? Number(digits) : null;
+  };
+
+  // `input`: { funding, lives, women40, women45, included }; women counts are null when blank.
+  // `a`: the assumptions. Returns the low, base and high cases.
+  const calculate = (input, a) => {
+    const pathA = a.specialtyVisits + a.initialVisit + a.followUps + a.pelvicFloor;            // Assumptions!B9
+    const counts = [input.women40, input.women45].filter((n) => n !== null);
+    const women = counts.length === 0
+      ? input.lives * (a.share45 + a.share40)
+      : counts.reduce((sum, n) => sum + n, 0);                                                // B13:D13
+    const pathB = input.funding === 'ASO' ? a.swordAso : a.swordInsured;                      // B24:D24
+    const scenario = (seekShare) => {
+      const share = input.included === 'All women in age bands' ? 1 : seekShare;              // row 14
+      const includedWomen = women * share;                                                     // row 15
+      const costToday = includedWomen * pathA;                                                 // row 19
+      const swordUsers = includedWomen * a.swordUse;                                           // row 23
+      const costSword = swordUsers * pathB + (includedWomen - swordUsers) * pathA;             // row 25
+      const savings = costToday - costSword;                                                   // row 26
+      return {
+        women, share, included: includedWomen, pathA, costToday,
+        perLife: input.lives === 0 ? 0 : costToday / input.lives,                              // row 20
+        swordUsers, pathB, costSword, savings,
+        savingsPct: costToday === 0 ? 0 : savings / costToday,                                 // row 27
+      };
+    };
+    return { low: scenario(a.seekLow), base: scenario(a.seekBase), high: scenario(a.seekHigh) };
+  };
+
+  const outputs = [...section.querySelectorAll('[data-calc]')];
+  const message = {};
+  section.querySelectorAll('[data-calc-msg]').forEach((el) => { message[el.dataset.calcMsg] = el; });
 
   const update = () => {
-    const patients = Number(range.value);
-    const min = Number(range.min);
-    const max = Number(range.max);
-    slider.style.setProperty('--fill', (((patients - min) / (max - min)) * 100).toFixed(2));
-    value.textContent = number.format(patients);
-
-    const result = calculate(patients, {
-      location: selects.location.value,
-      industry: selects.industry.value,
-      solution: selects.solution.value,
+    const a = CALCULATOR_ASSUMPTIONS;
+    const input = {
+      funding: funding.value,
+      lives: wholeNumber(lives) ?? 0,
+      women40: wholeNumber(women40),
+      women45: wholeNumber(women45),
+      included: included.value,
+    };
+    const model = calculate(input, a);
+    outputs.forEach((el) => {
+      el.textContent = FORMAT[el.dataset.calc](model[el.dataset.case || 'base'][el.dataset.calc]);
     });
-    out.total.textContent = money.format(result.total);
-    out.perPatient.textContent = money.format(result.perPatient);
-    out.reached.textContent = number.format(result.reached);
+
+    // The filled part of the slider's track, up to the thumb.
+    const min = Number(livesRange.min);
+    const max = Number(livesRange.max);
+    slider.style.setProperty('--fill', (((Number(livesRange.value) - min) / (max - min)) * 100).toFixed(2));
+    // What a blank women count stands for.
+    women40.placeholder = `Default: ${count.format(round(input.lives * a.share40, 0))}`;
+    women45.placeholder = `Default: ${count.format(round(input.lives * a.share45, 0))}`;
+
+    // Key messages (Client Model!A30:A33, without the client's name).
+    const { low, base, high } = model;
+    message.scale.textContent = `About ${FORMAT.women(base.women)} women are in perimenopause or menopause, out of ${count.format(input.lives)} eligible lives.`;
+    message.today.textContent = `In the base case, ${FORMAT.included(base.included)} of these women are ${input.included === 'All women in age bands' ? 'counted' : 'seeking care'} at an estimated ${FORMAT.pathA(base.pathA)} each, which is ${FORMAT.costToday(base.costToday)} in total, or ${FORMAT.perLife(base.perLife)} per eligible life.`;
+    message.sword.textContent = `The same women cost an estimated ${FORMAT.costSword(base.costSword)} with Sword, a difference of ${FORMAT.savings(base.savings)} (${pct0.format(round(base.savingsPct, 2))}).`;
+    message.range.textContent = `The estimated cost of menopause care today runs from ${FORMAT.costToday(low.costToday)} to ${FORMAT.costToday(high.costToday)} across the low and high cases, with savings of ${FORMAT.savings(low.savings)} to ${FORMAT.savings(high.savings)}.`;
   };
+
+  // Whole-number fields: tidy the commas once the visitor has finished typing.
+  const tidy = (input, blankAllowed) => {
+    const value = wholeNumber(input);
+    input.value = value === null ? (blankAllowed ? '' : '0') : count.format(value);
+  };
+  lives.addEventListener('change', () => tidy(lives, false));
+  [women40, women45].forEach((input) => input.addEventListener('change', () => tidy(input, true)));
+  // The slider and the typed number are the same value. Each one moves the
+  // other, but the slider is never written to while it is the one being used:
+  // some browsers drop the drag when a script sets its value.
+  livesRange.addEventListener('input', () => { lives.value = count.format(Number(livesRange.value)); });
+  lives.addEventListener('input', () => { livesRange.value = wholeNumber(lives) ?? 0; }); // stops at the slider's ends
 
   form.addEventListener('input', update);
   form.addEventListener('change', update);

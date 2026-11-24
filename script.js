@@ -1185,28 +1185,22 @@ const CALCULATOR_ASSUMPTIONS = {
   const women45 = field('calc-women-45');
   const included = field('calc-included');
 
-  // Excel number formats: #,##0   $#,##0   $#,##0.00   0.0%   0%
+  // Excel number formats: #,##0   $#,##0   0.0%
   const count = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
   const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-  const usdCents = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const pct1 = new Intl.NumberFormat('en-US', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  const pct0 = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 0 });
-  // Round the way Excel does (on the decimal value: 83.655 is $83.66), not on
-  // the binary fraction behind it.
+  // Round the way Excel does: on the decimal value, not on the binary
+  // fraction behind it.
   const round = (value, digits) => {
     const tidy = Number(value.toPrecision(15));
     if (!Number.isFinite(tidy) || Math.abs(tidy) < 1e-6) return 0;
     return Number(`${Math.round(Number(`${tidy}e${digits}`))}e-${digits}`);
   };
   const FORMAT = {
-    women: (v) => count.format(round(v, 0)),
-    included: (v) => count.format(round(v, 0)),
     savingsPct: (v) => pct1.format(round(v, 3)),
-    pathA: (v) => usd.format(round(v, 0)),
     costToday: (v) => usd.format(round(v, 0)),
     costSword: (v) => usd.format(round(v, 0)),
     savings: (v) => usd.format(round(v, 0)),
-    perLife: (v) => usdCents.format(round(v, 2)),
   };
 
   // A whole number typed with or without commas. Blank (or no digits) = null.
@@ -1242,8 +1236,6 @@ const CALCULATOR_ASSUMPTIONS = {
   };
 
   const outputs = [...section.querySelectorAll('[data-calc]')];
-  const message = {};
-  section.querySelectorAll('[data-calc-msg]').forEach((el) => { message[el.dataset.calcMsg] = el; });
 
   const update = () => {
     const a = CALCULATOR_ASSUMPTIONS;
@@ -1267,12 +1259,6 @@ const CALCULATOR_ASSUMPTIONS = {
     women40.placeholder = `Default: ${count.format(round(input.lives * a.share40, 0))}`;
     women45.placeholder = `Default: ${count.format(round(input.lives * a.share45, 0))}`;
 
-    // Key messages (Client Model!A30:A33, without the client's name).
-    const { low, base, high } = model;
-    message.scale.textContent = `About ${FORMAT.women(base.women)} women are in perimenopause or menopause, out of ${count.format(input.lives)} eligible lives.`;
-    message.today.textContent = `In the base case, ${FORMAT.included(base.included)} of these women are ${input.included === 'All women in age bands' ? 'counted' : 'seeking care'} at an estimated ${FORMAT.pathA(base.pathA)} each, which is ${FORMAT.costToday(base.costToday)} in total, or ${FORMAT.perLife(base.perLife)} per eligible life.`;
-    message.sword.textContent = `The same women cost an estimated ${FORMAT.costSword(base.costSword)} with Sword, a difference of ${FORMAT.savings(base.savings)} (${pct0.format(round(base.savingsPct, 2))}).`;
-    message.range.textContent = `The estimated cost of menopause care today runs from ${FORMAT.costToday(low.costToday)} to ${FORMAT.costToday(high.costToday)} across the low and high cases, with savings of ${FORMAT.savings(low.savings)} to ${FORMAT.savings(high.savings)}.`;
   };
 
   // Whole-number fields: tidy the commas once the visitor has finished typing.

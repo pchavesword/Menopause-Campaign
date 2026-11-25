@@ -35,10 +35,55 @@
   --sans: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --serif: "Lora", Georgia, "Times New Roman", serif;
 
-  --edge: 10px;                              /* page margin around panels   */
+  /* ---- Design tokens ------------------------------------------------------
+     The same names and 1440 values as the Figma variables (collection
+     "Menopause LP") and text styles ("Menopause LP/..."). Change a value here
+     and in Figma together. The receipts, Sarah's card and the calculator are
+     illustrations or library pieces and keep their own sizes. */
+
+  /* Type: font sizes. Display is Lora at 1.1; body is Figtree at 1.4; labels
+     are Figtree capitals: eyebrows with 5% tracking, buttons SemiBold with none. The clamps bring the big
+     sizes down on small screens; the top value is the design's. */
+  --display-2xl: 80px;                              /* Display/2XL: the calculator result */
+  --display-xl: clamp(40px, 24px + 4.2vw, 64px);    /* Display/XL: opening title, big numerals */
+  --display-l: clamp(36px, 22px + 3vw, 56px);       /* Display/L: hero and full-screen headings; italic for quotes */
+  --display-m: clamp(30px, 22px + 2.2vw, 40px);     /* Display/M: section headings */
+  --display-s: clamp(24px, 20px + 1vw, 28px);       /* Display/S: card titles */
+  --display-xs: 20px;                               /* Display/XS: list headings, at 1.3 */
+  --body-l: 18px;                                   /* Body/L: lead paragraphs */
+  --body-m: 16px;                                   /* Body/M: default paragraph */
+  --body-s: 14px;                                   /* Body/S: text in cards, secondary text */
+  --body-xs: 12px;                                  /* Body/XS: captions, footnotes, footer */
+  --label-m: 15px;                                  /* Label/M: buttons (SemiBold capitals, no tracking) */
+  --label-s: 12px;                                  /* Label/S: eyebrows, tags, counters */
+  --lh-body: 1.4;
+  --tracking-label: 0.05em;
+
+  /* Layout: where sections sit */
+  --layout-page-margin: 20px;                       /* screen edge to the panels */
+  --layout-panel-gap: 20px;                         /* between panels that sit together */
+  --layout-content-inset: 80px;                     /* side padding of a section (content is 1240 wide at 1440); also between the two halves of a split panel */
+  --layout-section-gap: clamp(72px, 8.4vw, 120px);  /* between sections, down to "Meet Sword Women's Health" */
+  --layout-section-gap-lg: clamp(96px, 12.5vw, 180px); /* above every section after it */
+  --layout-column-gap: 24px;                        /* between columns, and between cards in a row */
+  /* Stack: vertical rhythm inside a section */
+  --stack-xl: 48px;                                 /* section heading to the content under it */
+  --stack-lg: 32px;                                 /* eyebrow, heading, paragraph, button */
+  --stack-md: 24px;                                 /* heading to paragraph in a card; between paragraphs */
+  --stack-sm: 16px;                                 /* label and value, list rows */
+  --stack-xs: 8px;                                  /* icon and label, name and role */
+  /* Inset: padding */
+  --inset-panel: 40px;                              /* inside large panels */
+  --inset-card: 32px;                               /* inside cards */
+  --inset-row: 24px;                                /* above and below a row: FAQ rows, footer */
+  /* Radius */
+  --radius-control: 8px;                            /* FAQ rows */
+  --radius-panel: 16px;                             /* panels, cards, video */
+  --radius-feature: 32px;                           /* the calculator in Figma (not used here yet) */
+
+  --edge: 10px;                              /* the page container's own padding; panels reach out to --layout-page-margin */
   --gutter: clamp(20px, 5.47vw, 70px);       /* panel inner padding         */
-  --section-gap: clamp(72px, 8.4vw, 120px);  /* the one gap between every section */
-  --radius: 16px;
+  --inset: clamp(20px, 6.25vw, calc(var(--layout-page-margin) + var(--layout-content-inset) - var(--edge))); /* sections below the panels: content starts 100px in at 1440 */
   --lilac: radial-gradient(ellipse 89.84% 100% at 50% 0, #f2f2f2, #dfcaf2);
 }
 
@@ -50,7 +95,7 @@ body {
   margin: 0;
   background: var(--white);
   color: var(--ink);
-  font: 400 16px/1.4 var(--sans);
+  font: 400 var(--body-m)/var(--lh-body) var(--sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-wrap: break-word;
@@ -73,7 +118,7 @@ a { color: inherit; }
 
 .page { max-width: 1440px; margin-inline: auto; padding: var(--edge) var(--edge) 0; }
 
-.panel { position: relative; border-radius: var(--radius); padding-inline: var(--gutter); }
+.panel { position: relative; border-radius: var(--radius-panel); padding-inline: var(--gutter); }
 .panel--lilac { background: var(--lilac); }
 
 /* Wide panels (hero, section 2): the background runs out to 20px from the
@@ -82,7 +127,7 @@ a { color: inherit; }
    --bleed is how far the panel reaches past the page's content edge. */
 :root {
   --vw: 100vw;
-  --wide-inset: 20px;   /* space between a wide panel and the screen edge, and below the hero */
+  --wide-inset: var(--layout-page-margin);   /* space between a wide panel and the screen edge, and below the hero */
   --bleed: calc((var(--vw) - min(var(--vw), 1440px)) / 2 + var(--edge) - var(--wide-inset));
   --panel-w: calc(min(var(--vw), 1440px) - 2 * var(--edge)); /* a regular panel's width */
   /* Right-hand column that holds the receipts in section 2 and the card in section 3 */
@@ -93,8 +138,9 @@ a { color: inherit; }
   padding-inline: max(20px, calc(var(--bleed) + var(--gutter))); /* lines up with the page; at least 20px on phones */
 }
 
-.wrap { margin-inline: var(--gutter); }
-.section { margin-top: var(--section-gap); }
+.wrap { margin-inline: var(--inset); }
+.section { margin-top: var(--layout-section-gap); }
+.meet ~ .section { margin-top: var(--layout-section-gap-lg); }
 .section--tight { margin-top: clamp(56px, 6.25vw, 80px); }
 
 .rule { display: block; width: 100%; height: 1px; }
@@ -106,42 +152,46 @@ a { color: inherit; }
 .display {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(30px, 22px + 2.2vw, 40px);
+  font-size: var(--display-m);
   line-height: 1.1;
 }
 .display--italic { font-style: italic; }
 .display--loose { line-height: 1.2; }
 
-.eyebrow { font-size: 12px; font-weight: 500; line-height: 1.2; letter-spacing: 0.6px; text-transform: uppercase; }
-.note { font-size: 12px; line-height: 1.4; color: var(--grey-600); }
-.small { font-size: 14px; line-height: 1.4; }
+.eyebrow { font-size: var(--label-s); font-weight: 500; line-height: 1.2; letter-spacing: var(--tracking-label); text-transform: uppercase; }
+.note { font-size: var(--body-xs); line-height: 1.4; color: var(--grey-600); }
+.small { font-size: var(--body-s); line-height: 1.4; }
 
 .stat__num {
   font-family: var(--serif);
-  font-size: clamp(40px, 24px + 4.2vw, 64px);
+  font-size: var(--display-xl);
   line-height: 1.1;
 }
 
-/* ---------- Button ---------- */
+/* ---------- Button ----------
+   Figma "Button": 43px high (16px above and below the trimmed label), 20px at
+   the sides, 4px corners, no border. Primary (.btn) is black and goes to pure
+   black on hover; Secondary (.btn--secondary) is frosted off-white and goes
+   solid on hover. */
 
 .btn {
   display: inline-block; /* block container, so the text-box trim applies */
-  padding: 12px;
-  border: 1px solid var(--ink);
-  border-radius: 8px;
+  padding: 16px 20px;
+  border: 0;
+  border-radius: 4px;
   background: var(--ink);
   color: var(--white);
-  font: 400 14px/1.2 var(--sans);
-  letter-spacing: 0.7px;
+  font: 600 var(--label-m)/1.2 var(--sans);
+  letter-spacing: 0;
   text-transform: uppercase;
   text-decoration: none;
   text-align: center;
   white-space: nowrap;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
-.btn:hover { background: var(--white); color: var(--ink); }
+.btn:hover { background: #000; }
 @supports not (text-box: trim-both cap alphabetic) {
-  .btn { padding-block: 8px; }
+  .btn { padding-block: 12px; }
 }
 
 /* ---------- Blurred texture backgrounds ----------
@@ -172,9 +222,9 @@ a { color: inherit; }
 .tex--offset img { left: 17.83%; top: -2.46%; }
 
 
-/* Outline button: white with a black border; inverts on hover. */
-.btn--outline { background: var(--white); color: var(--ink); }
-.btn--outline:hover { background: var(--ink); color: var(--white); }
+/* Secondary button: frosted off-white; goes solid on hover. */
+.btn--secondary { background: rgba(250, 250, 250, 0.9); color: var(--ink); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.btn--secondary:hover { background: #fafafa; }
 
 .md-up { display: none; }
 
@@ -225,10 +275,16 @@ a { color: inherit; }
 .site-header .logo { margin-top: 9px; }
 
 /* ==========================================================================
-   Section 1 — hero (centred title)
+   Section 1 — hero: the end of the receipt hangs down from the top, in the
+   middle; the copy is centred under it, in the lower half
    ========================================================================== */
 
 .hero {
+  /* Its own stacking order: section 2 comes later in the page, so the receipt
+     that leaves the hero to tear passes in front of the headline, not behind. */
+  isolation: isolate;
+  --end: calc((100svh - 30px) * 0.4); /* how far down the hero the receipt's end hangs: 40% of its height on phones */
+  --paper-start: 0.22;                /* intro: where the top of the paper starts, as a share of the hero's height */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -237,42 +293,123 @@ a { color: inherit; }
   background: var(--white);
   /* Fills the screen (less the page margin above and the gap below). */
   min-height: calc(100svh - var(--edge) - var(--wide-inset));
-  padding-block: 120px 140px;
+  padding-block: 120px 56px;
   text-align: center;
 }
+/* With the receipt (script.js): the copy starts just under its end, about
+   60% of the way down on wider screens. */
+.js .hero { justify-content: flex-start; padding-top: calc(var(--end) + clamp(28px, 5.4svh, 48px)); }
 .hero__copy {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(28px, 3.4vw, 43px);
-  max-width: 585px;
+  gap: var(--stack-md);
+  max-width: 645px;
 }
 .hero__title {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(40px, 24px + 3.6vw, 69.43px);
+  font-size: var(--display-l);
   line-height: 1.1;
   text-wrap: balance;
 }
-.hero__cta { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.hero__sub { max-width: 503px; }
+.hero__cta { display: flex; flex-direction: column; align-items: center; gap: var(--stack-sm); }
+
+/* The receipt. script.js copies Sarah's receipt into .hero__slot (so none of
+   this shows without it) and plays the intro. It is 459px wide, as it is
+   when the page opens. At rest only its end shows: the rest of it runs out
+   of the top of the hero. */
+.hero__stage { display: none; }
+.js .hero__stage { display: block; position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.hero__slot {
+  --w: min(459px, 86%);
+  position: absolute;
+  left: calc(50% - var(--w) / 2);
+  bottom: calc(100% - var(--end));
+  width: var(--w);
+}
+/* script.js moves the receipt during the intro */
+.hero__mover { transform-origin: 0 0; }
+
+/* Intro, step 1: the background comes in first (the `intro-pre` class is set
+   in <head> and removed by script.js). */
+.hero .tex-bg { transition: opacity 1s ease; }
+html.intro-pre .hero .tex-bg { opacity: 0; transition: none; }
+
+/* Intro, step 2: the title, "The hidden costs of menopause". Once the
+   background is on its way, script.js switches the words on one after the
+   other (`is-on`): each one simply appears, no fade. When the paper feeds up,
+   script.js moves the title up with it, out of the top of the hero. On phones
+   and tablets it is two centred lines just above the paper; on desktop see
+   the 1024px rules. */
+.intro-title {
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc((1 - var(--paper-start)) * 100% + clamp(18px, 3.4svh, 32px));
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(28px, 8.4vw, 48px);
+  line-height: 1.1;
+  text-align: center;
+  text-box: none;
+  color: var(--ink);
+}
+.intro-title__part { display: block; white-space: nowrap; }
+.intro-title__word { display: inline-block; visibility: hidden; }
+.intro-title__word.is-on { visibility: visible; }
+
+/* A small, quiet button in the bottom left corner of the hero that plays the
+   intro again (script.js adds it). Barely there until it is pointed at. */
+.intro-replay {
+  position: absolute;
+  z-index: 3;
+  left: 16px;
+  bottom: 16px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(13, 13, 13, 0.25);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink);
+  opacity: 0.2;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+.intro-replay:hover,
+.intro-replay:focus-visible { opacity: 1; }
+html.intro-hold .intro-replay { opacity: 0; pointer-events: none; }
+
+/* Intro, last step: until the receipt is nearly home, the navbar, the hero
+   copy and the scroll cue are held back (the `intro-hold` class is set in
+   <head> and removed by script.js). They then fade in the usual way. */
+html.intro-hold .site-header,
+html.intro-hold .hero__copy > *,
+html.intro-hold .scroll-cue { opacity: 0; transform: translateY(24px); pointer-events: none; }
+html.intro-hold .site-header__inner > * { pointer-events: none; }
 
 /* Scroll indicator: bottom centre of the hero, a line with a light running down it. */
 .scroll-cue {
   position: absolute;
   z-index: 1;
   left: 50%;
-  bottom: clamp(28px, 5svh, 48px);
-  transform: translateX(-50%);
-  display: flex;
+  bottom: clamp(16px, 3svh, 28px);
+  margin-left: -25px; /* centred without a transform, so it can fade in like the copy */
+  width: 50px;
+  display: none; /* phones and short screens: no room for it under the copy */
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: var(--stack-xs);
   color: var(--ink);
   text-decoration: none;
 }
-.scroll-cue__label { font: 500 11px/1 var(--sans); letter-spacing: 1.6px; text-transform: uppercase; text-box: none; }
+.scroll-cue__label { font: 500 var(--label-s)/1 var(--sans); letter-spacing: var(--tracking-label); text-transform: uppercase; text-box: none; }
 .scroll-cue__line {
   position: relative;
   overflow: hidden;
@@ -299,11 +436,11 @@ a { color: inherit; }
 }
 
 /* ==========================================================================
-   Section 2 — Meet Sarah + receipt + "Sarah isn't alone"
+   Section 2 — Meet Sarah + receipt + "The problem"
    ========================================================================== */
 
 .sarah {
-  margin-top: var(--wide-inset);
+  margin-top: var(--layout-panel-gap);
   padding-block: 56px;
   display: flex;
   flex-direction: column;
@@ -311,7 +448,24 @@ a { color: inherit; }
 }
 .sarah__top { display: flex; flex-direction: column; gap: 40px; }
 .sarah__copy { display: flex; flex-direction: column; gap: 40px; }
-.sarah__intro, .sarah__outro { display: flex; flex-direction: column; gap: 24px; }
+.sarah__intro { display: flex; flex-direction: column; gap: var(--stack-md); }
+/* Her story: two paragraphs, a blank line apart, as in the design. */
+.sarah__story { display: flex; flex-direction: column; gap: 2.1em; }
+/* "MEET (photo) Sarah" */
+.meet-kicker { display: flex; align-items: center; gap: var(--stack-xs); font: 500 var(--label-s)/1.2 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; }
+.meet-kicker__who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px 4px 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: var(--body-m);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.meet-kicker__who img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 
 /* The window the receipt is seen through. The receipt is more than four times
    as tall as it is wide, so only its lower part shows (the claims summary);
@@ -329,6 +483,45 @@ a { color: inherit; }
   mask-image: linear-gradient(transparent, #000 56px);
 }
 .receipt-morph { flex: none; width: min(100%, 371px); }
+
+/* Sarah's receipt torn in half (script.js builds this): the top half on the
+   left, the bottom half on the right, so the whole year shows at once.
+   script.js works out where the receipt tears and, from that, sets each
+   half's height and torn edge (a clip-path), where it sits from the top
+   (--py) and the shape of the box. Everything is placed in % of that box,
+   636 wide in the design, so it scales as one picture.
+   --dx/--dy/--r/--s: script.js, while the hero's receipt tears into this.
+   --wx/--wy/--wr: the paper's small shifts. */
+.receipt-window.is-torn {
+  display: block;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.is-torn .receipt-morph { width: 100%; max-width: 636px; margin-inline: auto; }
+.halves { position: relative; width: 100%; aspect-ratio: 636 / 770; container-type: inline-size; }
+.half {
+  --fu: calc(46.76cqw / 371); /* the same unit as a receipt's --u */
+  position: absolute;
+  left: calc(var(--px) * 1%);
+  top: calc(var(--py, 0) * 1%);
+  width: 46.76%;
+  transform-origin: 0 0;
+  transform:
+    translate(calc(var(--dx, 0px) + var(--wx, 0px)), calc(var(--dy, 0px) + var(--wy, 0px)))
+    rotate(calc(var(--r) + var(--wr, 0deg)))
+    scale(var(--s, 1));
+  filter: drop-shadow(0 calc(var(--fu) * 8) calc(var(--fu) * 20) rgba(42, 12, 78, 0.2));
+}
+.half--top { --px: 1.011; --r: -1.2deg; }
+.half--bottom { --px: 51.887; --r: 2deg; }
+/* Each half shows its own stretch of the receipt, cut along the torn edge. */
+.half__clip { position: relative; overflow: hidden; aspect-ratio: 371 / 860; }
+.half--bottom .receipt { position: absolute; left: 0; bottom: 0; }
+.halves .receipt__feed { filter: none; }
 
 /* Receipt. Everything inside is sized in --u (1/371 of the receipt's width),
    so the same markup works at any size: Sarah's, and the small ones in the
@@ -349,18 +542,21 @@ a { color: inherit; }
   transform: translate(var(--jx, 0px), var(--jy, 0px)) rotate(var(--jr, 0deg));
   transform-origin: 50% 100%;
 }
-/* The paper itself. --flip mirrors the creases now and then; --shade dims the
-   receipts further back in the collage. */
-.receipt__sheet {
-  position: absolute;
-  inset: 0 0 0.26% 0;
-  background: url("assets/receipt-paper.png") center / 100% 100% no-repeat;
-  transform: scaleX(var(--flip, 1));
-}
+/* The paper itself: the picture of it (::before), then a tint (::after).
+   --flip mirrors the creases now and then; --shade dims the receipts further
+   back in the collage. script.js clips the sheet (clip-path) so its long
+   sides are a little uneven, as if cut by hand; that outline stays put when
+   the creases flip. */
+.receipt__sheet { position: absolute; inset: 0 0 0.26% 0; }
+.receipt__sheet::before,
 .receipt__sheet::after {
   content: "";
   position: absolute;
   inset: 0;
+  transform: scaleX(var(--flip, 1));
+}
+.receipt__sheet::before { background: url("assets/receipt-paper.png") center / 100% 100% no-repeat; }
+.receipt__sheet::after {
   background: rgb(96 64 150 / var(--shade, 0));
   -webkit-mask: url("assets/receipt-paper.png") center / 100% 100% no-repeat;
   mask: url("assets/receipt-paper.png") center / 100% 100% no-repeat;
@@ -447,12 +643,16 @@ a { color: inherit; }
   background: linear-gradient(#fdfcfe, #fff 16%, #f1edf6 48%, #d9d2e6 84%, #c8bfd9);
 }
 
-/* "Sarah isn't alone" stats */
-.sarah__problem { display: flex; flex-direction: column; gap: 48px; }
-.problem { display: flex; flex-direction: column; gap: 20px; }
-.problem__kicker { font: 400 16px/1.1 var(--serif); text-transform: uppercase; }
-.stat { display: flex; flex-direction: column; gap: 24px; }
-.stat__text { display: flex; flex-direction: column; gap: 24px; max-width: 400px; }
+/* "The problem": heading, three stats, closing line */
+.sarah__problem { display: flex; flex-direction: column; gap: var(--stack-xl); }
+.problem { display: flex; flex-direction: column; gap: clamp(40px, 5vw, 60px); }
+.problem__head, .problem__stats { display: flex; flex-direction: column; gap: 20px; }
+.problem__stats { max-width: 423px; }
+.problem__close { padding-top: clamp(0px, 4vw, 60px); font: 400 var(--display-s)/1.1 var(--serif); }
+/* Each stat: the number, then what it measures beside it */
+.stat { display: flex; align-items: flex-start; gap: var(--layout-column-gap); }
+.problem .stat__num { flex: none; font-size: clamp(36px, 24px + 2.4vw, 48px); letter-spacing: -0.04em; }
+.stat__text { flex: 1; min-width: 0; max-width: 400px; font-size: var(--body-s); line-height: 1.4; }
 
 /* Collage of other people's receipts, built by script.js. Each .piece is
    placed in % of the collage (--x, --y, --w), so the whole picture scales. On
@@ -473,6 +673,8 @@ a { color: inherit; }
   transform: translate(var(--dx, 0px), var(--dy, 0px)) rotate(var(--r, 0deg)) scale(var(--s, 1));
 }
 .piece .receipt__feed { filter: drop-shadow(0 calc(var(--u) * 10) calc(var(--u) * 26) rgba(42, 12, 78, 0.26)); }
+.piece .halves .receipt__feed { filter: none; }
+.piece .half { filter: drop-shadow(0 calc(var(--fu) * 10) calc(var(--fu) * 26) rgba(42, 12, 78, 0.26)); }
 
 /* A receipt crumpled up: three pictures (folded, scrunched, ball) that
    script.js paints on canvases and shows one after the other. Once it is a ball it moves to
@@ -495,42 +697,93 @@ a { color: inherit; }
 
 /* ==========================================================================
    Section 3 — one intake, one care team, one record
+   As wide and as tall as the hero, with the blurred texture on the right. The
+   texture is not clipped to the section: it sits behind the page and runs on
+   past the section's edges, above, below and off the side of the screen.
    ========================================================================== */
 
-.connected { display: flex; flex-direction: column; gap: 48px; }
-.connected__copy { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; max-width: 431px; }
+.connected {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-xl);
+  padding-block: var(--inset-panel);
+}
+/* The layer reaches the edges of the screen, where it is cut off (so the page
+   never scrolls sideways); above and below, nothing cuts it. */
+.connected .tex-bg { inset-inline: calc(-1 * var(--wide-inset)); z-index: -1; overflow-x: clip; overflow-y: visible; border-radius: 0; }
+/* Content lines up with the sections below (--inset), not with the hero. */
+.connected.panel--bleed { padding-inline: max(20px, calc(var(--bleed) + var(--inset))); }
+.connected > :not(.tex-bg) { position: relative; z-index: 1; }
+.connected__copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--stack-lg); max-width: 514px; }
+.connected__copy .display { font-size: var(--display-l); }
 .connected__copy > p:not(.eyebrow) { max-width: 410px; }
-.connected__kicker { color: #f00; } /* red in the design: likely a placeholder line */
+.connected__visual { display: flex; justify-content: center; }
 
-/* Sarah's card (Marketing Kit "Signal detected"). The kit card is 280px wide;
-   --k shows it a little larger here. */
+/* Sarah's card: her one record. Whose record it is (Sword's, dated like her
+   receipt), who she is, why she came (quiet, in a line), the plan (the point
+   of the card, in a tinted block) and a summary set like the totals of a
+   receipt. Built on the Marketing Kit's "Signal detected" card; the kit's
+   type is scaled by --k. */
 .signal-card {
   --k: 1.25;
   display: flex;
   flex-direction: column;
-  gap: calc(12px * var(--k));
-  width: calc(280px * var(--k));
+  gap: calc(16px * var(--k));
+  width: 368px;
   max-width: 100%;
-  margin-inline: auto;
-  padding: calc(16px * var(--k));
-  border: 1px solid rgba(255, 255, 255, 0.95);
+  padding: calc(16px * var(--k)) calc(22.4px * var(--k));
+  border: 1.25px solid rgba(255, 255, 255, 0.95);
   border-radius: calc(16px * var(--k));
   background: rgba(255, 255, 255, 0.86);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 6px 17px rgba(13, 13, 13, 0.07);
+  -webkit-backdrop-filter: blur(25px);
+  backdrop-filter: blur(25px);
+  box-shadow: 0 7.5px 21px rgba(13, 13, 13, 0.07);
 }
 .signal-card :where(p, span, li) { text-box: none; }
-.signal-card__head { display: flex; align-items: center; gap: calc(10px * var(--k)); }
-.signal-card__photo { flex: none; width: calc(32px * var(--k)); height: calc(32px * var(--k)); border-radius: 50%; }
-.signal-card__who { display: flex; flex-direction: column; gap: calc(1px * var(--k)); }
-.signal-card__name { font: 500 calc(14px * var(--k)) / 1.2 var(--sans); }
-.signal-card__role { font: 400 calc(13px * var(--k)) / 1.4 var(--sans); color: #5e5e5e; }
-.signal-card__rule { height: 1px; margin-top: -1px; background: #dbdbdb; }
-.signal-card__eyebrow { font: 500 calc(11px * var(--k)) / 1.2 var(--sans); letter-spacing: calc(0.8px * var(--k)); color: #e05555; text-transform: uppercase; white-space: nowrap; }
-.signal-card__list { display: flex; flex-direction: column; gap: calc(6px * var(--k)); }
-.signal-card__list li { display: flex; align-items: center; gap: calc(8px * var(--k)); font: 400 calc(13px * var(--k)) / 1.4 var(--sans); }
-.signal-card__list li::before { content: ""; flex: none; width: calc(6px * var(--k)); height: calc(6px * var(--k)); border-radius: 50%; background: #ef6c6c; }
+.signal-card__top { display: flex; align-items: center; justify-content: space-between; gap: calc(12px * var(--k)); }
+.signal-card__logo { flex: none; width: calc(59px * var(--k)); height: auto; }
+.signal-card__date { font: 400 calc(10.4px * var(--k)) / 1 var(--sans); color: #808080; white-space: nowrap; }
+.signal-card__head { display: flex; align-items: center; gap: calc(10.4px * var(--k)); }
+.signal-card__photo { flex: none; width: calc(27.6px * var(--k)); height: calc(27.6px * var(--k)); border-radius: 50%; }
+.signal-card__who { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: calc(8px * var(--k)); }
+.signal-card__name { font: 500 calc(14.4px * var(--k)) / 1.2 var(--sans); white-space: nowrap; }
+.signal-card__role { font: 400 calc(12.8px * var(--k)) / 1.4 var(--sans); color: #5e5e5e; white-space: nowrap; }
+.signal-card__rule { height: 1.25px; margin-top: -1.25px; background: #dbdbdb; }
+.signal-card__block { display: flex; flex-direction: column; gap: calc(9px * var(--k)); }
+.signal-card__eyebrow { font: 500 calc(11px * var(--k)) / 1.2 var(--sans); letter-spacing: calc(0.8px * var(--k)); text-transform: uppercase; white-space: nowrap; }
+.signal-card__eyebrow--alert { color: #e05555; }
+.signal-card__eyebrow--quiet { color: #5e5e5e; }
+
+/* Reasons for visit run on as one line of text; a reason never breaks in two,
+   and the dot that follows it stays with it at the end of the line. */
+.signal-card__reasons { font: 400 calc(12px * var(--k)) / 1.5 var(--sans); color: #5e5e5e; }
+.signal-card__reasons li { display: inline; white-space: nowrap; }
+.signal-card__reasons li:not(:last-child)::after { content: "\00a0·"; color: #ef6c6c; font-weight: 700; }
+
+.signal-card__plan { gap: calc(12px * var(--k)); padding: calc(14px * var(--k)); border-radius: calc(10px * var(--k)); background: rgba(153, 87, 214, 0.09); }
+.signal-card__steps { display: flex; flex-direction: column; gap: calc(9px * var(--k)); }
+.signal-card__steps li { display: flex; align-items: center; gap: calc(8px * var(--k)); font: 500 calc(14px * var(--k)) / 1.3 var(--sans); }
+.signal-card__steps li::before {
+  content: "";
+  flex: none;
+  width: calc(11.2px * var(--k));
+  height: calc(11.2px * var(--k));
+  border-radius: 50%;
+  background: var(--purple-600) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.7 8.3l2.2 2.2 4.4-4.8'/%3E%3C/svg%3E") center / 100% no-repeat;
+}
+.signal-card__steps small { font-size: calc(12px * var(--k)); font-weight: 400; color: #5e5e5e; white-space: nowrap; }
+
+.signal-card__summary { display: flex; flex-direction: column; gap: calc(5px * var(--k)); margin: 0; font: 400 calc(13px * var(--k)) / 1.4 var(--sans); }
+.signal-card__summary > div { display: flex; align-items: baseline; justify-content: space-between; gap: calc(12px * var(--k)); }
+.signal-card__summary dt { color: #5e5e5e; }
+.signal-card__summary dd { font-weight: 500; text-align: right; }
+
+/* On a phone the card is narrower than the kit's: smaller type, so the name
+   and her age share a line, and the reasons flow as ordinary text. */
+@media (max-width: 479px) {
+  .signal-card { --k: 1.05; }
+  .signal-card__reasons li { white-space: normal; }
+}
 
 /* The card fades up from below, slowly and smoothly: the opposite of the
    stop-motion receipts above it. script.js adds .is-visible. */
@@ -543,29 +796,31 @@ a { color: inherit; }
 
 /* ==========================================================================
    Section 4 — Meet Sword Women's Health
+   One wide panel: copy on the left, the app and the Bloom pod on the right.
    ========================================================================== */
 
-.meet { display: grid; gap: 40px; }
 .meet__card {
-  position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  min-height: 380px;
-  padding: 32px;
-  border-radius: var(--radius);
-  background: var(--white);
+  gap: var(--stack-xl);
+  padding-block: var(--inset-panel) 0;
+  background: var(--white) url("assets/meet-bg.jpg") center / cover no-repeat;
 }
-.meet__card > :not(.tex-bg) { position: relative; z-index: 1; }
-.meet__body { display: flex; flex-direction: column; gap: 40px; }
+/* Content lines up with the sections below (--inset). */
+.meet__card.panel--bleed { padding-inline: max(20px, calc(var(--bleed) + var(--inset))); }
+.meet__copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--stack-xl); max-width: 540px; }
+.meet__intro { display: flex; flex-direction: column; gap: var(--stack-md); }
 
-.points li { display: flex; flex-direction: column; gap: 24px; padding-block: 32px; border-top: 1px solid var(--grey-500); }
-.points li:first-child { padding-top: 0; border-top: 0; }
-.points li:last-child { padding-bottom: 0; }
-.points h3 { font: 400 24px/1.1 var(--serif); }
+/* Each point: the old way struck through and faded, then the Sword way. */
+.points { align-self: stretch; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--stack-lg) var(--layout-column-gap); }
+.points li { display: flex; flex-direction: column; gap: var(--stack-sm); }
+.points h3, .points__was { font: 400 var(--display-xs)/1.3 var(--serif); }
+.points__was { opacity: 0.3; }
+.points__was s { text-decoration-thickness: 1px; }
+.points li > p:last-child { font-size: var(--body-s); line-height: 1.4; }
 
-.callout { display: flex; justify-content: flex-end; align-items: center; min-height: 100px; padding: 32px; border-radius: var(--radius); }
+.meet__visual { align-self: center; width: min(600px, 100%); height: auto; margin-bottom: 26px; }
 
 /* ==========================================================================
    Section 5 — savings calculator
@@ -574,7 +829,7 @@ a { color: inherit; }
 .calc { display: flex; flex-direction: column; gap: 24px; }
 .calc__card {
   display: grid;
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   background: radial-gradient(130% 120% at 65% 45%, var(--white) 60%, #f2f2f2);
   box-shadow: inset 0 0 0 1px rgba(13, 13, 13, 0.03);
 }
@@ -691,7 +946,7 @@ a { color: inherit; }
 }
 .calc__results > .eyebrow { color: #5e5e5e; }
 .calc__main { display: flex; flex-direction: column; gap: 8px; }
-.calc__total { font: 400 clamp(34px, 13.5cqw, 80px)/1.075 var(--serif); letter-spacing: -0.2px; white-space: nowrap; }
+.calc__total { font: 400 clamp(34px, 13.5cqw, var(--display-2xl))/1.075 var(--serif); letter-spacing: -0.2px; white-space: nowrap; }
 .calc__label { font: 400 clamp(16px, 15px + 0.25vw, 18px)/24px var(--sans); }
 .calc__facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 24px; margin: 12px 0 0; font: 400 14px/22px var(--sans); }
 .calc__facts div { display: flex; gap: 6px; }
@@ -720,31 +975,67 @@ a { color: inherit; }
    Section 6 — what changes (outcomes and economics)
    ========================================================================== */
 
-.outcomes { display: flex; flex-direction: column; gap: 40px; }
+.outcomes { display: flex; flex-direction: column; gap: var(--stack-xl); }
 .outcomes__grid { display: grid; }
-.outcomes__item { display: flex; flex-direction: column; gap: 24px; }
-.outcomes__item + .outcomes__item { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--grey-500); }
+.outcomes__item { display: flex; flex-direction: column; gap: var(--stack-md); }
+.outcomes__item + .outcomes__item { margin-top: var(--stack-lg); padding-top: var(--stack-lg); border-top: 1px solid var(--grey-500); }
 .outcomes__note { max-width: 470px; }
 
 /* ==========================================================================
    Section 7 — the women behind the claims
+   A carousel that moves side to side: a scroll-snapping row of three slides.
+   The first is a quote beside the member video; the other two are a quote on
+   its own. script.js moves it on when the bar under it has filled, and on a
+   click on a bar; it can also be swiped or scrolled sideways.
    ========================================================================== */
 
-.voices { display: flex; flex-direction: column; gap: 40px; }
-.voices__feature { display: flex; flex-direction: column; gap: 32px; }
-.voices__lead { display: flex; flex-direction: column; gap: 24px; }
-.byline { font-size: 14px; line-height: 1.4; }
-.byline strong { font-weight: 600; }
+.voices { display: flex; flex-direction: column; gap: var(--stack-xl); }
+.voices__carousel { display: flex; flex-direction: column; gap: var(--stack-md); }
+.voices__track {
+  display: flex;
+  gap: var(--stack-xl);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.voices__track::-webkit-scrollbar { display: none; }
+.voices__track:focus-visible { outline-offset: 4px; }
+.voices__slide { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: center; gap: var(--stack-lg); }
 
-.voices__quotes { display: grid; gap: 40px; }
-.quote { display: flex; flex-direction: column; gap: 24px; padding-left: 24px; border-left: 1px solid var(--grey-500); }
-.quote blockquote { font: italic 400 clamp(22px, 16px + 1.6vw, 28px)/1.2 var(--serif); }
+.voice { display: flex; flex-direction: column; align-items: flex-start; gap: var(--stack-lg); }
+.voice__mark { width: 29px; height: 27px; margin-bottom: -8px; }
+.voice__quote { max-width: 446px; font: italic 400 var(--display-l)/1.1 var(--serif); }
+/* A quote on its own: across the page, a little smaller so it stays a few lines */
+.voice--solo { max-width: 960px; }
+.voice--solo .voice__quote { max-width: none; font-size: clamp(26px, 16px + 2vw, 40px); line-height: 1.15; }
+.byline { font-size: var(--body-s); font-weight: 600; line-height: 1.4; }
+.byline span { display: block; max-width: 520px; margin-top: 12px; font-weight: 400; color: var(--grey-600); }
 
-.video { position: relative; overflow: hidden; border-radius: var(--radius); background: #aaa; }
+/* One bar per slide: 48 × 2px, with room around it to click. The bar of the
+   slide on show fills up over --turn (script.js moves on when it is full).
+   Needs script.js, so it only shows under the `js` class. */
+.voices__progress { display: none; }
+.js .voices__progress { display: flex; gap: var(--stack-xs); }
+.voices__bar { position: relative; width: 48px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; }
+.voices__bar::before, .voices__bar span { content: ""; position: absolute; left: 0; top: 12px; width: 100%; height: 2px; }
+.voices__bar::before { background: #c2c2c2; }
+.voices__bar span { background: var(--ink); transform: scaleX(0); transform-origin: 0 50%; }
+.voices__bar.is-done span { transform: scaleX(1); }
+.voices__bar.is-active span { animation: voice-turn var(--turn, 7s) linear forwards; }
+.voices.is-paused .voices__bar.is-active span { animation-play-state: paused; }
+@keyframes voice-turn { to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .voices__track { scroll-behavior: auto; }
+  .voices__bar.is-active span { animation: none; transform: scaleX(1); }
+}
+
+.video { position: relative; overflow: hidden; border-radius: var(--radius-panel); background: #aaa; }
 .video__poster, .video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.video--member { aspect-ratio: 724 / 500; }
-/* Same crop as the design: image zoomed to 124.7% of the frame, anchored left. */
-.video--member .video__poster { inset: -50.8% auto auto 0; width: 124.72%; height: auto; max-width: none; object-fit: fill; }
+.video video { border-radius: inherit; background: #000; } /* Safari doesn't always clip a video to its frame's corners */
+/* The film's own shape (16:9), so its titles and subtitles are never cut off. */
+.video--member { aspect-ratio: 16 / 9; }
 
 .play {
   position: absolute;
@@ -753,17 +1044,18 @@ a { color: inherit; }
   transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 38px;
+  height: 38px;
   padding: 0;
-  border: 1px solid var(--ink);
-  border-radius: 8px;
+  border: 0;
+  border-radius: 50%;
   background: var(--white);
   cursor: pointer;
   transition: transform 0.2s ease;
 }
-.play:hover { transform: translate(-50%, -50%) scale(1.06); }
-.play img { width: 32px; height: 32px; }
+.play:hover { transform: translate(-50%, -50%) scale(1.08); }
+.play:active { transform: translate(-50%, -50%) scale(0.95); }
+.play img { width: 12px; height: 12px; margin-left: 2px; }
 
 /* ==========================================================================
    Section 8 — whitepaper feature
@@ -775,12 +1067,16 @@ a { color: inherit; }
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 32px;
-  padding: 32px 32px 0;
-  border-radius: var(--radius);
+  gap: var(--stack-lg);
+  padding: var(--inset-card) var(--inset-card) 0;
+  border-radius: var(--radius-panel);
 }
-.whitepaper__text { display: flex; flex-direction: column; gap: 24px; max-width: 367px; }
-.whitepaper__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; width: 100%; }
+.whitepaper__text { display: flex; flex-direction: column; gap: var(--stack-md); max-width: 424px; }
+.whitepaper__text .eyebrow { font-weight: 700; }
+/* What is inside: a short bulleted list, each point led by a few words in bold. */
+.whitepaper__points { display: flex; flex-direction: column; gap: var(--stack-xs); max-width: 367px; padding-left: 21px; list-style: disc; }
+.whitepaper__points strong { font-weight: 700; }
+.whitepaper__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--stack-sm); width: 100%; }
 
 /* Page carousel: a scroll-snapping row of pages; the next page peeks in.
    script.js wires up the arrows, the counter and a slow autoplay. */
@@ -801,6 +1097,7 @@ a { color: inherit; }
   scroll-snap-align: start;
 }
 .wp-carousel__slide img { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 28px rgba(42, 12, 78, 0.12); }
+/* Figma "carousel controls": the Secondary button's look on 36px circles. */
 .wp-carousel__controls { display: flex; align-items: center; gap: 12px; }
 .wp-carousel__btn {
   display: grid;
@@ -808,14 +1105,17 @@ a { color: inherit; }
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid var(--ink);
+  border: 0;
   border-radius: 50%;
-  background: var(--white);
+  background: rgba(250, 250, 250, 0.9);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   color: var(--ink);
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease;
 }
-.wp-carousel__btn:hover { background: var(--ink); color: var(--white); }
+.wp-carousel__btn:hover { background: #fafafa; }
+.wp-carousel__btn:disabled { opacity: 0.35; cursor: default; }
 .wp-carousel__count { min-width: 40px; font: 500 12px/1 var(--sans); letter-spacing: 0.6px; text-align: center; text-box: none; }
 @media (prefers-reduced-motion: reduce) { .wp-carousel__track { scroll-behavior: auto; } }
 
@@ -823,33 +1123,33 @@ a { color: inherit; }
    Section 9 — resources
    ========================================================================== */
 
-.resources { display: grid; gap: 40px; }
-.resources__intro { display: flex; flex-direction: column; gap: 24px; }
-.resources__cards { display: grid; gap: 10px; }
+.resources { display: grid; gap: var(--stack-xl); }
+.resources__intro { display: flex; flex-direction: column; gap: var(--stack-md); }
+.resources__cards { display: grid; gap: var(--layout-column-gap); }
 .card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 32px;
-  padding: 32px;
-  border-radius: var(--radius);
+  gap: var(--stack-lg);
+  padding: var(--inset-card);
+  border-radius: var(--radius-panel);
 }
-.card__text { display: flex; flex-direction: column; gap: 24px; }
-.card__title { font: 400 clamp(24px, 20px + 1vw, 28px)/1.1 var(--serif); }
+.card__text { display: flex; flex-direction: column; gap: var(--stack-md); }
+.card__title { font: 400 var(--display-s)/1.1 var(--serif); }
 
 /* ==========================================================================
    Section 10 — FAQ
    ========================================================================== */
 
-.faq { display: flex; flex-direction: column; gap: 40px; }
-.faq__group { border: 1px solid var(--grey-500); border-radius: 8px; overflow: hidden; }
-.faq__item + .faq__item { border-top: 1px solid var(--grey-500); }
+.faq { display: flex; flex-direction: column; gap: var(--stack-xl); }
+.faq__group { border-radius: var(--radius-control); overflow: hidden; background: #fafafa; }
+.faq__item { border-bottom: 1px solid #e8e8e8; }
 .faq__item summary {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 24px 20px;
+  padding: var(--inset-row) 20px;
   font-weight: 600;
   line-height: 1.25;
   cursor: pointer;
@@ -858,15 +1158,15 @@ a { color: inherit; }
 .faq__item summary::-webkit-details-marker { display: none; }
 .faq__item summary > span:first-child { flex: 1; min-width: 0; }
 .faq__item summary:focus-visible { outline-offset: -4px; }
-.faq__icon { flex: none; padding: 4px; border: 1px solid var(--ink); border-radius: 50%; background: var(--white); }
-.faq__icon img { width: 20px; height: 20px; }
-/* The plus turns 45° into an x when the question is open. script.js toggles
-   .is-open (so the icon starts turning the moment a question is clicked, in
-   step with the answer sliding open or shut); [open] covers the no-script case. */
-.faq__plus { transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.2, 1); }
-.faq__item.is-open .faq__plus,
-.faq__item[open]:not(.is-closing) .faq__plus { transform: rotate(45deg); }
-.faq__answer { overflow: hidden; padding: 0 20px 24px; }
+/* A circled plus. Its upright stroke folds away when the question is open,
+   leaving a minus. script.js toggles .is-open (so the icon starts changing the
+   moment a question is clicked, in step with the answer sliding open or
+   shut); [open] covers the no-script case. */
+.faq__icon { flex: none; box-sizing: content-box; width: 20px; height: 20px; padding: 4px; fill: none; stroke: var(--ink); stroke-width: 1; stroke-linecap: round; }
+.faq__upright { transform-origin: 10px 10px; transition: transform 0.35s cubic-bezier(0.3, 0.7, 0.2, 1); }
+.faq__item.is-open .faq__upright,
+.faq__item[open]:not(.is-closing) .faq__upright { transform: scaleY(0); }
+.faq__answer { overflow: hidden; padding: 0 20px var(--inset-row); }
 .faq__answer p { text-box: none; }
 
 /* ==========================================================================
@@ -879,27 +1179,30 @@ a { color: inherit; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 40px;
+  gap: var(--stack-lg);
   min-height: clamp(420px, 44vw, 600px);
-  padding-block: 80px;
+  padding-block: var(--inset-panel);
   background: var(--white);
   text-align: center;
 }
 .closing > :not(.tex-bg) { position: relative; z-index: 1; }
-.closing__text { display: flex; flex-direction: column; align-items: center; gap: 24px; }
-.closing__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.closing__text { display: flex; flex-direction: column; align-items: center; gap: var(--stack-md); }
+.closing__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--stack-sm); }
 
 /* ==========================================================================
    Footer
    ========================================================================== */
 
 .footer {
-  margin-top: 10px;
-  padding-block: 40px;
+  margin: var(--layout-panel-gap) var(--edge) var(--layout-page-margin);
+  padding: var(--inset-row) 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: var(--stack-md);
+  font-size: var(--body-xs);
+  line-height: 1.4;
+  color: #2e2e2e;
   text-align: center;
 }
 .footer p { text-box: none; }
@@ -915,7 +1218,7 @@ a { color: inherit; }
    ========================================================================== */
 
 @media (max-width: 400px) {
-  .site-header .btn { padding: 10px; font-size: 12px; letter-spacing: 0.5px; }
+  .site-header .btn { padding: 12px 14px; font-size: 13px; }
   .btn { white-space: normal; }
 }
 
@@ -924,20 +1227,20 @@ a { color: inherit; }
    ========================================================================== */
 
 @media (min-width: 640px) {
-  .play { width: 64px; height: 64px; }
-
   .resources__cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .card { min-height: 281px; }
 
-  .outcomes__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
+  .outcomes__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--stack-xl); }
   .outcomes__item + .outcomes__item { margin-top: 0; padding-top: 0; border-top: 0; }
-  .outcomes__item { padding-right: 40px; }
-  .outcomes__item:nth-child(even) { padding-left: 40px; border-left: 1px solid var(--grey-500); }
+  .outcomes__item { padding-right: var(--layout-column-gap); }
+  .outcomes__item:nth-child(even) { padding-left: var(--layout-column-gap); border-left: 1px solid var(--grey-500); }
 
-  .faq__item summary { padding: 24px 40px; }
-  .faq__answer { padding: 0 40px 24px; }
+  .faq__item summary { padding: var(--inset-row) var(--inset-panel); }
+  .faq__answer { padding: 0 var(--inset-panel) var(--inset-row); }
 
-  .footer { flex-direction: row; justify-content: space-between; text-align: left; }
+  /* Logo on the left, icons in the middle, copyright on the right */
+  .footer { display: grid; grid-template-columns: 1fr auto 1fr; padding: var(--inset-row) var(--inset-panel); text-align: left; }
+  .footer p { justify-self: end; }
 }
 
 /* ==========================================================================
@@ -947,13 +1250,25 @@ a { color: inherit; }
 @media (min-width: 760px) {
   .md-up { display: inline; }
 
-  .hero { padding-block: 140px 160px; }
+  .hero { --end: calc((100svh - 30px) * 0.53); }
+  .scroll-cue { display: flex; }
 
   /* Text on the left, receipt on the right. */
   .sarah__top { display: grid; grid-template-columns: minmax(0, 1fr) min(371px, 48%); column-gap: 40px; align-items: start; }
+  .sarah__top.has-halves { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); align-items: center; }
   .receipt-window { height: min(78svh, 640px); }
 
-  .connected { display: grid; grid-template-columns: minmax(0, 431px) minmax(0, 350px); justify-content: space-between; align-items: center; column-gap: 40px; }
+  /* Copy on the left, the card centred in the right-hand part; the panel
+     fills the screen, as the hero does (up to the design's 874px). */
+  .connected {
+    display: grid;
+    grid-template-columns: minmax(0, 514px) minmax(0, 657px);
+    justify-content: space-between;
+    align-items: center;
+    column-gap: 40px;
+    min-height: min(874px, calc(100svh - var(--edge) - var(--wide-inset)));
+    padding-block: 80px;
+  }
 
   .calc__card { grid-template-columns: minmax(0, 478fr) minmax(0, 636fr); }
   .calc__inputs { padding: 48px 0 48px 40px; }
@@ -961,14 +1276,10 @@ a { color: inherit; }
 
   /* Text and controls on the left; the pages run off the right and bottom edges. */
   .whitepaper { min-height: 594px; padding-bottom: 32px; justify-content: space-between; }
-  .whitepaper__text, .whitepaper__actions { position: relative; z-index: 1; max-width: min(400px, 40%); }
-  .wp-carousel { position: absolute; left: 46.76%; top: 84px; right: 0; width: auto; margin: 0; }
-  .wp-carousel__track { gap: 24px; padding-right: 0; }
+  .whitepaper__text, .whitepaper__actions { position: relative; z-index: 1; max-width: min(424px, 40%); }
+  .wp-carousel { position: absolute; left: min(599px, 48.3%); top: 84px; right: 0; width: auto; margin: 0; }
+  .wp-carousel__track { gap: var(--layout-column-gap); padding-right: 0; }
   .wp-carousel__slide { flex-basis: min(530px, 82%); }
-
-  .voices__quotes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
-  .quote { min-height: 196px; padding-inline: clamp(24px, 3.1vw, 40px); }
-  .quote:last-child { border-right: 1px solid var(--grey-500); }
 
   .closing h2 { text-wrap: balance; }
 }
@@ -980,42 +1291,67 @@ a { color: inherit; }
 @media (min-width: 1024px) {
   .lg-only { display: inline; }
 
-  .hero { padding-block: 140px 160px; }
+  /* Intro title: either side of the receipt, "The hidden / costs" on its left
+     and "of / menopause" on its right, one line lower, so "costs" and "of"
+     read across the paper. 66px where there is room; smaller on narrower
+     screens so "menopause" still fits beside the 459px receipt. */
+  .hero { --paper-start: 0.1466; }
+  .intro-title {
+    --half: calc(min(459px, 86%) / 2); /* half the receipt (.hero__slot) */
+    inset: 0;
+    font-size: clamp(30px, calc((var(--vw) - 539px) / 12.8), 64px);
+    text-align: left;
+  }
+  .intro-title__part { position: absolute; }
+  .intro-title__line { display: block; }
+  .intro-title__part--a { right: calc(50% + var(--half) + 0.5em); top: calc(51.8% - 1.65em); text-align: right; }
+  .intro-title__part--b { left: calc(50% + var(--half) + 1.08em); top: calc(51.8% - 0.55em); }
 
   /* Section 2 (in flow; see the pinned version below): copy on the left,
      the receipts in a column of --visual-w on the right. */
   .sarah { padding-block: 70px 82px; gap: 81px; }
   .sarah__top { grid-template-columns: 310px var(--visual-w); justify-content: space-between; }
+  .sarah__top.has-halves { grid-template-columns: 310px minmax(0, 636px); }
   .sarah__copy { gap: 75px; }
-  .sarah__outro { gap: 28px; }
-  .sarah__outro .rule { margin-bottom: -4px; }
   .sarah__problem { display: grid; grid-template-columns: minmax(0, 564px) var(--visual-w); justify-content: space-between; align-items: center; }
-  .problem .stat__num { font-size: min(64px, 4.6vw); }
 
-  /* The card sits in the same column as the receipts above it. */
-  .connected { grid-template-columns: 431px var(--visual-w); }
-
-  .meet { grid-template-columns: minmax(0, 480fr) minmax(0, 600fr); }
-  .meet__card { min-height: 0; }
+  /* Copy in the middle of the left half; the phones and the pod stand on the
+     panel's bottom edge on the right. */
+  .meet__card {
+    display: grid;
+    grid-template-columns: minmax(0, 540fr) minmax(0, 600fr);
+    column-gap: clamp(var(--layout-column-gap), 5.6vw, var(--layout-content-inset));
+    align-items: center;
+    min-height: clamp(600px, 53vw, 760px);
+    padding-block: var(--inset-panel) 0;
+  }
+  .meet__visual { justify-self: center; align-self: end; margin-bottom: 32px; }
 
   .calc__inputs { padding: 56px 0 56px 64px; gap: 40px; }
   .calc__results { padding: 56px 64px; gap: 48px; }
 
-  .outcomes__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .outcomes__item:nth-child(n) { padding-inline: 40px; border-left: 1px solid var(--grey-500); }
-  .outcomes__item:first-child { padding-left: 0; border-left: 0; }
-  .outcomes__item:last-child { padding-right: 0; }
+  /* Four across, a hairline in the middle of each 80px gap */
+  .outcomes__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: calc(2 * var(--layout-column-gap)); }
+  .outcomes__item:nth-child(n) { position: relative; padding: 0; border-left: 0; }
+  .outcomes__item + .outcomes__item::before { content: ""; position: absolute; left: calc(-1 * var(--layout-column-gap)); top: 0; bottom: 0; width: 1px; background: var(--grey-500); }
 
-  .resources { grid-template-columns: minmax(0, 280px) minmax(0, 830px); justify-content: space-between; align-items: center; }
+  .resources { grid-template-columns: minmax(0, 400px) minmax(0, 816px); column-gap: var(--layout-column-gap); justify-content: space-between; align-items: start; }
 
-  .voices__feature { flex-direction: row; align-items: center; gap: 64px; }
-  .voices__lead { flex: 0 0 380px; }
-  .voices__feature .video { flex: 1; min-width: 0; }
+  /* First slide: the quote on the left, the video on the right */
+  .voices__slide--video { flex-direction: row; align-items: center; gap: var(--layout-column-gap); }
+  .voices__slide--video .voice { flex: 0 0 min(446px, 36%); }
+  .voices__slide--video .video { flex: 1; min-width: 0; }
 
-  .faq { flex-direction: row; align-items: flex-start; justify-content: space-between; }
-  .faq__group { flex: 0 1 690px; }
+  .faq { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: var(--layout-column-gap); }
+  .faq h2 { flex: 0 1 400px; }
+  .faq__group { flex: 0 1 816px; }
 
   .closing { min-height: 600px; }
+}
+
+/* Short screens: the hero copy reaches down to where the scroll cue would be. */
+@media (max-height: 799px) {
+  .scroll-cue { display: none; }
 }
 
 /* ==========================================================================
@@ -1034,15 +1370,15 @@ a { color: inherit; }
     --pad: clamp(40px, 7svh, 70px);                    /* space above and below the content */
     position: relative;
     height: calc(var(--panel-h) + var(--pin-length));
-    margin-top: var(--wide-inset);
+    margin-top: var(--layout-panel-gap);
   }
+  /* Nothing is clipped: the tearing receipt arrives from the hero, above. */
   .js .sarah {
     position: sticky;
     top: var(--pin-top);
     height: var(--panel-h);
     margin-top: 0;
     padding: 0;
-    overflow: hidden;
     display: block;
   }
   .js .sarah__moment {
@@ -1057,29 +1393,44 @@ a { color: inherit; }
   }
 
   /* Moment 1 sits on top (the receipt travels over moment 2), but only its
-     own content takes clicks. */
-  .js .sarah__top { z-index: 2; grid-template-columns: 310px var(--visual-w); pointer-events: none; }
-  .js .sarah__copy { pointer-events: auto; transition: opacity 0.45s ease, transform 0.45s ease, visibility 0s; }
+     own content takes clicks. The copy starts a fifth of the way down. */
+  .js .sarah__top, .js .sarah__top.has-halves { z-index: 2; grid-template-columns: 310px minmax(0, 1fr); pointer-events: none; }
+  .js .sarah__copy {
+    align-self: start;
+    margin-top: max(0px, calc(var(--panel-h) * 0.193 - var(--pad)));
+    pointer-events: auto;
+    transition: opacity 0.45s ease, transform 0.45s ease, visibility 0s;
+  }
   .js .sarah.is-m2 .sarah__copy {
     opacity: 0;
     transform: translateY(-24px);
     visibility: hidden;
     transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s 0.35s;
   }
-  /* The panel is the window here: the receipt hangs down from above it. */
-  .js .receipt-window {
+  /* The two halves: on the right, centred top to bottom, as large as the
+     column and the panel allow (--ratio, the box's width over its height:
+     script.js). */
+  .js .receipt-window, .js .receipt-window.is-torn {
     align-self: stretch;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
     height: auto;
     margin: 0;
-    padding: 0;
+    padding: 0 clamp(20px, 4vw, 57px) 0 0;
     overflow: visible;
     -webkit-mask-image: none;
     mask-image: none;
   }
+  .js .is-torn .receipt-morph {
+    width: min(636px, 100%, calc((var(--panel-h) - 72px) * var(--ratio, 0.83)));
+    max-width: none;
+    margin: 0;
+  }
 
   .js .sarah__problem { z-index: 1; grid-template-columns: minmax(0, 564px) var(--visual-w); }
   .js .problem {
-    gap: min(20px, 2.2svh);
+    gap: min(60px, 6svh);
     opacity: 0;
     transform: translateY(24px);
     visibility: hidden;
@@ -1091,9 +1442,11 @@ a { color: inherit; }
     visibility: visible;
     transition: opacity 0.6s ease 0.3s, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s, visibility 0s 0.3s;
   }
-  .js .problem .stat { gap: min(24px, 2.4svh); }
-  .js .problem .stat__num { font-size: min(64px, 7svh, 4.6vw); }
-  .js .problem .stat__text { gap: min(24px, 2.4svh); }
+  /* Sized by the panel's height too, so the whole block fits a short screen. */
+  .js .problem__head, .js .problem__stats { gap: min(20px, 2.2svh); }
+  .js .problem .display { font-size: min(40px, 5svh, 3.4vw); }
+  .js .problem .stat__num { font-size: min(48px, 5.4svh); }
+  .js .problem__close { padding-top: min(60px, 6svh); font-size: min(28px, 3.4svh); }
 
   /* As large as the column and the panel allow, keeping its shape. */
   .js .collage {
@@ -1161,6 +1514,136 @@ a { color: inherit; }
 .tune__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .tune__actions button { padding: 8px 6px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; background: none; }
 .tune__actions button:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ==========================================================================
+   Download form (pop-up)
+   A <dialog> that every "Download the guide" button opens (script.js). It
+   sits in the browser's top layer, above the navbar and the falling receipts.
+   It is drawn as one of the page's receipts: the same paper, sides cut a
+   little unevenly, a perforated end, a centred header over a rule, dotted
+   lines to write on and a barcode.
+   ========================================================================== */
+
+/* The page behind stays put while the form is open; the scrollbar's space is
+   kept so nothing shifts sideways. */
+html:has(dialog[open]) { overflow: hidden; scrollbar-gutter: stable; }
+
+.guide-form {
+  width: min(440px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  /* the shadow follows the paper's outline, as it does under the receipts */
+  filter: drop-shadow(0 18px 36px rgba(42, 12, 78, 0.32));
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.guide-form::backdrop { background: rgba(13, 13, 13, 0.45); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+/* It arrives in a few frames, like everything else the paper does. */
+.guide-form[open] { animation: guide-form-in 0.45s steps(4, end); }
+.guide-form[open]::backdrop { animation: guide-form-fade 0.3s ease; }
+@keyframes guide-form-in { from { opacity: 0; transform: translateY(36px) rotate(-1.2deg); } }
+@keyframes guide-form-fade { from { opacity: 0; } }
+
+.guide-form__panel { position: relative; isolation: isolate; padding: 36px clamp(22px, 7vw, 36px) 44px; }
+/* The paper: the receipts' own sheet, at its natural proportions (the form
+   shows the top of it). Its sides and top stray in a little, as if cut by
+   hand, and its end is perforated. */
+.guide-form__panel::before {
+  --bite: 5px; /* the perforation: half-circles this big bitten out of the end */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #fff url("assets/receipt-paper.png") top center / 100% auto no-repeat;
+  clip-path: polygon(1.39% 0.28%, 17.75% 0.36%, 34.11% 0.12%, 50.47% 0.02%, 66.83% 0.27%, 83.19% 0.35%, 99.55% 0.19%, 99.27% 8.33%, 99.63% 16.67%, 99.86% 25%, 99.68% 33.33%, 99.41% 41.67%, 99% 50%, 99.22% 58.33%, 99.18% 66.67%, 98.72% 75%, 98.65% 83.33%, 98.68% 91.67%, 99.14% 100%, 0.39% 100%, 0.26% 91.67%, 0.41% 83.33%, 0.47% 75%, 0.52% 66.67%, 0.23% 58.33%, 0.61% 50%, 1.11% 41.67%, 1.11% 33.33%, 1.13% 25%, 0.97% 16.67%, 1.27% 8.33%);
+  -webkit-mask:
+    radial-gradient(circle at 50% 100%, transparent calc(var(--bite) - 0.5px), #000 var(--bite)) left bottom / calc(var(--bite) * 2.8) calc(var(--bite) + 1px) round no-repeat,
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--bite) - 1px) no-repeat;
+  mask:
+    radial-gradient(circle at 50% 100%, transparent calc(var(--bite) - 0.5px), #000 var(--bite)) left bottom / calc(var(--bite) * 2.8) calc(var(--bite) + 1px) round no-repeat,
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--bite) - 1px) no-repeat;
+}
+.guide-form :where(p, h2, dt, dd) { text-box: none; }
+.guide-form__close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.guide-form__close:hover { background: rgba(13, 13, 13, 0.06); }
+
+.guide-form__ask, .guide-form__done, .guide-form__form { display: flex; flex-direction: column; }
+.guide-form__ask, .guide-form__done { gap: 24px; }
+.guide-form__done { outline: 0; }
+.guide-form__done[hidden], .guide-form__ask[hidden] { display: none; }
+
+/* The header, as on the receipts: date, title, a line in italics. */
+.guide-form__head { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.guide-form__date { font: 400 12px/1 var(--sans); color: var(--grey-600); }
+.guide-form__title { font: 700 clamp(20px, 5.9vw, 24px)/1.15 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; }
+.guide-form__sub { font: italic 400 13px/1.35 var(--sans); color: #5e5e5e; }
+.guide-form__rule { height: 1px; background: rgba(13, 13, 13, 0.16); }
+
+/* The fields: a small label, and a dotted line to write on. */
+.guide-form__form { gap: 18px; }
+.guide-form__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 18px 20px; align-items: start; }
+.guide-form__field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.guide-form__field label { font: 500 11px/1 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: #5e5e5e; }
+.guide-form__field input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dashed #808080;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  font: 600 16px/1.2 var(--sans); /* 16px: iOS does not zoom in on focus */
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.guide-form__field input:focus-visible { outline: 0; border-bottom-style: solid; border-bottom-color: var(--purple-600); box-shadow: 0 1px 0 var(--purple-600); }
+.guide-form__field input[aria-invalid="true"] { border-bottom-style: solid; border-bottom-color: #b42318; }
+/* Filled in by the browser: keep the paper showing through. */
+.guide-form__field input:-webkit-autofill { -webkit-text-fill-color: var(--ink); transition: background-color 100000s; }
+.guide-form__error, .guide-form__problem { font: 400 12px/1.4 var(--sans); color: #b42318; }
+.guide-form__error { margin-top: 4px; }
+.guide-form__problem { padding: 10px 12px; border: 1px dashed #b42318; font-size: 13px; }
+.guide-form__trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.guide-form__submit { width: 100%; margin-top: 10px; padding-block: 18px; cursor: pointer; }
+.guide-form__submit[disabled] { opacity: 0.6; cursor: progress; }
+.guide-form .note { text-align: center; }
+.guide-form .note a { text-underline-offset: 2px; }
+.guide-form button.btn { cursor: pointer; }
+/* The receipts' barcode (its bars are in .receipt__barcode). */
+.guide-form__barcode { height: 40px; margin-top: 4px; }
+
+/* Thank-you: the same slip, with where it went as a line with a dotted leader. */
+.guide-form__sent > div { display: flex; align-items: flex-end; gap: 6px; }
+.guide-form__sent > div::before { content: ""; order: 1; flex: 1; min-width: 16px; margin-bottom: 3px; border-bottom: 1px dashed #808080; }
+.guide-form__sent dt { order: 0; font: 500 12px/1.2 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: #5e5e5e; white-space: nowrap; }
+.guide-form__sent dd { order: 2; max-width: 72%; font: 600 14px/1.2 var(--sans); text-align: right; overflow-wrap: anywhere; }
+.guide-form__done .btn { align-self: center; padding-inline: 28px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-form[open], .guide-form[open]::backdrop { animation: none; }
+}
 
 /* ==========================================================================
    Scroll fade-ins

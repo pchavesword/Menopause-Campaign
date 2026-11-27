@@ -1,3 +1,6 @@
+// head.js removes `js` if this script is late (more than 4 seconds): put it back.
+document.documentElement.classList.add('js');
+
 // Video frames: add data-video-src="<url>" (and data-video-title, its name for
 // screen readers) to a .video element. The play button swaps the poster for an
 // inline player and starts it, with sound, since the visitor asked for it. The
@@ -102,9 +105,10 @@ if (document.documentElement.classList.contains('js-reveal')) {
 //              receipts deal out from behind them.
 //   leaving    every receipt crumples into a ball and falls out of the panel.
 //
-// The tear, moment 2 and "leaving" only happen where the panel is pinned
-// (desktop). Elsewhere the receipt in section 2 is simply shown in two halves
-// and the collage is a still picture.
+// The tear and moment 2 only happen where the panel is pinned (desktop).
+// Elsewhere (phones and tablets) the receipt in section 2 is simply shown in
+// two halves and the collage is already dealt out; "leaving" still happens:
+// the receipts crumple and fall as the collage scrolls up the screen.
 
 // Everything about how the receipts move. Open the page with ?controls in the
 // address (for example http://localhost:8080/?controls) for a panel that
@@ -281,8 +285,13 @@ const OTHER_RECEIPTS = [
   const slot = stage && stage.querySelector('.hero__slot');
   if (!panel || !windowEl || !morph || !sarah || !collage || !slot) return;
 
-  const pinned = matchMedia('(min-width: 1024px) and (min-height: 720px)');
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The pinned layout: wide, tall enough, and landscape (a portrait screen would leave
+  // big empty bands around the two moments). Keep in step with styles.css.
+  const pinned = matchMedia('(min-width: 1024px) and (min-height: 720px) and (min-aspect-ratio: 1/1)');
+  // Read live: turning "reduce motion" on while the page is open takes effect at once.
+  const reduceQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  let reducedMotion = reduceQuery.matches;
+  reduceQuery.addEventListener?.('change', (event) => { reducedMotion = event.matches; });
   const MOMENT_2_AT = 0.85; // where moment 2 rests, as a share of the pinned scroll
   const S = RECEIPT_SETTINGS;
 
@@ -774,6 +783,7 @@ const OTHER_RECEIPTS = [
     });
   };
   const DOWN = 0.22; // share of the intro the roll takes to travel down the hero
+  const INTRO_W = 459; // px: the receipt's width while it unrolls (it rests at the slot's own width, 371)
   const renderIntro = () => {
     if (introOn && unroll >= S.introTextAt) release();
     if (unroll >= 1) {
@@ -789,30 +799,37 @@ const OTHER_RECEIPTS = [
     const width = slot.offsetWidth;
     const frame = hero.getBoundingClientRect();
     const restBottom = slot.getBoundingClientRect().bottom - frame.top;
+    // The receipt unrolls larger than it ends up (INTRO_W wide, where the hero
+    // has room for that) and comes down to its resting size as it feeds up.
+    const big = Math.max(1, Math.min(INTRO_W, slot.parentElement.clientWidth * 0.86) / width);
     // Where the top of the paper starts: --paper-start in styles.css (129 of 880 on desktop).
     const start = frame.height * (parseFloat(getComputedStyle(hero).getPropertyValue('--paper-start')) || 129 / 880);
     const below = frame.height + 30;            // the roll, out of sight under the hero
     let top = start;
-    let out;                                    // px of paper off the roll
+    let size = big;                             // how much larger than at rest the receipt is drawn
+    let out;                                    // px of paper off the roll, on screen
     if (unroll <= DOWN) {
       // 1. In the middle: the roll travels down the hero and off its bottom edge.
       const reach = below - start;
       //    It starts slowly and speeds up (unrollEase).
-      out = lerp(Math.min(reach, width * 0.3), reach, Math.pow(unroll / DOWN, S.unrollEase));
+      out = lerp(Math.min(reach, width * big * 0.3), reach, Math.pow(unroll / DOWN, S.unrollEase));
     } else {
       // 2. The paper feeds upward. The roll stays under the hero until it has
       //    given out all its paper; then the end of the receipt comes up into
       //    view and stops above the copy.
-      top = lerp(start, restBottom - full, easeInOut((unroll - DOWN) / (1 - DOWN)));
-      out = Math.min(full, below - top);
+      const fed = easeInOut((unroll - DOWN) / (1 - DOWN));
+      size = lerp(big, 1, fed);
+      top = lerp(start, restBottom - full, fed);
+      out = Math.min(full * size, below - top);
     }
-    const left = full - out;
+    const left = full - out / size;             // paper still on the roll, in the receipt's own px
     const shake = unroll > 0 ? (rand() - 0.5) * 2 * S.wobble : 0;
     heroReceipt.classList.toggle('is-rolled', left > 0.5);
     heroPaper.style.setProperty('--hidden', `${left.toFixed(1)}px`);
-    heroRoll.style.setProperty('--roll-y', `${out.toFixed(1)}px`);
+    heroRoll.style.setProperty('--roll-y', `${(out / size).toFixed(1)}px`);
     heroRoll.style.setProperty('--roll-r', `${Math.sqrt(9 + left * 0.5).toFixed(1)}px`);
-    mover.style.transform = `translate(${shake.toFixed(1)}px, ${(top - (restBottom - full)).toFixed(1)}px)`;
+    // Scaled about its top left corner, so it is also moved left to stay centred.
+    mover.style.transform = `translate(${(shake - ((size - 1) * width) / 2).toFixed(1)}px, ${(top - (restBottom - full)).toFixed(1)}px) scale(${size.toFixed(4)})`;
     // The title rides up with the paper, frame for frame.
     if (title) title.style.transform = top < start ? `translateY(${(top - start).toFixed(1)}px)` : '';
   };
@@ -994,6 +1011,11 @@ const OTHER_RECEIPTS = [
   let pile = null;
   const markPile = () => {
     const box = collage.getBoundingClientRect();
+    if (!pinned.matches) {
+      // In flow: wherever the collage is on screen right now.
+      pile = { left: box.left, top: box.top, show: box.bottom > 0 && box.top < window.innerHeight };
+      return;
+    }
     const frame = panel.getBoundingClientRect();
     const pinTop = parseFloat(getComputedStyle(panel).top) || 0;
     const pinnedTop = pinTop + box.top - frame.top;
@@ -1006,10 +1028,13 @@ const OTHER_RECEIPTS = [
 
   const renderCollage = () => {
     if (!geo) measure();
-    const moving = move > 0 && move < 1 && !reducedMotion;
+    // In flow (phones and tablets) nothing travels: Sarah's two halves stay in
+    // moment 1 and the collage is already dealt out. Only the crumple plays.
+    const flow = !pinned.matches;
+    const moving = !flow && move > 0 && move < 1 && !reducedMotion;
     const wobble = (amount) => (moving ? (rand() - 0.5) * amount * S.wobble : 0); // stop-motion imperfection
-    const landing = easeInOut(clamp01(move / S.landShare));
-    const landed = landing >= 1;
+    const landing = flow ? 0 : easeInOut(clamp01(move / S.landShare));
+    const landed = !flow && landing >= 1;
 
     // Sarah's two halves fly to her place in the collage; once there, the
     // copy that sits in the collage (and in its stacking order) takes over.
@@ -1023,7 +1048,7 @@ const OTHER_RECEIPTS = [
     const firstDeal = S.landShare * 0.6;
     const dealSpread = Math.max(0, 0.98 - S.dealShare - firstDeal);
     pieces.forEach((piece, i) => {
-      const dealt = piece.isSarah ? (landed ? 1 : 0) : easeOut(clamp01((move - firstDeal - piece.order * dealSpread) / S.dealShare));
+      const dealt = flow ? 1 : piece.isSarah ? (landed ? 1 : 0) : easeOut(clamp01((move - firstDeal - piece.order * dealSpread) / S.dealShare));
       const frame = crumple - Math.round(piece.wait * S.staggerFrames); // this receipt's own frame of the crumple
       const popping = pop - piece.popAt;               // <= 0: not back yet, 1: just popped in
       const flat = dealt > 0 && frame <= 0 && popping > 0;
@@ -1069,10 +1094,8 @@ const OTHER_RECEIPTS = [
 
   const render = () => {
     renderIntro();
-    if (pinned.matches) {
-      renderTear();
-      renderCollage();
-    }
+    if (pinned.matches) renderTear();
+    renderCollage();
   };
 
   // ---- Stepping ----
@@ -1170,12 +1193,20 @@ const OTHER_RECEIPTS = [
       const y = animating ? glideTo : window.scrollY;
       tearTo = y > steps()[0] * (target.tear ? 0.5 : 0.2) ? 1 : 0;
       const p = progress();
-      // A little stickiness, so each moment starts as soon as the page moves towards it.
-      moveTo = p > (target.move ? 0.5 : 0.2) ? 1 : 0;
+      // During a glide, the moment it is heading for (so the text changes once,
+      // as it sets off); otherwise a little stickiness either way.
+      moveTo = animating ? (glideTo > steps()[0] + 2 ? 1 : 0) : (p > (target.move ? 0.2 : 0.5) ? 1 : 0);
       // Past moment 2 the page scrolls freely: the receipts crumple once it has
       // moved on by S.crumpleAfter px, and come back if it returns.
       const past = (p - MOMENT_2_AT) * (track.offsetHeight - panel.offsetHeight);
       gone = previewGone || past > S.crumpleAfter * (target.gone ? 0.4 : 1);
+    } else if (!reducedMotion) {
+      // In flow: the receipts crumple once the middle of the collage has
+      // scrolled up into the top part of the screen, still in full view, and
+      // come back when it returns to the middle.
+      const box = collage.getBoundingClientRect();
+      const middle = (box.top + box.height / 2) / window.innerHeight;
+      gone = previewGone || middle < (target.gone ? 0.5 : 0.36);
     }
     if (tearTo === target.tear && moveTo === target.move && gone === target.gone) return;
     if (gone && !target.gone) markPile(); // the receipts let go here
@@ -1186,6 +1217,13 @@ const OTHER_RECEIPTS = [
     panel.classList.toggle('is-m2', moveTo === 1);
     run();
   };
+  // Focus during the intro (Tab) ends it at once, as scrolling does, so the
+  // navbar and the headline are not still invisible under the focus ring.
+  document.addEventListener('focusin', () => {
+    if (unroll >= 1) return;
+    finishIntro();
+    run();
+  });
   const requestSync = () => {
     if (syncQueued) return;
     syncQueued = true;
@@ -1196,24 +1234,29 @@ const OTHER_RECEIPTS = [
   // [what shifts, the first letter of its variables, how much it turns]. A
   // whole receipt shifts its paper (--jx, --jy, --jr); a torn one shifts its
   // two halves (--wx, --wy, --wr). The big ones turn less.
+  // The creases flip on the paper pictures themselves (.receipt__sheet), so
+  // only those restyle, not every line of print inside the receipt. The
+  // shift variables are registered as not inherited in styles.css for the
+  // same reason.
   const shifting = [
     [heroPaper, 'j', 0.25],
     ...halfEls.map((el) => [el, 'w', 0.25]),
     ...pieces.flatMap((piece) => (piece.isSarah
       ? [...piece.receipt.querySelectorAll('.half')].map((el) => [el, 'w', 0.4])
       : [[piece.receipt.querySelector('.receipt__paper'), 'j', 1]])),
-  ];
+  ].map(([el, v, size]) => [el, v, size, [...el.querySelectorAll('.receipt__sheet')]]);
   const shiftPaper = () => {
     setTimeout(shiftPaper, Math.max(0.05, S.shiftEvery) * 1000);
-    if (!onScreen || document.hidden) return;
-    shifting.forEach(([sheet, v, size]) => {
-      sheet.style.setProperty(`--${v}x`, `${((Math.random() - 0.5) * 1.6 * S.shiftAmount).toFixed(2)}px`);
-      sheet.style.setProperty(`--${v}y`, `${((Math.random() - 0.5) * 1.6 * S.shiftAmount).toFixed(2)}px`);
-      sheet.style.setProperty(`--${v}r`, `${((Math.random() - 0.5) * 1.3 * size * S.shiftAmount).toFixed(2)}deg`);
-      sheet.style.setProperty('--flip', S.creaseFlip && Math.random() < 0.5 ? -1 : 1);
+    if (!onScreen || document.hidden || reducedMotion) return;
+    shifting.forEach(([el, v, size, sheets]) => {
+      el.style.setProperty(`--${v}x`, `${((Math.random() - 0.5) * 1.6 * S.shiftAmount).toFixed(2)}px`);
+      el.style.setProperty(`--${v}y`, `${((Math.random() - 0.5) * 1.6 * S.shiftAmount).toFixed(2)}px`);
+      el.style.setProperty(`--${v}r`, `${((Math.random() - 0.5) * 1.3 * size * S.shiftAmount).toFixed(2)}deg`);
+      const flip = S.creaseFlip && Math.random() < 0.5 ? -1 : 1;
+      sheets.forEach((sheet) => sheet.style.setProperty('--flip', flip));
     });
   };
-  if (!reducedMotion) shiftPaper();
+  shiftPaper();
 
   // Step-by-step scrolling through the hero and the two moments: one swipe
   // (wheel, trackpad, key press or touch swipe) glides from the hero to moment
@@ -1235,11 +1278,14 @@ const OTHER_RECEIPTS = [
   let glideStart = 0;
   let glideTo = 0;         // where the current glide is heading
   let pendingDir = 0;      // a swipe made while gliding: taken as soon as the glide ends
+  let glideDir = 0;        // which way the current glide goes
+  let lastSteps = null;    // where the steps were when the page last came to rest on one
 
   const glide = (to) => {
     locked = true;
     animating = true;
     glideTo = to;
+    glideDir = Math.sign(to - window.scrollY);
     glideStart = performance.now();
     sync(); // the receipts set off with the glide
     const from = window.scrollY;
@@ -1254,6 +1300,7 @@ const OTHER_RECEIPTS = [
       if (k < 1) requestAnimationFrame(frame);
       else {
         animating = false;
+        lastSteps = steps();
         if (pendingDir) {
           const dir = pendingDir;
           pendingDir = 0;
@@ -1271,32 +1318,56 @@ const OTHER_RECEIPTS = [
     const [s0, s1] = steps();
     if (y < s0 - 2) return dir > 0 ? s0 : (y > 2 ? 0 : null);           // in the hero: on to moment 1, or back to the top
     if (y > s1 + 2) return dir < 0 && y + delta <= s1 ? s1 : null;      // arriving from below
+    // A hard flick up from below can carry the page a little past moment 2
+    // before the first wheel event is handled: still catch moment 2.
+    if (dir < 0 && y < s1 - 2 && y > s1 - 0.25 * (s1 - s0)) return s1;
     if (dir > 0) return y < s1 - 2 ? s1 : null;                         // at moment 2 going down: scroll normally
     return y > s0 + 2 ? s0 : 0;                                         // back a step: to moment 1, or to the hero
   };
   const inside = (y) => y <= steps()[1] + 2;
 
-  // Telling a new swipe from the momentum of the last one: momentum only ever
-  // fades, so a new swipe shows up as a pause in the events or a sudden jump
-  // in their size.
+  // Telling a new swipe from the momentum of the last one. Momentum only
+  // fades and never changes direction, so a new swipe shows up as a pause in
+  // the events, a change of direction, events rising again after they had
+  // faded (fingers back on the trackpad), or a sudden jump in size. Browsers
+  // sometimes merge two momentum events into one about the size of both, so
+  // a jump has to beat the sum of the last two, not just the larger. The
+  // rise at the start of a swipe is not a new swipe: only a rise after a fade.
   let lastWheel = 0;
+  let lastDy = 0;
+  let peak = 0;            // the largest event of the current gesture
+  let faded = false;       // its events have since fallen well below that
+  let travel = 0;          // wheel movement gathered towards a step: a 1px nudge is not a swipe
   const recent = [];
   // While a pop-up is open (the download form) the page behind it stays put.
   const modalOpen = () => document.querySelector('dialog[open]') !== null;
   window.addEventListener('wheel', (event) => {
     if (!pinned.matches || event.ctrlKey || modalOpen()) return; // ctrlKey = pinch zoom
-    const dy = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
+    const scale = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+    const dy = event.deltaY * scale;
+    const dx = event.deltaX * scale;
     const size = Math.abs(dy);
     const now = performance.now();
-    const fresh = now - lastWheel > 160 || (size > 10 && size > 1.6 * Math.max(0, ...recent.slice(-2)));
+    if (now - lastWheel > 160) { recent.length = 0; peak = 0; faded = false; } // a pause: a new gesture
+    const r = recent;
+    const n = r.length;
+    const rising = faded && n >= 3 && size > 6 && size > r[n - 1] && r[n - 1] > r[n - 2] && r[n - 2] > r[n - 3];
+    if (rising) { peak = 0; faded = false; }
+    peak = Math.max(peak, size);
+    if (size < peak * 0.6) faded = true;
+    const reversed = size > 4 && dy * lastDy < 0;
+    const fresh = now - lastWheel > 160 || rising || reversed
+      || (size > 10 && size > 1.6 * r.slice(-2).reduce((sum, v) => sum + v, 0));
     lastWheel = now;
     recent.push(size);
     if (recent.length > 4) recent.shift();
+    if (dy) lastDy = dy;
 
     if (animating) {
       // A new swipe while gliding is remembered, not lost. The first moments of
-      // the swipe that started this glide are still ramping up, so skip those.
-      if (fresh && now - glideStart > 300) pendingDir = Math.sign(dy);
+      // the swipe that started this glide are still ramping up, so skip those,
+      // unless the new swipe goes the other way.
+      if (fresh && (now - glideStart > 300 || Math.sign(dy) === -glideDir)) pendingDir = Math.sign(dy);
       event.preventDefault();
       return;
     }
@@ -1304,101 +1375,163 @@ const OTHER_RECEIPTS = [
       if (!fresh) { event.preventDefault(); return; } // still the old swipe's momentum
       locked = false;
     }
+    if (fresh) travel = 0;
     if (size < 1) return;
     const y = window.scrollY;
     const dir = Math.sign(dy);
     const to = targetFor(y, dir, dy);
     if (to === null) return; // scroll normally
     event.preventDefault();
+    if (Math.abs(dx) > size) return;   // mostly sideways: not a step
+    travel += dy;
+    if (Math.abs(travel) < 8) return;  // a nudge (trackpad jitter), not yet a swipe
+    travel = 0;
     glide(to);
   }, { passive: false });
 
   window.addEventListener('keydown', (event) => {
-    if (!pinned.matches || animating || modalOpen() || event.target.closest?.('input, select, textarea, [contenteditable]')) return;
+    if (!pinned.matches || modalOpen() || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.target.closest?.('input, select, textarea, video, [contenteditable]')) return;
+    if (event.key === ' ' && event.target.closest?.('button, summary, [role="button"]')) return; // Space presses a focused button
     const down = ['ArrowDown', 'PageDown', ' '].includes(event.key) && !event.shiftKey;
     const up = ['ArrowUp', 'PageUp'].includes(event.key) || (event.key === ' ' && event.shiftKey);
     if (!down && !up) return;
+    if (animating) {
+      // Pressed again during a glide: take it as soon as the glide ends.
+      event.preventDefault();
+      pendingDir = down ? 1 : -1;
+      return;
+    }
     const y = window.scrollY;
-    const to = targetFor(y, down ? 1 : -1, down ? window.innerHeight * 0.8 : -window.innerHeight * 0.8);
+    // How far the key would move the page by itself: arrows a line, the others a screen.
+    const reach = event.key.startsWith('Arrow') ? 40 : window.innerHeight * 0.8;
+    const to = targetFor(y, down ? 1 : -1, down ? reach : -reach);
     if (to === null) return;
     event.preventDefault();
     glide(to);
   });
 
-  // Touch (large tablets): a swipe inside the pinned stretch is one step.
+  // Touch (large tablets): a one-finger swipe inside the pinned stretch is one
+  // step. Two fingers (pinch zoom), a zoomed-in page and mostly sideways
+  // swipes are left to the browser.
+  let touchX = null;
   let touchY = null;
-  window.addEventListener('touchstart', (event) => { touchY = event.touches[0].clientY; }, { passive: true });
+  let touchMulti = false;
+  let touchFromBelow = false;   // the swipe started below moment 2
+  const zoomed = () => (window.visualViewport ? window.visualViewport.scale > 1.01 : false);
+  window.addEventListener('touchstart', (event) => {
+    if (event.touches.length > 1) { touchMulti = true; touchY = null; return; }
+    touchMulti = false;
+    touchX = event.touches[0].clientX;
+    touchY = event.touches[0].clientY;
+    touchFromBelow = pinned.matches && window.scrollY > steps()[1] + 2;
+  }, { passive: true });
   window.addEventListener('touchmove', (event) => {
-    if (!pinned.matches || touchY === null || modalOpen()) return;
+    if (!pinned.matches || touchY === null || touchMulti || event.touches.length > 1 || zoomed() || modalOpen()) return;
     const y = window.scrollY;
     const dir = Math.sign(touchY - event.touches[0].clientY);
-    if (animating || (inside(y) && targetFor(y, dir, 0) !== null)) event.preventDefault();
+    // Once the browser has started scrolling, the move can no longer be held back.
+    if (event.cancelable && (animating || (inside(y) && targetFor(y, dir, 0) !== null))) event.preventDefault();
   }, { passive: false });
   window.addEventListener('touchend', (event) => {
-    if (!pinned.matches || touchY === null || animating || modalOpen()) return;
+    if (touchMulti) {
+      if (event.touches.length === 0) touchMulti = false;
+      touchY = null;
+      return;
+    }
+    if (!pinned.matches || touchY === null || modalOpen()) return;
     const dy = touchY - event.changedTouches[0].clientY;
+    const dx = touchX - event.changedTouches[0].clientX;
     touchY = null;
-    if (Math.abs(dy) < 30 || !inside(window.scrollY)) return;
-    const to = targetFor(window.scrollY, Math.sign(dy), dy);
+    if (zoomed() || Math.abs(dy) < 30 || Math.abs(dx) > Math.abs(dy)) return;
+    if (animating) { pendingDir = Math.sign(dy); return; } // a second swipe during a glide
+    const y = window.scrollY;
+    // Back up from below: the page has scrolled up into the stretch; catch moment 2.
+    if (touchFromBelow && dy < 0 && y <= steps()[1] + 2) { glide(steps()[1]); return; }
+    if (!inside(y)) return;
+    const to = targetFor(y, Math.sign(dy), dy);
     if (to !== null) glide(to);
   });
+  window.addEventListener('touchcancel', () => { touchY = null; touchMulti = false; });
 
   // Scrollbar drags and anything else: if scrolling stops between two steps,
-  // glide on to the nearer one.
+  // glide on to the nearer one. Never while a mouse button is held (the
+  // visitor may be dragging the scrollbar): then once it is let go. Never on a
+  // zoomed-in page either: pinching and panning move the page, and a glide
+  // would pull it away from what the visitor zoomed in on.
   let restTimer;
-  window.addEventListener('scroll', () => {
-    if (animating) return;
+  let mouseHeld = false;
+  const settleOnStep = () => {
+    if (!pinned.matches || animating || mouseHeld || zoomed()) return;
+    const y = window.scrollY;
+    if (!inside(y)) return;
+    const pts = [0, ...steps()];
+    if (pts.some((p) => Math.abs(p - y) <= 2)) return;
+    glide(pts.reduce((a, p) => (Math.abs(p - y) < Math.abs(a - y) ? p : a)));
+  };
+  const armSettle = () => {
     clearTimeout(restTimer);
-    restTimer = setTimeout(() => {
-      if (!pinned.matches || animating) return;
-      const y = window.scrollY;
-      if (!inside(y)) return;
-      const pts = [0, ...steps()];
-      if (pts.some((p) => Math.abs(p - y) <= 2)) return;
-      glide(pts.reduce((a, p) => (Math.abs(p - y) < Math.abs(a - y) ? p : a)));
-    }, 180);
-  }, { passive: true });
+    restTimer = setTimeout(settleOnStep, 180);
+  };
+  window.addEventListener('scroll', () => { if (!animating) armSettle(); }, { passive: true });
+  window.addEventListener('pointerdown', (event) => { if (event.pointerType === 'mouse') mouseHeld = true; }, true);
+  const letGo = () => {
+    if (!mouseHeld) return;
+    mouseHeld = false;
+    armSettle();
+  };
+  window.addEventListener('pointerup', letGo, true);
+  window.addEventListener('pointercancel', letGo, true);
+  window.addEventListener('mouseup', letGo, true);
+  window.addEventListener('blur', letGo);
+  window.addEventListener('mousemove', (event) => { if (mouseHeld && event.buttons === 0) letGo(); }, { passive: true });
 
   // ---- Layout changes ----
   const onLayout = () => {
     geo = null;
+    if (pinned.matches && anchors) clearTear(); // mid-tear: measure its course again on the next frame
     layoutHalves();
     roughEdges();
+    // Resting on a step when the window changes size: stay on that step.
+    if (pinned.matches && !animating && lastSteps) {
+      const old = [0, ...lastSteps];
+      const i = old.findIndex((p) => Math.abs(p - window.scrollY) <= 2);
+      if (i > 0) {
+        const now = [0, ...steps()][i];
+        if (Math.abs(now - window.scrollY) > 2) window.scrollTo({ top: now, behavior: 'instant' });
+      }
+    }
     if (!pinned.matches) {
       // In flow: the receipt in section 2 is simply in two halves, the collage
-      // is a still picture and nothing is pinned.
+      // is dealt out and nothing is pinned. The crumple is left as it is: on
+      // phones the screen changes size whenever the browser's bars slide away.
       tear = 1;
       clearTear();
       slot.style.visibility = '';
       move = 0;
-      crumple = 0;
-      pop = POP_FRAMES;
       target.move = 0;
-      target.gone = false;
       panel.classList.remove('is-m2');
       morph.style.transform = '';
       morph.style.visibility = '';
-      pieces.forEach((piece) => {
-        ['visibility', '--dx', '--dy', '--s'].forEach((name) => piece.el.style.removeProperty(name));
-        piece.el.style.setProperty('--r', `${piece.rotation}deg`);
-        piece.crumple.hidden = true;
-        piece.launch = null;
-        collage.appendChild(piece.crumple);
-      });
     }
     sync();
     if (!started) {
       // Opening the page part of the way down: no tearing into place, no intro.
       started = true;
       tear = target.tear;
+      // Already past moment 2, or past the collage: show it as it is, without replaying the way there.
+      move = target.gone ? 1 : target.move;
+      if (target.gone) crumple = crumpleFrames();
       if (window.scrollY > 40) finishIntro();
     }
+    lastSteps = pinned.matches ? steps() : null;
     render();
   };
   let started = false;
   window.addEventListener('scroll', requestSync, { passive: true });
   window.addEventListener('resize', onLayout);
-  pinned.addEventListener('change', onLayout);
+  if (pinned.addEventListener) pinned.addEventListener('change', onLayout);
+  else pinned.addListener?.(onLayout); // Safari before 14
   document.fonts?.ready.then(onLayout);
   onLayout();
 
@@ -1408,16 +1541,23 @@ const OTHER_RECEIPTS = [
     paperReady = true;
     startIntro();
   };
+  const noPaper = () => {
+    if (paperReady) return;
+    paperReady = true;
+    finishIntro();
+    render();
+  };
   const sheet = new Image();
   sheet.src = 'assets/receipt-paper.png';
-  (sheet.decode ? sheet.decode() : Promise.reject()).then(onPaper, onPaper);
-  setTimeout(onPaper, 1500);
+  (sheet.decode ? sheet.decode() : Promise.reject()).then(onPaper, noPaper);
+  setTimeout(noPaper, 4000);
 
   // The background and the title go first, once the texture and the fonts
   // have loaded (or after a moment). The title only plays with the full
   // intro: not with "reduce motion", and not when the page opens part of the
   // way down. From here on this script lets the page go, not the timer in <head>.
   clearTimeout(window.introFallback);
+  if (!held && !reducedMotion && unroll < 1) { finishIntro(); render(); }
   if (title && held && unroll < 1) {
     const texture = hero.querySelector('.tex-bg img');
     Promise.all([
@@ -1730,7 +1870,7 @@ const OTHER_RECEIPTS = [
   const card = carousel.closest('.whitepaper');
   const current = card.querySelector('[data-current]');
   const total = card.querySelector('[data-total]');
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceQuery = matchMedia('(prefers-reduced-motion: reduce)');
   total.textContent = slides.length;
 
   const index = () => {
@@ -1748,12 +1888,16 @@ const OTHER_RECEIPTS = [
     trackEl.scrollTo({ left: slides[next].offsetLeft - trackEl.offsetLeft });
   };
 
+  // The counter is a live region: screen readers hear the page number when the
+  // visitor turns a page, not every time the autoplay does.
+  const live = card.querySelector('.wp-carousel__count');
+  const announce = (on) => live.setAttribute('aria-live', on ? 'polite' : 'off');
   card.querySelectorAll('.wp-carousel__btn').forEach((btn) => {
-    btn.addEventListener('click', () => go(index() + Number(btn.dataset.dir)));
+    btn.addEventListener('click', () => { announce(true); go(index() + Number(btn.dataset.dir)); });
   });
   trackEl.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowRight') { event.preventDefault(); go(index() + 1); }
-    if (event.key === 'ArrowLeft') { event.preventDefault(); go(index() - 1); }
+    if (event.key === 'ArrowRight') { event.preventDefault(); announce(true); go(index() + 1); }
+    if (event.key === 'ArrowLeft') { event.preventDefault(); announce(true); go(index() - 1); }
   });
   let settle;
   trackEl.addEventListener('scroll', () => {
@@ -1761,7 +1905,6 @@ const OTHER_RECEIPTS = [
     settle = setTimeout(() => { current.textContent = index() + 1; }, 60);
   }, { passive: true });
 
-  if (reducedMotion) return;
   let paused = false;
   let onScreen = false;
   card.addEventListener('pointerenter', () => { paused = true; });
@@ -1770,22 +1913,22 @@ const OTHER_RECEIPTS = [
   card.addEventListener('focusout', () => { paused = false; });
   new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; }, { threshold: 0.4 }).observe(card);
   setInterval(() => {
-    if (!paused && onScreen && !document.hidden) go(index() + 1);
+    if (!paused && onScreen && !document.hidden && !reduceQuery.matches) { announce(false); go(index() + 1); }
   }, 4500);
 })();
 
 // Cost of menopause calculator.
-// The Excel model "Cost of menopause: Sword vs traditional cost" (Client Model
-// and Assumptions sheets), formula for formula. The comments name the cell
-// each line stands for.
-// The Assumptions sheet. Not shown on the page: change the model here.
+// Built on the Excel model "Cost of menopause: Sword vs traditional cost"
+// (Client Model and Assumptions sheets). The comments name the cell each line
+// stands for. Three things differ from the Excel, after review: the cost per
+// woman, the Sword fee, and the cost always counts only the women who seek
+// care (the "All women in age bands" option is gone).
+// The assumptions. Not shown on the page: change the model here.
 const CALCULATOR_ASSUMPTIONS = {
-  specialtyVisits: 1500, // Path A: specialty visits (6 specialties x $250)
-  initialVisit: 250,     // Path A: initial visit and labs
-  followUps: 600,        // Path A: follow-up visits (4 visits)
-  pelvicFloor: 900,      // Path A: external pelvic floor sessions (6 x $150)
-  swordAso: 900,         // Path B: Sword price per woman, ASO (to confirm)
-  swordInsured: 900,     // Path B: Sword price per woman, fully insured (to confirm)
+  costPerWoman: 2080,    // Path A: cost of menopause care per woman. The measured Bloom savings per member in the menopause program
+  swordFee: 750,         // Path B: Sword fee per woman, ASO. The average fee collected per member
+  insuredDiscount: 0.1,  // Path B: fully insured gets a further 10% off the fee ($675)
+  swordFeeMax: 1000,     // Path B: the most Sword charges per member in total
   share45: 0.17,         // women 45+ as share of eligible lives (default)
   share40: 0.05,         // women 40-44 as share of eligible lives (default)
   seekLow: 0.076,        // share of women who seek care, low case
@@ -1805,7 +1948,6 @@ const CALCULATOR_ASSUMPTIONS = {
   const slider = section.querySelector('.calc__slider');
   const women40 = field('calc-women-40');
   const women45 = field('calc-women-45');
-  const included = field('calc-included');
 
   // Excel number formats: #,##0   $#,##0   0.0%
   const count = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
@@ -1825,23 +1967,27 @@ const CALCULATOR_ASSUMPTIONS = {
     savings: (v) => usd.format(round(v, 0)),
   };
 
-  // A whole number typed with or without commas. Blank (or no digits) = null.
+  // A whole number typed with or without commas ("50,000", "50k", "1.2m").
+  // A short decimal tail is dropped ("50,000.75" is 50,000). Blank = null.
   const wholeNumber = (input) => {
-    const digits = input.value.replace(/[^\d]/g, '');
-    return digits ? Number(digits) : null;
+    const raw = input.value.trim().toLowerCase();
+    const mult = /k$/.test(raw) ? 1e3 : /m$/.test(raw) ? 1e6 : 1;
+    const number = mult === 1 ? raw.replace(/[.,]\d{1,2}$/, '') : raw.replace(/[^\d.]/g, '');
+    const value = mult === 1 ? Number(number.replace(/[^\d]/g, '')) : Math.round(parseFloat(number) * mult);
+    return number.replace(/[^\d]/g, '') ? Math.min(value, 10000000) : null;
   };
 
-  // `input`: { funding, lives, women40, women45, included }; women counts are null when blank.
+  // `input`: { funding, lives, women40, women45 }; women counts are null when blank.
   // `a`: the assumptions. Returns the low, base and high cases.
   const calculate = (input, a) => {
-    const pathA = a.specialtyVisits + a.initialVisit + a.followUps + a.pelvicFloor;            // Assumptions!B9
+    const pathA = a.costPerWoman;                                                              // Assumptions!B9
     const counts = [input.women40, input.women45].filter((n) => n !== null);
     const women = counts.length === 0
       ? input.lives * (a.share45 + a.share40)
       : counts.reduce((sum, n) => sum + n, 0);                                                // B13:D13
-    const pathB = input.funding === 'ASO' ? a.swordAso : a.swordInsured;                      // B24:D24
-    const scenario = (seekShare) => {
-      const share = input.included === 'All women in age bands' ? 1 : seekShare;              // row 14
+    const fee = input.funding === 'ASO' ? a.swordFee : a.swordFee * (1 - a.insuredDiscount);
+    const pathB = Math.min(fee, a.swordFeeMax);                                               // B24:D24
+    const scenario = (share) => {                                                              // row 14: the share of women who seek care
       const includedWomen = women * share;                                                     // row 15
       const costToday = includedWomen * pathA;                                                 // row 19
       const swordUsers = includedWomen * a.swordUse;                                           // row 23
@@ -1858,6 +2004,8 @@ const CALCULATOR_ASSUMPTIONS = {
   };
 
   const outputs = [...section.querySelectorAll('[data-calc]')];
+  const status = section.querySelector('[data-calc-status]');
+  let sayLater;
 
   const update = () => {
     const a = CALCULATOR_ASSUMPTIONS;
@@ -1866,7 +2014,6 @@ const CALCULATOR_ASSUMPTIONS = {
       lives: wholeNumber(lives) ?? 0,
       women40: wholeNumber(women40),
       women45: wholeNumber(women45),
-      included: included.value,
     };
     const model = calculate(input, a);
     outputs.forEach((el) => {
@@ -1877,9 +2024,16 @@ const CALCULATOR_ASSUMPTIONS = {
     const min = Number(livesRange.min);
     const max = Number(livesRange.max);
     slider.style.setProperty('--fill', (((Number(livesRange.value) - min) / (max - min)) * 100).toFixed(2));
-    // What a blank women count stands for.
-    women40.placeholder = `Default: ${count.format(round(input.lives * a.share40, 0))}`;
-    women45.placeholder = `Default: ${count.format(round(input.lives * a.share45, 0))}`;
+    // Screen readers: one sentence, once the visitor stops changing things.
+    clearTimeout(sayLater);
+    sayLater = setTimeout(() => {
+      if (status) status.textContent = `Estimated savings, base case: ${FORMAT.savings(model.base.savings)}, ${FORMAT.savingsPct(model.base.savingsPct)}.`;
+    }, 700);
+    // What a blank women count stands for: the default share while both are
+    // blank; 0 once the other one is filled in (the model then uses the counts given).
+    const one = (input.women40 === null) !== (input.women45 === null);
+    women40.placeholder = one && input.women40 === null ? 'Counts as 0' : `Default: ${count.format(round(input.lives * a.share40, 0))}`;
+    women45.placeholder = one && input.women45 === null ? 'Counts as 0' : `Default: ${count.format(round(input.lives * a.share45, 0))}`;
 
   };
 
@@ -1894,8 +2048,24 @@ const CALCULATOR_ASSUMPTIONS = {
   // other, but the slider is never written to while it is the one being used:
   // some browsers drop the drag when a script sets its value.
   livesRange.addEventListener('input', () => { lives.value = count.format(Number(livesRange.value)); });
+  // Touch: a mostly vertical swipe that starts on the slider is the page
+  // scrolling, not a change: put the value back when the finger lifts.
+  let slideStart = null;
+  livesRange.addEventListener('touchstart', (event) => {
+    const t = event.touches[0];
+    slideStart = { x: t.clientX, y: t.clientY, value: livesRange.value };
+  }, { passive: true });
+  livesRange.addEventListener('touchend', (event) => {
+    const t = event.changedTouches[0];
+    if (slideStart && t && Math.abs(t.clientY - slideStart.y) > 2 * Math.abs(t.clientX - slideStart.x) && livesRange.value !== slideStart.value) {
+      livesRange.value = slideStart.value;
+      livesRange.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    slideStart = null;
+  }, { passive: true });
   lives.addEventListener('input', () => { livesRange.value = wholeNumber(lives) ?? 0; }); // stops at the slider's ends
 
+  form.addEventListener('submit', (event) => event.preventDefault()); // Enter in a field: nothing to send
   form.addEventListener('input', update);
   form.addEventListener('change', update);
   update();
@@ -1909,7 +2079,9 @@ const CALCULATOR_ASSUMPTIONS = {
 //
 // To try it without sending anything, add ?hubspot=mock to the address (the
 // console shows what would be sent, then the thank-you appears) or
-// ?hubspot=fail (the same, then the error).
+// ?hubspot=fail (the same, then the error). These only work on localhost and
+// on the preview, never on the live site, where a shared link carrying them
+// would otherwise drop the visitor's request without a word.
 const HUBSPOT_FORM = {
   portalId: '49228156',
   formId: '7c080f23-d5fd-4adf-9a3f-8916d05121ad',
@@ -1921,20 +2093,24 @@ const HUBSPOT_FORM = {
   // The form's consent settings in HubSpot: legitimate interest (a lead), one
   // subscription type, and the privacy line shown under the button.
   subscriptionTypeId: 3905884755,
-  consentText: "By submitting to this form, you agree to Sword Health's privacy policy. You can unsubscribe from these communications at any time.",
+  consentText: 'By submitting this form, you agree to Sword Health’s privacy policy. You can unsubscribe at any time.',
 };
 (() => {
   const dialog = document.getElementById('guide-form');
   // Without <dialog> the buttons keep their plain link to the whitepaper section.
   if (!dialog || typeof dialog.showModal !== 'function') return;
   const form = dialog.querySelector('form');
+  // First of all: the form never submits the browser's own way, which would put
+  // the visitor's details in the address, even if the setup below fails.
+  form.addEventListener('submit', (event) => event.preventDefault());
   const ask = dialog.querySelector('.guide-form__ask');
   const done = dialog.querySelector('.guide-form__done');
   const problem = dialog.querySelector('.guide-form__problem');
   const submit = dialog.querySelector('.guide-form__submit');
   const submitLabel = submit.textContent;
   const inputs = HUBSPOT_FORM.fields.map((name) => form.elements[name]);
-  const mode = new URLSearchParams(window.location.search).get('hubspot'); // 'mock', 'fail' or null
+  const testHost = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname) || /^menopause-campaign-preview(-[\w-]+)?\.vercel\.app$/.test(window.location.hostname);
+  const mode = testHost ? new URLSearchParams(window.location.search).get('hubspot') : null; // 'mock', 'fail' or null
 
   // ---- Opening and closing ----
   const reset = () => {
@@ -1956,6 +2132,8 @@ const HUBSPOT_FORM = {
     dialog.showModal();
   });
   dialog.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => dialog.close()));
+  // A link to the page with #download opens the form.
+  if (window.location.hash === '#download') document.querySelector('a[href="#download"]')?.click();
   // A click on the dimmed page closes it; a drag that merely ends there (selecting text) does not.
   let pressedOutside = false;
   dialog.addEventListener('mousedown', (event) => { pressedOutside = event.target === dialog; });
@@ -1969,7 +2147,7 @@ const HUBSPOT_FORM = {
     firstname: 'Enter your first name.',
     lastname: 'Enter your last name.',
     company: 'Enter your company.',
-    email: 'Enter your business email.',
+    email: 'Enter your work email.',
   };
   function setError(input, message) {
     const note = document.getElementById(`${input.id}-error`);
@@ -2010,7 +2188,7 @@ const HUBSPOT_FORM = {
       context: {
         pageUri: window.location.href,
         pageName: document.title,
-        ...(cookie ? { hutk: decodeURIComponent(cookie[1]) } : {}),
+        ...(cookie && /^[0-9a-f]{32}$/i.test(cookie[1]) ? { hutk: cookie[1] } : {}),
       },
       legalConsentOptions: {
         legitimateInterest: {
@@ -2032,7 +2210,13 @@ const HUBSPOT_FORM = {
     try {
       const response = await fetch(
         `https://api.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_FORM.portalId}/${HUBSPOT_FORM.formId}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          // Give up after 15 seconds rather than leave the button on "Sending…".
+          signal: typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(15000) : undefined,
+        },
       );
       if (response.ok) return { ok: true };
       // HubSpot's reply names the field and the rule it failed.
@@ -2061,10 +2245,16 @@ const HUBSPOT_FORM = {
     submit.disabled = true;
     submit.textContent = 'Sending…';
     // A bot filled in the field people cannot see: say thanks, send nothing.
-    const result = form.elements.hp_note.value ? { ok: true } : await send(payload());
-    sending = false;
-    submit.disabled = false;
-    submit.textContent = submitLabel;
+    let result;
+    try {
+      result = form.elements.hp_note.value ? { ok: true } : await send(payload());
+    } catch (error) {
+      result = { ok: false, types: [], detail: String(error) };
+    } finally {
+      sending = false;
+      submit.disabled = false;
+      submit.textContent = submitLabel;
+    }
 
     if (result.ok) {
       done.querySelector('[data-sent-to]').textContent = form.elements.email.value.trim();
@@ -2076,7 +2266,7 @@ const HUBSPOT_FORM = {
     console.error('[download form]', result.detail);
     if (result.types.some((type) => /EMAIL/.test(type))) {
       // HubSpot turned the address down (not valid, or not one it accepts for this form).
-      setError(form.elements.email, 'Please use a valid business email address.');
+      setError(form.elements.email, 'Enter a valid work email address.');
       form.elements.email.focus();
     } else {
       problem.textContent = 'Something went wrong and the form was not sent. Please try again.';
@@ -2096,7 +2286,7 @@ const HUBSPOT_FORM = {
 
 // FAQ: slide answers open and shut instead of snapping.
 (() => {
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceQuery = matchMedia('(prefers-reduced-motion: reduce)');
   document.querySelectorAll('.faq__item').forEach((item) => {
     const summary = item.querySelector('summary');
     const answer = item.querySelector('.faq__answer');
@@ -2104,7 +2294,7 @@ const HUBSPOT_FORM = {
     let running = null;
 
     summary.addEventListener('click', (event) => {
-      if (reducedMotion) return; // native open/close, no animation
+      if (reduceQuery.matches) return; // native open/close, no animation
       event.preventDefault();
       const opening = !item.open || item.classList.contains('is-closing');
 
@@ -2137,3 +2327,10 @@ const HUBSPOT_FORM = {
     });
   });
 })();
+
+// Smooth scrolling for in-page links only once the page has loaded, so a
+// link that opens the page at a section jumps straight there.
+window.addEventListener('load', () => requestAnimationFrame(() => document.documentElement.classList.add('smooth-ok')));
+
+// Everything above ran: head.js's safety net is not needed.
+clearTimeout(window.scriptFallback);

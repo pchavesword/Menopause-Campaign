@@ -27,7 +27,8 @@
 
 :root {
   --ink: #0d0d0d;
-  --grey-600: #808080;
+  --grey-600: #808080;   /* lines and fills only: under 4.5:1 for text */
+  --grey-700: #5e5e5e;   /* secondary text: 6.4:1 on white, 5.5:1 or more on the lilac and the hero texture */
   --grey-500: #ababab;
   --purple-600: #9957d6;
   --white: #fff;
@@ -83,13 +84,37 @@
 
   --edge: 10px;                              /* the page container's own padding; panels reach out to --layout-page-margin */
   --gutter: clamp(20px, 5.47vw, 70px);       /* panel inner padding         */
-  --inset: clamp(20px, 6.25vw, calc(var(--layout-page-margin) + var(--layout-content-inset) - var(--edge))); /* sections below the panels: content starts 100px in at 1440 */
+  /* Sections below the panels: headings and cards start at the page margin on
+     phones (20px from the screen edge) and move in from there to 100px at 1440. */
+  --inset: clamp(calc(var(--layout-page-margin) - var(--edge)), calc(10px + (100vw - 640px) * 0.1), calc(var(--layout-page-margin) + var(--layout-content-inset) - var(--edge)));
   --lilac: radial-gradient(ellipse 89.84% 100% at 50% 0, #f2f2f2, #dfcaf2);
+  /* The page is designed light only: browsers' automatic dark modes must not
+     invert it (they would turn the receipts' print light on their white paper). */
+  color-scheme: only light;
+}
+
+/* The receipts' small shifts are set by script.js on the paper or the half
+   itself and read only there: registered as not inherited, so changing them
+   does not restyle every line of print inside. */
+@property --jx { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --jy { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --jr { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@property --wx { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --wy { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --wr { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+
+/* Phones: panels and cards are padded by the page margin, 20px all round. */
+@media (max-width: 639px) {
+  :root { --inset-panel: 20px; --inset-card: 20px; }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: clip; }
+/* scroll-padding-top: keyboard focus and in-page links stop below the fixed navbar.
+   Smooth scrolling for in-page links only once the page has loaded (script.js
+   adds smooth-ok), so a link that opens the page at a section jumps there. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: clip; scroll-padding-top: 100px; }
+html.smooth-ok { scroll-behavior: smooth; }
 
 body {
   margin: 0;
@@ -112,11 +137,12 @@ a { color: inherit; }
   text-box: trim-both cap alphabetic;
 }
 
-:focus-visible { outline: 2px solid var(--purple-600); outline-offset: 3px; border-radius: 4px; }
+/* Dark plum, so the ring shows on white, on the lilac panels and over the hero texture (3:1 and up everywhere). */
+:focus-visible { outline: 2px solid #42074e; outline-offset: 3px; border-radius: 4px; }
 
 /* ---------- Layout primitives ---------- */
 
-.page { max-width: 1440px; margin-inline: auto; padding: var(--edge) var(--edge) 0; }
+.page { max-width: 1440px; margin-inline: auto; padding: var(--layout-page-margin) var(--edge) 0; }
 
 .panel { position: relative; border-radius: var(--radius-panel); padding-inline: var(--gutter); }
 .panel--lilac { background: var(--lilac); }
@@ -130,7 +156,7 @@ a { color: inherit; }
   --wide-inset: var(--layout-page-margin);   /* space between a wide panel and the screen edge, and below the hero */
   --bleed: calc((var(--vw) - min(var(--vw), 1440px)) / 2 + var(--edge) - var(--wide-inset));
   --panel-w: calc(min(var(--vw), 1440px) - 2 * var(--edge)); /* a regular panel's width */
-  /* Right-hand column that holds the receipts in section 2 and the card in section 3 */
+  /* Right-hand column that holds the collage in section 2 */
   --visual-w: min(560px, calc(0.44 * (var(--panel-w) - 2 * var(--gutter))));
 }
 .panel--bleed {
@@ -141,11 +167,11 @@ a { color: inherit; }
 .wrap { margin-inline: var(--inset); }
 .section { margin-top: var(--layout-section-gap); }
 .meet ~ .section { margin-top: var(--layout-section-gap-lg); }
-.section--tight { margin-top: clamp(56px, 6.25vw, 80px); }
 
 .rule { display: block; width: 100%; height: 1px; }
 
 .lg-only { display: none; }
+/* .until-lg: a line break on phones and tablets only (switched off in the 1024px rules) */
 
 /* ---------- Type ---------- */
 
@@ -155,12 +181,12 @@ a { color: inherit; }
   font-size: var(--display-m);
   line-height: 1.1;
 }
-.display--italic { font-style: italic; }
-.display--loose { line-height: 1.2; }
 
 .eyebrow { font-size: var(--label-s); font-weight: 500; line-height: 1.2; letter-spacing: var(--tracking-label); text-transform: uppercase; }
-.note { font-size: var(--body-xs); line-height: 1.4; color: var(--grey-600); }
-.small { font-size: var(--body-s); line-height: 1.4; }
+.note { font-size: var(--body-xs); line-height: var(--lh-body); color: var(--grey-700); }
+.small { font-size: var(--body-s); line-height: var(--lh-body); }
+/* Read by screen readers, not shown. */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 .stat__num {
   font-family: var(--serif);
@@ -226,7 +252,6 @@ a { color: inherit; }
 .btn--secondary { background: rgba(250, 250, 250, 0.9); color: var(--ink); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 .btn--secondary:hover { background: #fafafa; }
 
-.md-up { display: none; }
 
 /* ==========================================================================
    Navbar
@@ -262,7 +287,7 @@ a { color: inherit; }
 .site-header__inner {
   position: relative; /* above the frosted bar */
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   max-width: 1440px;
@@ -272,7 +297,12 @@ a { color: inherit; }
 .site-header__inner > * { pointer-events: auto; }
 .logo { display: block; flex: none; }
 .logo img { width: 97.5px; height: 24px; }
-.site-header .logo { margin-top: 9px; }
+/* Phones: a smaller logo and button, 8px inside the hero's top corners. */
+@media (max-width: 639px) {
+  .site-header__inner { padding: 28px 28px 0; }
+  .site-header .logo img { width: 81px; height: 20px; }
+  .site-header .btn { padding: 12px 14px; font-size: 13px; }
+}
 
 /* ==========================================================================
    Section 1 — hero: the end of the receipt hangs down from the top, in the
@@ -283,7 +313,7 @@ a { color: inherit; }
   /* Its own stacking order: section 2 comes later in the page, so the receipt
      that leaves the hero to tear passes in front of the headline, not behind. */
   isolation: isolate;
-  --end: calc((100svh - 30px) * 0.4); /* how far down the hero the receipt's end hangs: 40% of its height on phones */
+  --end: calc((100svh - 40px) * 0.42); /* how far down the hero the receipt's end hangs: 42% of its height (370 of 880 in the design) */
   --paper-start: 0.22;                /* intro: where the top of the paper starts, as a share of the hero's height */
   display: flex;
   flex-direction: column;
@@ -291,27 +321,27 @@ a { color: inherit; }
   align-items: center;
   overflow: hidden;
   background: var(--white);
-  /* Fills the screen (less the page margin above and the gap below). */
-  min-height: calc(100svh - var(--edge) - var(--wide-inset));
+  /* Fills the screen (less the page margin above and below). */
+  min-height: calc(100svh - 2 * var(--wide-inset));
   padding-block: 120px 56px;
   text-align: center;
 }
-/* With the receipt (script.js): the copy starts just under its end, about
-   60% of the way down on wider screens. */
-.js .hero { justify-content: flex-start; padding-top: calc(var(--end) + clamp(28px, 5.4svh, 48px)); }
+/* With the receipt (script.js): the copy starts just under its end (57px
+   under it in the design), a little under half way down. */
+.js .hero { justify-content: flex-start; padding-top: calc(var(--end) + clamp(28px, 6.4svh, 57px)); }
 .hero__copy {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--stack-md);
+  gap: clamp(var(--stack-md), 3.6svh, var(--stack-lg)); /* 32px in the design; tighter on short screens */
   max-width: 645px;
 }
 .hero__title {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: var(--display-l);
+  font-size: min(var(--display-l), 8.8vw); /* narrow phones: small enough to stay three lines */
   line-height: 1.1;
   text-wrap: balance;
 }
@@ -319,13 +349,21 @@ a { color: inherit; }
 .hero__cta { display: flex; flex-direction: column; align-items: center; gap: var(--stack-sm); }
 
 /* The receipt. script.js copies Sarah's receipt into .hero__slot (so none of
-   this shows without it) and plays the intro. It is 459px wide, as it is
-   when the page opens. At rest only its end shows: the rest of it runs out
-   of the top of the hero. */
+   this shows without it) and plays the intro. At rest it is 371px wide and
+   only its end shows: the rest of it runs out of the top of the hero. While
+   it unrolls script.js shows it larger (459px, between the two halves of the
+   title), and brings it down to this size as the paper feeds up. */
 .hero__stage { display: none; }
 .js .hero__stage { display: block; position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+/* The receipt is seen through a window the size of the hero. Below desktop
+   the receipt is nearly as wide as the screen and would run under the logo
+   and the button: there the window fades it out before it reaches them. */
+.hero__window { position: absolute; inset: 0; }
+@media (max-width: 1023px) {
+  .hero__window { -webkit-mask-image: linear-gradient(transparent 44px, #000 108px); mask-image: linear-gradient(transparent 44px, #000 108px); }
+}
 .hero__slot {
-  --w: min(459px, 86%);
+  --w: min(371px, 86%);
   position: absolute;
   left: calc(50% - var(--w) / 2);
   bottom: calc(100% - var(--end));
@@ -384,6 +422,7 @@ html.intro-pre .hero .tex-bg { opacity: 0; transition: none; }
 .intro-replay:hover,
 .intro-replay:focus-visible { opacity: 1; }
 html.intro-hold .intro-replay { opacity: 0; pointer-events: none; }
+html.intro-hold .intro-replay:focus-visible { opacity: 1; }
 
 /* Intro, last step: until the receipt is nearly home, the navbar, the hero
    copy and the scroll cue are held back (the `intro-hold` class is set in
@@ -398,7 +437,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   position: absolute;
   z-index: 1;
   left: 50%;
-  bottom: clamp(16px, 3svh, 28px);
+  bottom: clamp(16px, 4.4svh, 39px);
   margin-left: -25px; /* centred without a transform, so it can fade in like the copy */
   width: 50px;
   display: none; /* phones and short screens: no room for it under the copy */
@@ -441,18 +480,21 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 
 .sarah {
   margin-top: var(--layout-panel-gap);
-  padding-block: 56px;
+  padding-block: clamp(40px, 9vw, 56px);
   display: flex;
   flex-direction: column;
   gap: 64px;
 }
 .sarah__top { display: flex; flex-direction: column; gap: 40px; }
-.sarah__copy { display: flex; flex-direction: column; gap: 40px; }
+.sarah__copy { display: flex; flex-direction: column; gap: 40px; max-width: 560px; }
 .sarah__intro { display: flex; flex-direction: column; gap: var(--stack-md); }
-/* Her story: two paragraphs, a blank line apart, as in the design. */
-.sarah__story { display: flex; flex-direction: column; gap: 2.1em; }
+/* 48px in the design: between Display/M and Display/L. */
+.sarah__intro .display { font-size: clamp(36px, 22px + 2.6vw, 48px); }
+/* Her story, then the turn: one line set apart, in the serif. */
+.sarah__story { display: flex; flex-direction: column; gap: clamp(32px, 5vw, 56px); }
+.sarah__turn { font: 400 clamp(20px, 16px + 1vw, 24px)/1.2 var(--serif); }
 /* "MEET (photo) Sarah" */
-.meet-kicker { display: flex; align-items: center; gap: var(--stack-xs); font: 500 var(--label-s)/1.2 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; }
+.meet-kicker { display: flex; align-items: center; gap: var(--stack-xs); font: 500 var(--label-s)/1.2 var(--sans); letter-spacing: var(--tracking-label); text-transform: uppercase; }
 .meet-kicker__who {
   display: flex;
   align-items: center;
@@ -483,6 +525,9 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   mask-image: linear-gradient(transparent, #000 56px);
 }
 .receipt-morph { flex: none; width: min(100%, 371px); }
+/* Until script.js has torn Sarah's receipt in two, keep the long receipt out
+   of sight: it would stick up into the hero and then jump into place. */
+.js .receipt-window:not(.is-torn) .receipt-morph { visibility: hidden; }
 
 /* Sarah's receipt torn in half (script.js builds this): the top half on the
    left, the bottom half on the right, so the whole year shows at once.
@@ -526,7 +571,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 /* Receipt. Everything inside is sized in --u (1/371 of the receipt's width),
    so the same markup works at any size: Sarah's, and the small ones in the
    collage. */
-.receipt { position: relative; width: 100%; container-type: inline-size; }
+.receipt { position: relative; width: 100%; container-type: inline-size; text-align: left; } /* left, even inside the centred hero */
 .receipt__feed {
   --u: calc(100cqw / 371);
   position: relative;
@@ -571,19 +616,19 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 .receipt :where(p, dt, dd, span, b) { text-box: none; line-height: 1; }
 
 .receipt__head { display: flex; flex-direction: column; gap: calc(var(--u) * 10); text-align: center; }
-.receipt__date, .receipt__sub, .receipt__caption, .visit__date, .visit__line { color: var(--grey-600); }
+.receipt__date, .receipt__sub, .receipt__caption, .visit__date, .visit__line { color: var(--grey-700); }
 .receipt__issuer { margin-bottom: calc(var(--u) * -4); font-size: calc(var(--u) * 12); font-weight: 600; text-transform: uppercase; }
 .receipt__title { font-size: calc(var(--u) * 16); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
 .receipt__sub { font-style: italic; }
 /* A 1px line that takes up no room, as in the design. */
-.receipt__rule { height: calc(var(--u) * 1); margin-top: calc(var(--u) * -1); background: #5e5e5e; }
+.receipt__rule { height: calc(var(--u) * 1); margin-top: calc(var(--u) * -1); background: var(--grey-700); }
 .receipt__heading { font-size: calc(var(--u) * 13); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
 
 .receipt__member, .receipt__claims { display: flex; flex-direction: column; gap: calc(var(--u) * 12); }
 .receipt__plan { display: flex; flex-direction: column; gap: calc(var(--u) * 8); font-size: calc(var(--u) * 11); letter-spacing: 0.05em; }
 .receipt__plan > div { display: flex; justify-content: space-between; gap: calc(var(--u) * 8); }
 .receipt__plan :where(dt, dd) { line-height: 1.2; }
-.receipt__plan dt { color: #5e5e5e; text-transform: uppercase; }
+.receipt__plan dt { color: var(--grey-700); text-transform: uppercase; }
 .receipt__plan dd { white-space: nowrap; text-align: right; }
 
 .receipt__claims { padding-bottom: calc(var(--u) * 8); }
@@ -621,7 +666,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   height: calc(var(--u) * 0.75);
   background: url("assets/visit-separator.svg") left top / calc(var(--u) * 327) 100% repeat-x;
 }
-.receipt__totals dt { order: 0; font-size: calc(var(--u) * 12); font-weight: 500; color: #5e5e5e; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; text-box: trim-both cap alphabetic; }
+.receipt__totals dt { order: 0; font-size: calc(var(--u) * 12); font-weight: 500; color: var(--grey-700); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; text-box: trim-both cap alphabetic; }
 .receipt__totals dd { order: 2; font-size: calc(var(--u) * 13); font-weight: 600; letter-spacing: 0.05em; white-space: nowrap; text-box: trim-both cap alphabetic; }
 .receipt__grand { display: flex; align-items: flex-start; justify-content: space-between; gap: calc(var(--u) * 8); font-size: calc(var(--u) * 13); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
 .receipt__grand b { font: 500 calc(var(--u) * 22) / 1 var(--serif); letter-spacing: -0.03em; }
@@ -647,19 +692,22 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 .sarah__problem { display: flex; flex-direction: column; gap: var(--stack-xl); }
 .problem { display: flex; flex-direction: column; gap: clamp(40px, 5vw, 60px); }
 .problem__head, .problem__stats { display: flex; flex-direction: column; gap: 20px; }
-.problem__stats { max-width: 423px; }
+.problem__stats { max-width: 552px; }
 .problem__close { padding-top: clamp(0px, 4vw, 60px); font: 400 var(--display-s)/1.1 var(--serif); }
 /* Each stat: the number, then what it measures beside it */
-.stat { display: flex; align-items: flex-start; gap: var(--layout-column-gap); }
-.problem .stat__num { flex: none; font-size: clamp(36px, 24px + 2.4vw, 48px); letter-spacing: -0.04em; }
-.stat__text { flex: 1; min-width: 0; max-width: 400px; font-size: var(--body-s); line-height: 1.4; }
+.stat { display: flex; align-items: flex-start; gap: clamp(16px, 4vw, var(--layout-column-gap)); }
+/* The numbers share one column (150px at 48px), so what they measure lines up. */
+.problem .stat__num { flex: 0 0 3.125em; font-size: clamp(36px, 24px + 2.4vw, 48px); letter-spacing: -0.04em; }
+.stat__text { flex: 1; min-width: 0; max-width: 378px; font-size: var(--body-s); line-height: var(--lh-body); }
 
 /* Collage of other people's receipts, built by script.js. Each .piece is
    placed in % of the collage (--x, --y, --w), so the whole picture scales. On
    desktop script.js also moves the pieces (--dx, --dy, --r, --s). */
+/* Without script.js nothing fills the collage: leave no empty box. */
+html:not(.js) .collage { display: none; }
 .collage {
   position: relative;
-  width: 100%;
+  width: calc(100% - 24px); /* the receipts at its sides lean out a little: this keeps them inside the panel */
   max-width: 560px;
   margin-inline: auto;
   aspect-ratio: 560 / 640;
@@ -712,7 +760,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
    never scrolls sideways); above and below, nothing cuts it. */
 .connected .tex-bg { inset-inline: calc(-1 * var(--wide-inset)); z-index: -1; overflow-x: clip; overflow-y: visible; border-radius: 0; }
 /* Content lines up with the sections below (--inset), not with the hero. */
-.connected.panel--bleed { padding-inline: max(20px, calc(var(--bleed) + var(--inset))); }
+.connected.panel--bleed { padding-inline: calc(var(--bleed) + var(--inset)); }
 .connected > :not(.tex-bg) { position: relative; z-index: 1; }
 .connected__copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--stack-lg); max-width: 514px; }
 .connected__copy .display { font-size: var(--display-l); }
@@ -720,69 +768,67 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 .connected__visual { display: flex; justify-content: center; }
 
 /* Sarah's card: her one record. Whose record it is (Sword's, dated like her
-   receipt), who she is, why she came (quiet, in a line), the plan (the point
-   of the card, in a tinted block) and a summary set like the totals of a
-   receipt. Built on the Marketing Kit's "Signal detected" card; the kit's
-   type is scaled by --k. */
+   receipt), who she is and what she came with (quiet, in a line), the plan
+   (the point of the card, in a tinted block) and a summary set like the
+   totals of a receipt. Built on the Marketing Kit's "Signal detected" card,
+   at 1.25 times the kit's sizes. */
 .signal-card {
-  --k: 1.25;
   display: flex;
   flex-direction: column;
-  gap: calc(16px * var(--k));
-  width: 368px;
+  gap: 20px;
+  width: 419px;
   max-width: 100%;
-  padding: calc(16px * var(--k)) calc(22.4px * var(--k));
-  border: 1.25px solid rgba(255, 255, 255, 0.95);
-  border-radius: calc(16px * var(--k));
+  padding: 24px 20px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.86);
-  -webkit-backdrop-filter: blur(25px);
-  backdrop-filter: blur(25px);
-  box-shadow: 0 7.5px 21px rgba(13, 13, 13, 0.07);
+  -webkit-backdrop-filter: blur(12.5px);
+  backdrop-filter: blur(12.5px);
+  /* the white edge is drawn inside the card, as in the design, so it takes no room from the text */
+  box-shadow: inset 0 0 0 1.25px rgba(255, 255, 255, 0.95), 0 7.5px 21.25px rgba(13, 13, 13, 0.07);
 }
 .signal-card :where(p, span, li) { text-box: none; }
-.signal-card__top { display: flex; align-items: center; justify-content: space-between; gap: calc(12px * var(--k)); }
-.signal-card__logo { flex: none; width: calc(59px * var(--k)); height: auto; }
-.signal-card__date { font: 400 calc(10.4px * var(--k)) / 1 var(--sans); color: #808080; white-space: nowrap; }
-.signal-card__head { display: flex; align-items: center; gap: calc(10.4px * var(--k)); }
-.signal-card__photo { flex: none; width: calc(27.6px * var(--k)); height: calc(27.6px * var(--k)); border-radius: 50%; }
-.signal-card__who { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: calc(8px * var(--k)); }
-.signal-card__name { font: 500 calc(14.4px * var(--k)) / 1.2 var(--sans); white-space: nowrap; }
-.signal-card__role { font: 400 calc(12.8px * var(--k)) / 1.4 var(--sans); color: #5e5e5e; white-space: nowrap; }
+.signal-card__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-inline: 4px; }
+.signal-card__logo { flex: none; width: 73.75px; height: auto; }
+.signal-card__date { font: 400 13px/1 var(--sans); color: var(--grey-700); white-space: nowrap; }
 .signal-card__rule { height: 1.25px; margin-top: -1.25px; background: #dbdbdb; }
-.signal-card__block { display: flex; flex-direction: column; gap: calc(9px * var(--k)); }
-.signal-card__eyebrow { font: 500 calc(11px * var(--k)) / 1.2 var(--sans); letter-spacing: calc(0.8px * var(--k)); text-transform: uppercase; white-space: nowrap; }
-.signal-card__eyebrow--alert { color: #e05555; }
-.signal-card__eyebrow--quiet { color: #5e5e5e; }
+.signal-card__block { display: flex; flex-direction: column; gap: 11.25px; padding-inline: 4px; }
+.signal-card__head { display: flex; align-items: center; gap: 13px; }
+.signal-card__photo { flex: none; width: 34.45px; height: 34.45px; border-radius: 50%; }
+.signal-card__who { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.signal-card__name { font: 500 18px/1.2 var(--sans); white-space: nowrap; }
+.signal-card__role { font: 400 16px/1.4 var(--sans); color: var(--grey-700); white-space: nowrap; }
+.signal-card__eyebrow { font: 500 13px/1.2 var(--sans); letter-spacing: 0.65px; text-transform: uppercase; }
 
-/* Reasons for visit run on as one line of text; a reason never breaks in two,
-   and the dot that follows it stays with it at the end of the line. */
-.signal-card__reasons { font: 400 calc(12px * var(--k)) / 1.5 var(--sans); color: #5e5e5e; }
-.signal-card__reasons li { display: inline; white-space: nowrap; }
-.signal-card__reasons li:not(:last-child)::after { content: "\00a0·"; color: #ef6c6c; font-weight: 700; }
+/* Her symptoms run on as lines of text with a dot between one and the next.
+   Each symptom carries its dot in front of it, and the list is pulled left by
+   the dot's room, so a dot never starts a line: there it is clipped away. */
+.signal-card__person { gap: 12px; overflow: hidden; }
+.signal-card__reasons { display: flex; flex-wrap: wrap; margin-left: -16px; font: 400 14px/1.5 var(--sans); color: var(--grey-700); }
+.signal-card__reasons li { position: relative; padding-left: 16px; white-space: nowrap; }
+.signal-card__reasons li::before { content: "·"; position: absolute; left: 6px; font-weight: 700; }
 
-.signal-card__plan { gap: calc(12px * var(--k)); padding: calc(14px * var(--k)); border-radius: calc(10px * var(--k)); background: rgba(153, 87, 214, 0.09); }
-.signal-card__steps { display: flex; flex-direction: column; gap: calc(9px * var(--k)); }
-.signal-card__steps li { display: flex; align-items: center; gap: calc(8px * var(--k)); font: 500 calc(14px * var(--k)) / 1.3 var(--sans); }
+.signal-card__plan { gap: 15px; padding: 17.5px; border-radius: 12.5px; background: rgba(153, 87, 214, 0.09); }
+.signal-card__steps { display: flex; flex-direction: column; gap: 11.25px; }
+.signal-card__steps li { display: flex; align-items: center; gap: 8px; font: 500 16px/1.3 var(--sans); }
 .signal-card__steps li::before {
   content: "";
   flex: none;
-  width: calc(11.2px * var(--k));
-  height: calc(11.2px * var(--k));
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: var(--purple-600) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.7 8.3l2.2 2.2 4.4-4.8'/%3E%3C/svg%3E") center / 100% no-repeat;
 }
-.signal-card__steps small { font-size: calc(12px * var(--k)); font-weight: 400; color: #5e5e5e; white-space: nowrap; }
+.signal-card__steps small { font-size: inherit; font-weight: 400; color: var(--grey-700); white-space: nowrap; }
 
-.signal-card__summary { display: flex; flex-direction: column; gap: calc(5px * var(--k)); margin: 0; font: 400 calc(13px * var(--k)) / 1.4 var(--sans); }
-.signal-card__summary > div { display: flex; align-items: baseline; justify-content: space-between; gap: calc(12px * var(--k)); }
-.signal-card__summary dt { color: #5e5e5e; }
-.signal-card__summary dd { font-weight: 500; text-align: right; }
+.signal-card__summary { display: flex; flex-direction: column; gap: 6.25px; margin: 0; font: 400 16.25px/1.4 var(--sans); }
+.signal-card__summary > div { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
+.signal-card__summary dt { color: var(--grey-700); white-space: nowrap; }
+.signal-card__summary dd { margin: 0; font-weight: 500; text-align: right; }
 
-/* On a phone the card is narrower than the kit's: smaller type, so the name
-   and her age share a line, and the reasons flow as ordinary text. */
+/* On a phone the card is narrower than the kit's: the summary a size down, so
+   its longer answers still sit beside their labels. */
 @media (max-width: 479px) {
-  .signal-card { --k: 1.05; }
-  .signal-card__reasons li { white-space: normal; }
+  .signal-card__summary { font-size: 14px; }
 }
 
 /* The card fades up from below, slowly and smoothly: the opposite of the
@@ -796,7 +842,8 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 
 /* ==========================================================================
    Section 4 — Meet Sword Women's Health
-   One wide panel: copy on the left, the app and the Bloom pod on the right.
+   One card, as wide as the sections below: copy on the left, the app and the
+   Bloom pod on the right.
    ========================================================================== */
 
 .meet__card {
@@ -804,11 +851,10 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   display: flex;
   flex-direction: column;
   gap: var(--stack-xl);
-  padding-block: var(--inset-panel) 0;
+  padding: var(--inset-panel) var(--inset-panel) 0;
+  border-radius: var(--radius-panel);
   background: var(--white) url("assets/meet-bg.jpg") center / cover no-repeat;
 }
-/* Content lines up with the sections below (--inset). */
-.meet__card.panel--bleed { padding-inline: max(20px, calc(var(--bleed) + var(--inset))); }
 .meet__copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--stack-xl); max-width: 540px; }
 .meet__intro { display: flex; flex-direction: column; gap: var(--stack-md); }
 
@@ -818,31 +864,37 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 .points h3, .points__was { font: 400 var(--display-xs)/1.3 var(--serif); }
 .points__was { opacity: 0.3; }
 .points__was s { text-decoration-thickness: 1px; }
-.points li > p:last-child { font-size: var(--body-s); line-height: 1.4; }
+.points li > p:last-child { font-size: var(--body-s); line-height: var(--lh-body); }
 
-.meet__visual { align-self: center; width: min(600px, 100%); height: auto; margin-bottom: 26px; }
+.meet__visual { align-self: center; width: min(440px, 100%); height: auto; margin-bottom: 26px; }
 
 /* ==========================================================================
    Section 5 — savings calculator
    ========================================================================== */
 
-.calc { display: flex; flex-direction: column; gap: 24px; }
+/* --pad: the card's padding; --gap: between the groups inside it. */
 .calc__card {
+  --pad: var(--inset-card);
+  --gap: 40px;
   display: grid;
   border-radius: var(--radius-panel);
   background: radial-gradient(130% 120% at 65% 45%, var(--white) 60%, #f2f2f2);
   box-shadow: inset 0 0 0 1px rgba(13, 13, 13, 0.03);
 }
-.calc :where(p, label, output, span, dt, dd, summary > span:first-child) { text-box: none; }
+.calc :where(p, label, span, dt, dd) { text-box: none; }
+
+/* The title runs across the top of the card, over both columns. */
+.calc__title { padding: var(--pad) var(--pad) 0; }
 
 /* ---- Client inputs ---- */
-.calc__inputs { display: flex; flex-direction: column; gap: 32px; padding: 32px 24px; }
-.calc__fields { display: flex; flex-direction: column; gap: 16px; }
+.calc__inputs { display: flex; flex-direction: column; gap: var(--stack-md); padding: var(--gap) var(--pad) var(--pad); }
+.calc__inputs > .eyebrow { margin-bottom: -6px; } /* its text box is not trimmed here: 24px from its capitals to the row below */
+.calc__fields { display: flex; flex-direction: column; gap: 16px; margin-top: calc(var(--gap) - var(--stack-md)); }
 /* Two fields side by side where there is room; stacked where there isn't. */
 .calc__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; align-items: end; }
 .calc__field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .calc__field label { font: 600 14px/22px var(--sans); color: #2e2e2e; }
-.calc__field label span { font-weight: 400; color: #5e5e5e; }
+.calc__field label span { font-weight: 400; color: var(--grey-700); }
 .calc__field :where(select, input) {
   -webkit-appearance: none;
   appearance: none;
@@ -862,8 +914,12 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   cursor: pointer;
   text-overflow: ellipsis;
 }
-.calc__field input::placeholder { color: #8c8c8c; font-weight: 400; opacity: 1; }
-.calc__hint { margin-top: -4px; font: 400 12px/1.4 var(--sans); color: #5e5e5e; }
+/* Touch screens: 16px, so iOS does not zoom the page in when a field is focused. */
+@media (pointer: coarse) {
+  .calc__field :where(select, input) { font-size: 16px; }
+}
+.calc__field input::placeholder { color: #707070; font-weight: 400; opacity: 1; } /* 4.9:1 */
+.calc__hint { margin-top: -4px; font: 400 12px/1.4 var(--sans); color: var(--grey-700); }
 
 /* Eligible lives: a number to type, and a slider for the same number. */
 .calc__slider-group { display: flex; flex-direction: column; gap: 20px; }
@@ -928,9 +984,9 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   box-shadow: 0 6px 17px rgba(0, 0, 0, 0.07);
 }
 .calc__range:focus-visible { outline: none; }
-.calc__range:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--purple-600); outline-offset: 2px; }
-.calc__range:focus-visible::-moz-range-thumb { outline: 2px solid var(--purple-600); outline-offset: 2px; }
-.calc__bounds { display: flex; justify-content: space-between; font: 600 12px/18px var(--sans); color: #5e5e5e; }
+.calc__range:focus-visible::-webkit-slider-thumb { outline: 2px solid #42074e; outline-offset: 2px; }
+.calc__range:focus-visible::-moz-range-thumb { outline: 2px solid #42074e; outline-offset: 2px; }
+.calc__bounds { display: flex; justify-content: space-between; font: 600 12px/18px var(--sans); color: var(--grey-700); }
 
 /* ---- The base case ---- */
 /* A container, so the numbers and the two smaller results are sized by the
@@ -940,17 +996,17 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 40px;
-  padding: 32px 24px 48px;
+  gap: var(--gap);
+  padding: var(--stack-sm) var(--pad) var(--pad);
   text-align: center;
 }
-.calc__results > .eyebrow { color: #5e5e5e; }
+.calc__results > .eyebrow { color: var(--grey-700); }
 .calc__main { display: flex; flex-direction: column; gap: 8px; }
 .calc__total { font: 400 clamp(34px, 13.5cqw, var(--display-2xl))/1.075 var(--serif); letter-spacing: -0.2px; white-space: nowrap; }
 .calc__label { font: 400 clamp(16px, 15px + 0.25vw, 18px)/24px var(--sans); }
 .calc__facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 24px; margin: 12px 0 0; font: 400 14px/22px var(--sans); }
 .calc__facts div { display: flex; gap: 6px; }
-.calc__facts dt { color: #5e5e5e; }
+.calc__facts dt { color: var(--grey-700); }
 .calc__facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
 /* Today's cost and the cost with Sword: one under the other in a narrow
    column, side by side with a line between them in a wide one. */
@@ -966,7 +1022,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
     border-top: 1px solid rgba(13, 13, 13, 0.12);
   }
   .calc__others::before { content: ""; grid-column: 2; grid-row: 1; background: rgba(13, 13, 13, 0.12); }
-  .calc__other { grid-row: 1; padding-block: 44px 0; border-top: 0; }
+  .calc__other { grid-row: 1; padding-block: min(64px, 10.7cqw) 0; border-top: 0; }
   .calc__other:first-child { grid-column: 1; }
   .calc__other:last-child { grid-column: 3; }
 }
@@ -1007,11 +1063,11 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 .voice { display: flex; flex-direction: column; align-items: flex-start; gap: var(--stack-lg); }
 .voice__mark { width: 29px; height: 27px; margin-bottom: -8px; }
 .voice__quote { max-width: 446px; font: italic 400 var(--display-l)/1.1 var(--serif); }
-/* A quote on its own: across the page, a little smaller so it stays a few lines */
-.voice--solo { max-width: 960px; }
-.voice--solo .voice__quote { max-width: none; font-size: clamp(26px, 16px + 2vw, 40px); line-height: 1.15; }
-.byline { font-size: var(--body-s); font-weight: 600; line-height: 1.4; }
-.byline span { display: block; max-width: 520px; margin-top: 12px; font-weight: 400; color: var(--grey-600); }
+/* A quote on its own: smaller and wider (32px at 1.3, 711px in the design), so it stays a few lines */
+.voice--solo { max-width: 711px; }
+.voice--solo .voice__quote { max-width: none; font-size: clamp(24px, 16px + 2vw, 32px); line-height: 1.3; }
+.byline { font-size: var(--body-s); font-weight: 600; line-height: var(--lh-body); }
+.byline span { display: block; max-width: 520px; margin-top: 12px; font-weight: 400; color: var(--grey-700); }
 
 /* One bar per slide: 48 × 2px, with room around it to click. The bar of the
    slide on show fills up over --turn (script.js moves on when it is full).
@@ -1020,7 +1076,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 .js .voices__progress { display: flex; gap: var(--stack-xs); }
 .voices__bar { position: relative; width: 48px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; }
 .voices__bar::before, .voices__bar span { content: ""; position: absolute; left: 0; top: 12px; width: 100%; height: 2px; }
-.voices__bar::before { background: #c2c2c2; }
+.voices__bar::before { background: #949494; } /* 3:1 on white: it is the button's only visible edge */
 .voices__bar span { background: var(--ink); transform: scaleX(0); transform-origin: 0 50%; }
 .voices__bar.is-done span { transform: scaleX(1); }
 .voices__bar.is-active span { animation: voice-turn var(--turn, 7s) linear forwards; }
@@ -1054,6 +1110,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   transition: transform 0.2s ease;
 }
 .play:hover { transform: translate(-50%, -50%) scale(1.08); }
+html:not(.js) .play { display: none; } /* the film needs script.js to play */
 .play:active { transform: translate(-50%, -50%) scale(0.95); }
 .play img { width: 12px; height: 12px; margin-left: 2px; }
 
@@ -1068,19 +1125,23 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   flex-direction: column;
   align-items: flex-start;
   gap: var(--stack-lg);
-  padding: var(--inset-card) var(--inset-card) 0;
+  padding: var(--inset-card);
   border-radius: var(--radius-panel);
 }
 .whitepaper__text { display: flex; flex-direction: column; gap: var(--stack-md); max-width: 424px; }
-.whitepaper__text .eyebrow { font-weight: 700; }
 /* What is inside: a short bulleted list, each point led by a few words in bold. */
-.whitepaper__points { display: flex; flex-direction: column; gap: var(--stack-xs); max-width: 367px; padding-left: 21px; list-style: disc; }
+.whitepaper__points { display: flex; flex-direction: column; gap: var(--stack-xs); padding-left: 21px; list-style: disc; }
 .whitepaper__points strong { font-weight: 700; }
-.whitepaper__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--stack-sm); width: 100%; }
+/* The button, then the carousel's arrows beside it. */
+.whitepaper__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--stack-md); width: 100%; }
+/* Phones: no room for both in a row: the button, then the arrows under it. */
+@media (max-width: 639px) {
+  .whitepaper__actions { flex-direction: column; align-items: flex-start; }
+}
 
 /* Page carousel: a scroll-snapping row of pages; the next page peeks in.
    script.js wires up the arrows, the counter and a slow autoplay. */
-.wp-carousel { width: calc(100% + 32px); margin-right: -32px; }
+.wp-carousel { width: calc(100% + var(--inset-card)); margin-right: calc(-1 * var(--inset-card)); }
 .wp-carousel__track {
   display: flex;
   gap: 16px;
@@ -1088,12 +1149,12 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   scrollbar-width: none;
-  padding-right: 32px;
+  padding-right: var(--inset-card);
 }
 .wp-carousel__track::-webkit-scrollbar { display: none; }
 .wp-carousel__track:focus-visible { outline-offset: -2px; }
 .wp-carousel__slide {
-  flex: 0 0 78%;
+  flex: 0 0 min(78%, 420px);
   scroll-snap-align: start;
 }
 .wp-carousel__slide img { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 28px rgba(42, 12, 78, 0.12); }
@@ -1116,7 +1177,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 }
 .wp-carousel__btn:hover { background: #fafafa; }
 .wp-carousel__btn:disabled { opacity: 0.35; cursor: default; }
-.wp-carousel__count { min-width: 40px; font: 500 12px/1 var(--sans); letter-spacing: 0.6px; text-align: center; text-box: none; }
+.wp-carousel__count { min-width: 40px; font: 500 var(--label-s)/1 var(--sans); letter-spacing: var(--tracking-label); text-align: center; text-box: none; }
 @media (prefers-reduced-motion: reduce) { .wp-carousel__track { scroll-behavior: auto; } }
 
 /* ==========================================================================
@@ -1137,6 +1198,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
 }
 .card__text { display: flex; flex-direction: column; gap: var(--stack-md); }
 .card__title { font: 400 var(--display-s)/1.1 var(--serif); }
+.card .btn { white-space: normal; } /* "Download the whitepaper" wraps in a narrow card instead of running out of it */
 
 /* ==========================================================================
    Section 10 — FAQ
@@ -1151,7 +1213,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   gap: 16px;
   padding: var(--inset-row) 20px;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: var(--lh-body);
   cursor: pointer;
   list-style: none;
 }
@@ -1201,7 +1263,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   align-items: center;
   gap: var(--stack-md);
   font-size: var(--body-xs);
-  line-height: 1.4;
+  line-height: var(--lh-body);
   color: #2e2e2e;
   text-align: center;
 }
@@ -1218,8 +1280,17 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
    ========================================================================== */
 
 @media (max-width: 400px) {
-  .site-header .btn { padding: 12px 14px; font-size: 13px; }
   .btn { white-space: normal; }
+}
+/* The narrowest phones (320): the headline stays three lines and the navbar button one. */
+@media (max-width: 329px) {
+  .hero__title { font-size: 8.2vw; }
+  .site-header .btn { font-size: 12px; white-space: nowrap; }
+}
+/* Phones on their side: the paper starts lower so the intro title fits above
+   it, and the receipt's end hangs higher so the button stays on screen. */
+@media (max-width: 1023px) and (max-height: 500px) {
+  .hero { --paper-start: 0.32; --end: calc((100svh - 40px) * 0.3); }
 }
 
 /* ==========================================================================
@@ -1248,56 +1319,38 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
    ========================================================================== */
 
 @media (min-width: 760px) {
-  .md-up { display: inline; }
 
-  .hero { --end: calc((100svh - 30px) * 0.53); }
   .scroll-cue { display: flex; }
 
-  /* Text on the left, receipt on the right. */
-  .sarah__top { display: grid; grid-template-columns: minmax(0, 1fr) min(371px, 48%); column-gap: 40px; align-items: start; }
-  .sarah__top.has-halves { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); align-items: center; }
+  /* Without script.js: text on the left, the plain receipt on the right.
+     With it, the two halves stay under the text until there is room beside
+     it (1024px). */
+  .sarah__top:not(.has-halves) { display: grid; grid-template-columns: minmax(0, 1fr) min(371px, 48%); column-gap: 40px; align-items: start; }
   .receipt-window { height: min(78svh, 640px); }
 
-  /* Copy on the left, the card centred in the right-hand part; the panel
-     fills the screen, as the hero does (up to the design's 874px). */
-  .connected {
-    display: grid;
-    grid-template-columns: minmax(0, 514px) minmax(0, 657px);
-    justify-content: space-between;
-    align-items: center;
-    column-gap: 40px;
-    min-height: min(874px, calc(100svh - var(--edge) - var(--wide-inset)));
-    padding-block: 80px;
-  }
-
-  .calc__card { grid-template-columns: minmax(0, 478fr) minmax(0, 636fr); }
-  .calc__inputs { padding: 48px 0 48px 40px; }
-  .calc__results { padding: 48px 40px; }
-
-  /* Text and controls on the left; the pages run off the right and bottom edges. */
-  .whitepaper { min-height: 594px; padding-bottom: 32px; justify-content: space-between; }
-  .whitepaper__text, .whitepaper__actions { position: relative; z-index: 1; max-width: min(424px, 40%); }
-  .wp-carousel { position: absolute; left: min(599px, 48.3%); top: 84px; right: 0; width: auto; margin: 0; }
-  .wp-carousel__track { gap: var(--layout-column-gap); padding-right: 0; }
-  .wp-carousel__slide { flex-basis: min(530px, 82%); }
+  /* Tablets: still one column, with more room around it. */
+  .connected { padding-block: 64px; }
+  .calc__card { --pad: 40px; --gap: 48px; }
 
   .closing h2 { text-wrap: balance; }
 }
 
 /* ==========================================================================
-   ≥ 1024px — desktop (matches the 1280 design)
+   ≥ 1024px — desktop (the design is 1440 wide)
    ========================================================================== */
 
 @media (min-width: 1024px) {
   .lg-only { display: inline; }
+  .until-lg { display: none; }
 
   /* Intro title: either side of the receipt, "The hidden / costs" on its left
      and "of / menopause" on its right, one line lower, so "costs" and "of"
-     read across the paper. 66px where there is room; smaller on narrower
-     screens so "menopause" still fits beside the 459px receipt. */
+     read across the paper. 64px where there is room; smaller on narrower
+     screens so "menopause" still fits beside the receipt, 459px wide while
+     the title is up. */
   .hero { --paper-start: 0.1466; }
   .intro-title {
-    --half: calc(min(459px, 86%) / 2); /* half the receipt (.hero__slot) */
+    --half: calc(min(459px, 86%) / 2); /* half the receipt, at the size it unrolls at */
     inset: 0;
     font-size: clamp(30px, calc((var(--vw) - 539px) / 12.8), 64px);
     text-align: left;
@@ -1310,27 +1363,43 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   /* Section 2 (in flow; see the pinned version below): copy on the left,
      the receipts in a column of --visual-w on the right. */
   .sarah { padding-block: 70px 82px; gap: 81px; }
-  .sarah__top { grid-template-columns: 310px var(--visual-w); justify-content: space-between; }
-  .sarah__top.has-halves { grid-template-columns: 310px minmax(0, 636px); }
+  /* The copy's column: 501px at 1440, narrower with the screen; the heading
+     follows it, so "One year. Nine claims." stays on one line. */
+  .sarah__top, .sarah__top.has-halves { display: grid; grid-template-columns: minmax(0, clamp(310px, 36vw, 501px)) minmax(0, 636px); column-gap: 40px; justify-content: space-between; align-items: center; }
+  .sarah__intro .display { font-size: min(48px, 3.33vw); }
   .sarah__copy { gap: 75px; }
   .sarah__problem { display: grid; grid-template-columns: minmax(0, 564px) var(--visual-w); justify-content: space-between; align-items: center; }
 
-  /* Copy in the middle of the left half; the phones and the pod stand on the
-     panel's bottom edge on the right. */
+  /* Copy at the top of the left half; the phones and the pod stand near the
+     card's bottom edge on the right. */
   .meet__card {
     display: grid;
-    grid-template-columns: minmax(0, 540fr) minmax(0, 600fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: clamp(var(--layout-column-gap), 5.6vw, var(--layout-content-inset));
-    align-items: center;
-    min-height: clamp(600px, 53vw, 760px);
-    padding-block: var(--inset-panel) 0;
+    align-items: start;
   }
-  .meet__visual { justify-self: center; align-self: end; margin-bottom: 32px; }
+  .meet__copy { padding-bottom: var(--inset-panel); }
+  .meet__visual { justify-self: center; align-self: end; margin-block: 22px 38px; }
 
-  .calc__inputs { padding: 56px 0 56px 64px; gap: 40px; }
-  .calc__results { padding: 56px 64px; gap: 48px; }
+  /* Copy on the left, the card centred in the right-hand part; the panel
+     fills the screen, as the hero does (up to the design's 874px). */
+  .connected {
+    display: grid;
+    grid-template-columns: minmax(0, 514px) minmax(0, 657px);
+    justify-content: space-between;
+    align-items: center;
+    column-gap: 40px;
+    min-height: min(874px, calc(100svh - 2 * var(--wide-inset)));
+    padding-block: 80px;
+  }
 
-  /* Four across, a hairline in the middle of each 80px gap */
+  /* Inputs on the left, results on the right, centred in what the inputs leave. */
+  .calc__card { --pad: clamp(40px, 4.45vw, 64px); --gap: var(--pad); grid-template-columns: minmax(0, 514fr) minmax(0, 726fr); }
+  .calc__title { grid-column: 1 / -1; }
+  .calc__inputs { padding: var(--gap) 0 var(--pad) var(--pad); }
+  .calc__results { padding: var(--gap) var(--pad) var(--pad); }
+
+  /* Four across, a hairline in the middle of each 48px gap */
   .outcomes__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: calc(2 * var(--layout-column-gap)); }
   .outcomes__item:nth-child(n) { position: relative; padding: 0; border-left: 0; }
   .outcomes__item + .outcomes__item::before { content: ""; position: absolute; left: calc(-1 * var(--layout-column-gap)); top: 0; bottom: 0; width: 1px; background: var(--grey-500); }
@@ -1341,6 +1410,14 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
   .voices__slide--video { flex-direction: row; align-items: center; gap: var(--layout-column-gap); }
   .voices__slide--video .voice { flex: 0 0 min(446px, 36%); }
   .voices__slide--video .video { flex: 1; min-width: 0; }
+
+  /* Text and controls on the left; the pages run off the right and bottom edges. */
+  .whitepaper { min-height: 594px; justify-content: space-between; }
+  .whitepaper__text, .whitepaper__actions { position: relative; z-index: 1; max-width: min(424px, 40%); }
+  .whitepaper__actions { justify-content: flex-start; }
+  .wp-carousel { position: absolute; left: min(599px, 48.3%); top: 84px; right: 0; width: auto; margin: 0; }
+  .wp-carousel__track { gap: var(--layout-column-gap); padding-right: 0; }
+  .wp-carousel__slide { flex-basis: min(530px, 90%); }
 
   .faq { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: var(--layout-column-gap); }
   .faq h2 { flex: 0 1 400px; }
@@ -1362,7 +1439,7 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
    Needs script.js, so it only applies once the page has the `js` class.
    ========================================================================== */
 
-@media (min-width: 1024px) and (min-height: 720px) {
+@media (min-width: 1024px) and (min-height: 720px) and (min-aspect-ratio: 1/1) { /* keep in step with `pinned` in script.js */
   .js .sarah-track {
     --pin-top: 92px;                                   /* below the navbar */
     --panel-h: calc(100svh - var(--pin-top) - var(--wide-inset)); /* 20px clear of the screen bottom */
@@ -1388,24 +1465,27 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
     grid-template-rows: minmax(0, 1fr);
     justify-content: space-between;
     align-items: center;
+    align-items: safe center; /* taller than the panel (larger text): start at its top, never under the navbar */
     margin: 0;
     padding: var(--pad) var(--gutter);
   }
 
   /* Moment 1 sits on top (the receipt travels over moment 2), but only its
      own content takes clicks. The copy starts a fifth of the way down. */
-  .js .sarah__top, .js .sarah__top.has-halves { z-index: 2; grid-template-columns: 310px minmax(0, 1fr); pointer-events: none; }
+  .js .sarah__top, .js .sarah__top.has-halves { z-index: 2; grid-template-columns: minmax(0, clamp(310px, 36vw, 501px)) minmax(0, 1fr); pointer-events: none; }
   .js .sarah__copy {
     align-self: start;
     margin-top: max(0px, calc(var(--panel-h) * 0.193 - var(--pad)));
     pointer-events: auto;
-    transition: opacity 0.45s ease, transform 0.45s ease, visibility 0s;
+    transition: opacity 0.45s ease, transform 0.45s ease;
   }
+  /* The moment not on show is hidden from sight only (no visibility: hidden),
+     so screen readers can always read both. */
   .js .sarah.is-m2 .sarah__copy {
     opacity: 0;
     transform: translateY(-24px);
-    visibility: hidden;
-    transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s 0.35s;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s ease;
   }
   /* The two halves: on the right, centred top to bottom, as large as the
      column and the panel allow (--ratio, the box's width over its height:
@@ -1433,18 +1513,16 @@ html.intro-hold .site-header__inner > * { pointer-events: none; }
     gap: min(60px, 6svh);
     opacity: 0;
     transform: translateY(24px);
-    visibility: hidden;
-    transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s 0.35s;
+    transition: opacity 0.35s ease, transform 0.35s ease;
   }
   .js .sarah.is-m2 .problem {
     opacity: 1;
     transform: none;
-    visibility: visible;
-    transition: opacity 0.6s ease 0.3s, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s, visibility 0s 0.3s;
+    transition: opacity 0.6s ease 0.3s, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s;
   }
   /* Sized by the panel's height too, so the whole block fits a short screen. */
   .js .problem__head, .js .problem__stats { gap: min(20px, 2.2svh); }
-  .js .problem .display { font-size: min(40px, 5svh, 3.4vw); }
+  .js .problem .display { font-size: min(40px, 5svh, 3.1vw); } /* "Nobody bills it as menopause" stays on one line */
   .js .problem .stat__num { font-size: min(48px, 5.4svh); }
   .js .problem__close { padding-top: min(60px, 6svh); font-size: min(28px, 3.4svh); }
 
@@ -1594,16 +1672,16 @@ html:has(dialog[open]) { overflow: hidden; scrollbar-gutter: stable; }
 
 /* The header, as on the receipts: date, title, a line in italics. */
 .guide-form__head { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
-.guide-form__date { font: 400 12px/1 var(--sans); color: var(--grey-600); }
+.guide-form__date { font: 400 12px/1 var(--sans); color: var(--grey-700); }
 .guide-form__title { font: 700 clamp(20px, 5.9vw, 24px)/1.15 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; }
-.guide-form__sub { font: italic 400 13px/1.35 var(--sans); color: #5e5e5e; }
+.guide-form__sub { font: italic 400 13px/1.35 var(--sans); color: var(--grey-700); }
 .guide-form__rule { height: 1px; background: rgba(13, 13, 13, 0.16); }
 
 /* The fields: a small label, and a dotted line to write on. */
 .guide-form__form { gap: 18px; }
 .guide-form__pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 18px 20px; align-items: start; }
 .guide-form__field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.guide-form__field label { font: 500 11px/1 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: #5e5e5e; }
+.guide-form__field label { font: 500 11px/1 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey-700); }
 .guide-form__field input {
   -webkit-appearance: none;
   appearance: none;
@@ -1637,7 +1715,7 @@ html:has(dialog[open]) { overflow: hidden; scrollbar-gutter: stable; }
 /* Thank-you: the same slip, with where it went as a line with a dotted leader. */
 .guide-form__sent > div { display: flex; align-items: flex-end; gap: 6px; }
 .guide-form__sent > div::before { content: ""; order: 1; flex: 1; min-width: 16px; margin-bottom: 3px; border-bottom: 1px dashed #808080; }
-.guide-form__sent dt { order: 0; font: 500 12px/1.2 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: #5e5e5e; white-space: nowrap; }
+.guide-form__sent dt { order: 0; font: 500 12px/1.2 var(--sans); letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey-700); white-space: nowrap; }
 .guide-form__sent dd { order: 2; max-width: 72%; font: 600 14px/1.2 var(--sans); text-align: right; overflow-wrap: anywhere; }
 .guide-form__done .btn { align-self: center; padding-inline: 28px; }
 
@@ -1665,4 +1743,15 @@ html:has(dialog[open]) { overflow: hidden; scrollbar-gutter: stable; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; }
+}
+
+/* ==========================================================================
+   Print: everything visible, nothing fixed or floating over the content
+   ========================================================================== */
+
+@media print {
+  .js-reveal :where([data-reveal]:not([data-reveal="children"]), [data-reveal="children"] > *),
+  .js-reveal .signal-card { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .site-header { position: absolute; }
+  .site-header::before, .fall-layer, .intro-replay, .scroll-cue, .guide-form { display: none !important; }
 }

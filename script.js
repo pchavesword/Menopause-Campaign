@@ -128,8 +128,8 @@ const RECEIPT_SETTINGS = {
   unrollEase: 4,       // how the roll comes down: 1 = even speed, higher = a slower start that speeds up
   introTextAt: 0.8,    // share of the intro after which the navbar and the headline fade in
   tearTravel: 0.6,     // hero -> moment 1: the receipt coming down to where it tears (the page arrives meanwhile)
-  tearSeconds: 1,      // the tear itself: tugged, ripped across, then the halves parting
-  tearFps: 6,          // frames per second while it tears (it can have more drawings than the rest: try 12)
+  tearSeconds: 1.3,    // the tear itself: tugged, ripped across, then the halves parting
+  tearFps: 10,         // frames per second while it tears: more drawings than the rest, so its uneven pace shows
   moveSeconds: 1,      // moment 1 <-> moment 2
   landShare: 0.6,      // share of that move Sarah's receipt takes to reach the pile
   dealShare: 0.15,     // share each other receipt takes to slide out of the pile
@@ -531,15 +531,20 @@ const OTHER_RECEIPTS = [
     part: 297.39,
     top: { x: 6.43, y: 28, r: -1.2 },
     bottom: { x: 330, y: 6, r: 2 },
-    edge: 4.5, // how far the torn edge strays either side of the tear line, in receipt units (1/371 of its width)
+    edge: 6, // how far the torn edge strays either side of the tear line, in receipt units (1/371 of its width)
   };
   const turn = (degrees) => (degrees * Math.PI) / 180;
-  // The torn edge: 41 points across the paper, each -1 to 1. A slow drift plus
-  // a fine jitter, the same for both halves so they fit back together.
-  const EDGE = Array.from({ length: 41 }, (_, i) => {
-    const coarse = i / 6;
-    const drift = lerp(hash(Math.floor(coarse), 91), hash(Math.floor(coarse) + 1, 91), smooth(0, 1, coarse % 1));
-    return Math.max(-1, Math.min(1, (drift - 0.5) * 1.5 + (hash(i, 92) - 0.5) * 0.9));
+  // The torn edge: 81 points across the paper, each -1 to 1, the same for both
+  // halves so they fit back together. Paper does not tear in a line: this is
+  // a slow wander, a shorter ripple on top of it and a fine fray, and here
+  // and there a snag where it gave a little further.
+  const EDGE = Array.from({ length: 81 }, (_, i) => {
+    const wave = (every, seed) => {
+      const at = i / every;
+      return lerp(hash(Math.floor(at), seed), hash(Math.floor(at) + 1, seed), smooth(0, 1, at % 1)) - 0.5;
+    };
+    const snag = hash(Math.floor(i / 7), 94) > 0.7 ? (hash(i, 95) - 0.5) * 0.8 : 0;
+    return Math.max(-1, Math.min(1, wave(18, 91) * 1.3 + wave(5, 93) * 0.7 + (hash(i, 92) - 0.5) * 0.3 + snag));
   });
   // `receipt` becomes the top half; a copy of it shows the bottom half.
   const makeHalves = (receipt) => {
@@ -585,7 +590,7 @@ const OTHER_RECEIPTS = [
       + shown[i] * scale * Math.cos(turn(HALVES[kind].r)) + HALVES.part * Math.abs(Math.sin(turn(HALVES[kind].r)))));
     torn = { at, long, h };
     // The same torn edge on both halves: along the bottom of one, the top of the other.
-    const along = (from, of) => EDGE.map((offset, i) => `${(100 - i * 2.5).toFixed(1)}% ${(((from + offset * edge) / of) * 100).toFixed(3)}%`);
+    const along = (from, of) => EDGE.map((offset, i) => `${(100 - (i * 100) / (EDGE.length - 1)).toFixed(2)}% ${(((from + offset * edge) / of) * 100).toFixed(3)}%`);
     document.querySelectorAll('.halves').forEach((halves) => {
       halves.style.aspectRatio = `${HALVES.w} / ${h.toFixed(2)}`;
       ['top', 'bottom'].forEach((kind, i) => {
@@ -842,20 +847,31 @@ const OTHER_RECEIPTS = [
   // set higher than the rest so a quick tear gets more drawings. `tear` runs through:
   //   travel  the strip comes down with the page, from the first frame, until
   //           the tear line is in the middle of the screen
-  //   tug     the whole strip tilts a little: it is about to give
+  //   tug     the whole strip tilts a little, eases back and tilts again: it
+  //           is about to give
   //   rip     the tear starts at the right edge and runs across to the left,
-  //           the two halves swinging open behind it
+  //           not evenly: it goes with a jerk, catches about a third of the
+  //           way, then gives all at once. The two halves swing open behind
+  //           it, shivering while the paper is under strain, and are pulled
+  //           a little apart
   //   part    the halves fly to their places, side by side, the top one
-  //           first; they overshoot a touch and settle
+  //           first, each on a slight arc; they overshoot a touch, flutter
+  //           and settle
   // `anchors` are the two ends of that course, on screen; `tearPose` is where
   // the halves are right now, on screen: [top, bottom], each { x, y, r, s }.
   let anchors = null;
   let tearPose = null;
-  const TUG = 0.15;      // share of S.tearSeconds by which the strip has been tugged
-  const RIP = 0.45;      // ... and by which it has ripped right across; then the halves part
+  const TUG = 0.2;       // share of S.tearSeconds by which the strip has been tugged
+  const RIP = 0.56;      // ... and by which it has ripped right across; then the halves part
   const TUG_TURN = 1.5;  // degrees the strip tilts when tugged
   const OPEN = [-7, 9];  // degrees each half has swung open once ripped across [top, bottom]
-  const LAG = [0, 0.15]; // share of the parting each half waits before it sets off
+  const PULL = [[-3, -7], [2, 6]]; // px each half has been pulled away from the tear by then [x, y]
+  const LAG = [0, 0.2];  // share of the parting each half waits before it sets off
+  const ARC = [-22, 16]; // px each half leaves its straight line by, half way there (up, down)
+  const FLUTTER = [2.2, -2.6]; // degrees each half rocks as it comes to rest
+  // How far across the tear has run, for how far through the rip it is: quick
+  // off the mark, caught for a while, then all the rest at once.
+  const ripRun = (v) => (v < 0.3 ? 0.4 * easeOut(v / 0.3) : v < 0.6 ? 0.4 + 0.1 * ((v - 0.3) / 0.3) : 0.5 + 0.5 * ((v - 0.6) / 0.4) ** 1.5);
   // Ease-out that goes a little past the end and comes back (`over` = how far).
   const settle = (v, over) => 1 + (over + 1) * (v - 1) ** 3 + over * (v - 1) ** 2;
   const clearTear = () => {
@@ -907,9 +923,19 @@ const OTHER_RECEIPTS = [
     };
     const toTear = [(torn.at * u * size) / big, (edge * u * size) / big];
     const ready = toTear.map((below) => hung(0, below));
-    // 3. Ripped right across: each half hangs from the hinge, swung its own
-    //    way, so the gap is widest on the right.
-    const ripped = toTear.map((below, i) => hung(OPEN[i], below));
+    // 3. Ripping, `v` of the way through it: the tip of the tear has run
+    //    `done` of the way across, and each half hangs from it, swung its own
+    //    way (so the gap is widest on the right), shivering while the paper
+    //    is still under strain, and pulled a little away from the tear.
+    const ripping = (v) => {
+      const done = ripRun(v);
+      return toTear.map((below, i) => {
+        const shiver = Math.sin(v * 11 + i * 2.1) * 0.9 * (1 - done) * Math.min(1, v * 4);
+        const at = hung(lerp(TUG_TURN, OPEN[i], done ** 1.3) + shiver, below, 1 - done);
+        return { ...at, x: at.x + PULL[i][0] * done, y: at.y + PULL[i][1] * done };
+      });
+    };
+    const ripped = ripping(1);
     // 4. Side by side, at rest.
     const apart = ['top', 'bottom'].map((kind) => ({ x: anchors.fx + HALVES[kind].x * k, y: anchors.fy + HALVES[kind].y * k, r: HALVES[kind].r, s: 1 }));
 
@@ -921,23 +947,23 @@ const OTHER_RECEIPTS = [
       const t = easeOut(tear / travel);
       pose = strip.map((from, i) => ({ x: lerp(from.x, ready[i].x, t), y: lerp(from.y, ready[i].y, t), r: 0, s: lerp(from.s, size, t) }));
     } else if (p < TUG) {
-      // Tugged: still one strip, tilted about the right end of the tear line.
-      pose = toTear.map((below) => hung(TUG_TURN * easeOut(p / TUG), below, 1));
+      // Tugged: still one strip, tilted about the right end of the tear
+      // line. It eases back a touch on the way, like a hand taking a better grip.
+      const a = p / TUG;
+      pose = toTear.map((below) => hung(TUG_TURN * (easeOut(a) + 0.3 * Math.sin(a * Math.PI * 2) * (1 - a)), below, 1));
     } else if (p < RIP) {
-      // Ripping: the tip of the tear runs from the right edge to the left,
-      // and the halves swing open about it, slowly at first.
-      const v = (p - TUG) / (RIP - TUG);
-      pose = toTear.map((below, i) => hung(lerp(TUG_TURN, OPEN[i], v * v), below, 1 - v));
+      pose = ripping((p - TUG) / (RIP - TUG));
     } else {
-      // Parting: off quickly, sideways a touch ahead of up and down, past
-      // their places and back. The top half goes first.
+      // Parting: off quickly, sideways a touch ahead of up and down, on a
+      // slight arc, past their places and back, rocking as they come to
+      // rest. The top half goes first.
       const v = (p - RIP) / (1 - RIP);
       pose = ripped.map((from, i) => {
         const t = clamp01((v - LAG[i]) / (1 - LAG[i]));
         return {
           x: lerp(from.x, apart[i].x, settle(t, 0.8)),
-          y: lerp(from.y, apart[i].y, settle(t ** 1.25, 0.8)),
-          r: lerp(from.r, apart[i].r, settle(t, 2)),
+          y: lerp(from.y, apart[i].y, settle(t ** 1.25, 0.8)) + Math.sin(Math.PI * easeOut(t)) * ARC[i],
+          r: lerp(from.r, apart[i].r, settle(t, 2)) + Math.sin(t * Math.PI * 3) * (1 - t) * FLUTTER[i],
           s: lerp(from.s, 1, easeOut(t)),
         };
       });
@@ -1766,15 +1792,253 @@ const OTHER_RECEIPTS = [
   apply();
 })();
 
-// Section 3 card: fades up smoothly (styles.css) once most of it is on screen,
-// and resets when it drops back below the screen, so it plays again.
+// The app on a phone ("One intake", section 4) and the three screens in the
+// card under it ("Meet Sword Women's Health", section 5).
+//
+// The chat (desktop): the phone fades in first, then the messages arrive one
+// by one, each pushing the ones before it up, as in a chat. It plays once.
+//
+// The journey (desktop): when the card comes into view, the phone flies down
+// to it in one movement, straight down and down to the card's size, whatever
+// the page is doing meanwhile (it moves over the page, not with the scroll).
+// It lands to the right of its place in the fan. There a copy of the phone
+// that lives in the card takes over (it sits behind the other screens, which
+// the flying phone cannot), and the other two screens come in from the right
+// and push it left into place, one after the other; the pod comes last.
+// Scrolling back up to the first section undoes it: the screens leave, the
+// phone flies back. styles.css holds the movements; this script measures the
+// two places, decides when to go, and keeps the steps in order, also when
+// the visitor turns round half way.
+//
+// Phones, tablets and "reduce motion": nothing moves. The phone shows the
+// whole conversation and the card shows its three screens and the pod.
 (() => {
-  const card = document.querySelector('.signal-card');
-  if (!card || !document.documentElement.classList.contains('js-reveal')) return;
-  new IntersectionObserver(([entry]) => {
-    if (entry.intersectionRatio >= 0.45) card.classList.add('is-visible');
-    else if (!entry.isIntersecting && entry.boundingClientRect.top > 0) card.classList.remove('is-visible');
-  }, { threshold: [0, 0.45] }).observe(card);
+  const section = document.querySelector('.connected');
+  const visual = section?.querySelector('.connected__visual');
+  const rest = visual?.querySelector('.phone-rest');
+  const phone = rest?.querySelector('.phone');
+  const fan = document.querySelector('.fan');
+  const slot = fan?.querySelector('.fan__chat');
+  const card = fan?.closest('.meet__card');
+  if (!phone || !slot || !card) return;
+
+  // The card's own phone: a copy with the whole conversation in it.
+  const twin = phone.cloneNode(true);
+  twin.classList.add('phone--twin');
+  twin.removeAttribute('aria-label');
+  slot.append(twin);
+
+  const wide = matchMedia('(min-width: 1024px)');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
+
+  // ---- The chat ----
+  const thread = phone.querySelector('.phone__thread');
+  const bubbles = [...phone.querySelectorAll('.bubble')];
+  const WAITS = [450, 800, 850, 800, 750]; // ms before each message
+  let chat = 'ready'; // ready → waiting (messages hidden) → playing → done
+  let timer;
+
+  const finishChat = () => {
+    clearTimeout(timer);
+    chat = 'done';
+    phone.classList.remove('is-live');
+    phone.querySelectorAll('.is-off').forEach((el) => el.classList.remove('is-off'));
+  };
+  // One message arrives: it takes its room at the bottom, and everything
+  // above starts where it was and slides up out of its way.
+  const send = (i) => {
+    const bubble = bubbles[i];
+    const turn = bubble.closest('.turn');
+    const who = turn.querySelector('.turn__who');
+    const newTurn = turn.classList.contains('is-off');
+    const before = thread.offsetHeight;
+    bubble.classList.remove('is-off');
+    turn.classList.remove('is-off');
+    const rise = thread.offsetHeight - before;
+    if (thread.animate) {
+      const slide = { duration: 420, easing: EASE };
+      thread.animate([{ transform: `translateY(${rise}px)` }, { transform: 'none' }], slide);
+      bubble.animate([{ opacity: 0, transform: 'scale(0.9)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: EASE });
+      // The photo belongs beside the turn's last message: it fades in with a
+      // new turn, and holds still while a second message slides in above it.
+      if (who && newTurn) who.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: 'ease-out' });
+      else if (who) who.animate([{ transform: `translateY(${-rise}px)` }, { transform: 'none' }], slide);
+    }
+    if (i + 1 < bubbles.length) timer = setTimeout(() => send(i + 1), WAITS[i + 1]);
+    else finishChat();
+  };
+  if (wide.matches && !reduce.matches && thread && bubbles.length) {
+    chat = 'waiting';
+    phone.classList.add('is-live');
+    bubbles.forEach((bubble) => { bubble.classList.add('is-off'); bubble.closest('.turn').classList.add('is-off'); });
+    // It starts once most of the phone is on screen.
+    const seen = new IntersectionObserver(([entry]) => {
+      if (entry.intersectionRatio < 0.6) return;
+      seen.disconnect();
+      if (chat !== 'waiting') return;
+      chat = 'playing';
+      timer = setTimeout(() => send(0), WAITS[0]);
+    }, { threshold: 0.6 });
+    seen.observe(rest);
+  }
+
+  // ---- The journey ----
+  const FLIGHT = 950;  // ms, the same as the phone's transition in styles.css
+  let travel = false;
+  let target = 'up';   // where the phone belongs: 'up' (first section) or 'down' (the card)
+  let landed = false;  // its copy in the card has taken over
+  let queued = false;
+  let landTimer;
+  let leaveTimer;
+  let stepTimers = [];
+
+  // The other screens push the phone into place, one after the other.
+  const startSteps = () => {
+    fan.classList.add('is-in', 'is-step1');
+    stepTimers = [
+      setTimeout(() => fan.classList.add('is-step2'), 430),
+      setTimeout(() => fan.classList.add('is-step3'), 880),
+    ];
+  };
+  const stopSteps = () => {
+    stepTimers.forEach(clearTimeout);
+    stepTimers = [];
+    fan.classList.remove('is-step1', 'is-step2', 'is-step3');
+  };
+  // The flight down has ended: the copy in the card takes over.
+  const land = () => {
+    clearTimeout(landTimer);
+    if (target !== 'down' || landed || !section.classList.contains('is-down')) return;
+    landed = true;
+    section.classList.add('is-landed');
+    if (chat !== 'done') finishChat(); // the copy shows the whole conversation
+    startSteps();
+  };
+  // The other screens have left: the phone itself is back, and flies up.
+  const takeOff = () => {
+    if (target !== 'up' || !landed) return;
+    landed = false;
+    fan.classList.remove('is-in');
+    section.classList.remove('is-landed', 'is-down');
+  };
+  // Straight to where it belongs, with no movement.
+  const jump = () => {
+    stopSteps();
+    section.classList.add('no-fly');
+    fan.classList.add('no-fly');
+    landed = target === 'down';
+    section.classList.toggle('is-down', landed);
+    section.classList.toggle('is-landed', landed);
+    fan.classList.toggle('is-in', landed);
+    if (landed) {
+      fan.classList.add('is-step1', 'is-step2', 'is-step3');
+      if (chat !== 'done') finishChat();
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      section.classList.remove('no-fly');
+      fan.classList.remove('no-fly');
+    }));
+  };
+  const setTarget = (next, instant) => {
+    if (next === target && !instant) return;
+    target = next;
+    clearTimeout(landTimer);
+    clearTimeout(leaveTimer);
+    if (instant) { jump(); return; }
+    if (next === 'down') {
+      if (landed) startSteps(); // it was about to leave: the screens come back
+      else {
+        section.classList.add('is-down');
+        landTimer = setTimeout(land, FLIGHT + 200); // in case the transition's end goes unheard
+      }
+    } else if (landed) {
+      stopSteps();
+      leaveTimer = setTimeout(takeOff, 260);
+    } else section.classList.remove('is-down'); // turned round in mid-flight
+  };
+  phone.addEventListener('transitionend', (event) => {
+    if (event.target === phone && event.propertyName === 'transform') land();
+  });
+
+  // When to go. The two places rarely fit on the screen together, so on the
+  // way down the phone leaves at the point where as much of its place in the
+  // card is in view as is still in view of the phone itself. On a tall
+  // screen, where both fit, it waits until the phone has reached the top of
+  // the screen (60px from it), so the chat has had its time. On the way back
+  // up it returns once the page has moved a good bit further. In between, it
+  // stays where it is.
+  const where = () => {
+    const vh = window.innerHeight;
+    const a = visual.getBoundingClientRect(); // the phone's place up here
+    const b = slot.getBoundingClientRect();
+    const fall = b.top - new DOMMatrixReadOnly(getComputedStyle(card).transform).m42 - a.top; // without the page's fade-in
+    const downAt = Math.min(60, (a.height * (vh - fall) - a.height * b.height) / (a.height + b.height));
+    const upAt = downAt + Math.max(110, 0.13 * vh);
+    if (a.top <= downAt) return 'down';
+    if (a.top >= upAt) return 'up';
+    return null;
+  };
+  const check = (instant) => {
+    queued = false;
+    if (!travel) return;
+    const next = where();
+    if (next) setTarget(next, instant === true);
+    else if (instant === true) setTarget(target, true);
+  };
+  const onScroll = () => {
+    if (queued || !travel) return;
+    queued = true;
+    requestAnimationFrame(check);
+  };
+
+  // Where the two places are. Called again whenever the layout may have changed.
+  const measure = () => {
+    const phoneW = parseFloat(getComputedStyle(phone).width);
+    const slotW = parseFloat(getComputedStyle(slot).width);
+    if (!(phoneW > 0) || !(slotW > 0)) return;
+    const size = slotW / phoneW; // the card's phone over the full-size one
+    twin.style.setProperty('--k', size.toFixed(5));
+    if (!wide.matches || reduce.matches) {
+      if (chat !== 'done') finishChat();
+      if (!travel) return;
+      travel = false;
+      target = 'up';
+      landed = false;
+      clearTimeout(landTimer);
+      clearTimeout(leaveTimer);
+      stopSteps();
+      section.classList.remove('is-travel', 'is-down', 'is-landed');
+      fan.classList.remove('is-armed', 'is-in');
+      return;
+    }
+    const first = !travel;
+    travel = true;
+    section.classList.add('is-travel');
+    fan.classList.add('is-armed');
+    // The phone's place up here is the middle of its column; the page's
+    // fade-in may still be moving the card, so that is left out.
+    const a = visual.getBoundingClientRect();
+    const b = slot.getBoundingClientRect();
+    const lift = new DOMMatrixReadOnly(getComputedStyle(card).transform).m42;
+    section.style.setProperty('--fly-y', `${(b.top - lift - a.top).toFixed(2)}px`);
+    section.style.setProperty('--fly-s', size.toFixed(5));
+    fan.style.setProperty('--push', `${(a.left + a.width / 2 - (b.left + b.width / 2)).toFixed(2)}px`);
+    check(first); // the first time, straight into place
+  };
+
+  measure();
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', measure);
+  window.addEventListener('load', measure);
+  document.fonts?.ready.then(measure);
+  if ('ResizeObserver' in window) {
+    const watch = new ResizeObserver(measure);
+    watch.observe(section);
+    watch.observe(card);
+  }
+  const onQuery = () => measure();
+  [wide, reduce].forEach((query) => (query.addEventListener ? query.addEventListener('change', onQuery) : query.addListener(onQuery)));
 })();
 
 // "The women behind the claims": a carousel that moves side to side. The
@@ -1782,7 +2046,8 @@ const OTHER_RECEIPTS = [
 // scroll works by itself; this adds the turns. The bar under the slide on
 // show fills up (over --turn); when it is full the row glides on to the next
 // slide, and after the last one back to the first. A click on a bar goes
-// straight to that slide. The turn waits while the pointer or the keyboard
+// straight to that slide; the two arrows after the bars go one slide back
+// or forward. The turn waits while the pointer or the keyboard
 // focus is on the carousel, while it is off screen, and while the video
 // plays. The video pauses when its slide moves out of view or the carousel
 // leaves the screen. With "reduce motion" nothing moves on by itself.
@@ -1820,6 +2085,10 @@ const OTHER_RECEIPTS = [
   bars.forEach((bar, i) => {
     bar.addEventListener('click', () => go(i));
     bar.querySelector('span').addEventListener('animationend', () => { if (i === current) go(current + 1); });
+  });
+  // The arrows: one slide back or forward, round and round like the turns.
+  section.querySelectorAll('.voices__arrow').forEach((arrow) => {
+    arrow.addEventListener('click', () => go(current + Number(arrow.dataset.dir)));
   });
 
   // Swiped or scrolled by hand: once it settles, the slide it rests on has the turn.
@@ -2275,13 +2544,18 @@ const HUBSPOT_FORM = {
   });
 })();
 
-// Navbar: switch its frosted bar on once the page has scrolled a little.
+// "One intake": its blurred texture fades in once the section's top has come
+// up to the middle of the screen, and out again if it goes back down
+// (styles.css; only with the page's fade-ins on).
 (() => {
-  const header = document.querySelector('.site-header');
-  if (!header) return;
-  const update = () => header.classList.toggle('is-scrolled', window.scrollY > 8);
-  window.addEventListener('scroll', update, { passive: true });
-  update();
+  const section = document.querySelector('.connected');
+  if (!section || !('IntersectionObserver' in window) || !document.documentElement.classList.contains('js-reveal')) return;
+  // The root is squeezed to a line across the middle of the screen: this fires
+  // whenever the section's top or bottom edge crosses it.
+  new IntersectionObserver(([entry]) => {
+    const middle = entry.rootBounds ? entry.rootBounds.top : window.innerHeight / 2;
+    section.classList.toggle('is-lit', entry.boundingClientRect.top < middle);
+  }, { rootMargin: '-50% 0px -50% 0px' }).observe(section);
 })();
 
 // FAQ: slide answers open and shut instead of snapping.

@@ -76,14 +76,15 @@
   /* Inset: padding */
   --inset-panel: 40px;                              /* inside large panels */
   --inset-card: 32px;                               /* inside cards */
+  --inset-feature: clamp(40px, 4.45vw, 64px);       /* inside the big cards (calculator, Meet, whitepaper): 64 at 1440 */
   --inset-row: 24px;                                /* above and below a row: FAQ rows, footer */
   /* Radius */
   --radius-control: 8px;                            /* FAQ rows */
   --radius-panel: 16px;                             /* panels, cards, video */
-  --radius-feature: 32px;                           /* the calculator in Figma (not used here yet) */
+  --radius-feature: 32px;                           /* the calculator card on desktop */
 
   --edge: 10px;                              /* the page container's own padding; panels reach out to --layout-page-margin */
-  --gutter: clamp(20px, 5.47vw, 70px);       /* panel inner padding         */
+  --gutter: var(--inset);                    /* inside the wide panels: their content keeps to the same line as the sections below */
   /* Sections below the panels: headings and cards start at the page margin on
      phones (20px from the screen edge) and move in from there to 100px at 1440. */
   --inset: clamp(calc(var(--layout-page-margin) - var(--edge)), calc(10px + (100vw - 640px) * 0.1), calc(var(--layout-page-margin) + var(--layout-content-inset) - var(--edge)));
@@ -105,7 +106,7 @@
 
 /* Phones: panels and cards are padded by the page margin, 20px all round. */
 @media (max-width: 639px) {
-  :root { --inset-panel: 20px; --inset-card: 20px; }
+  :root { --inset-panel: 20px; --inset-card: 20px; --inset-feature: 20px; }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -195,10 +196,13 @@ a { color: inherit; }
 }
 
 /* ---------- Button ----------
-   Figma "Button": 43px high (16px above and below the trimmed label), 20px at
-   the sides, 4px corners, no border. Primary (.btn) is black and goes to pure
-   black on hover; Secondary (.btn--secondary) is frosted off-white and goes
-   solid on hover. */
+   Figma "Button": 16px above and below the trimmed label, 20px at the sides,
+   4px corners, no border. Primary (.btn) is black, 43px high with a 15px
+   label; on hover it goes pure black and grows 2px all round (a ring of its
+   own colour, so nothing around it moves). Secondary (.btn--secondary) is
+   frosted off-white, 42px high with a 14px label; on hover it goes solid and
+   an arrow slides in after the label (links only). The hover looks are for
+   pointers that can hover; the keyboard's focus gets the arrow too. */
 
 .btn {
   display: inline-block; /* block container, so the text-box trim applies */
@@ -213,9 +217,8 @@ a { color: inherit; }
   text-decoration: none;
   text-align: center;
   white-space: nowrap;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, margin 0.25s cubic-bezier(0.23, 1, 0.32, 1);
 }
-.btn:hover { background: #000; }
 @supports not (text-box: trim-both cap alphabetic) {
   .btn { padding-block: 12px; }
 }
@@ -249,8 +252,32 @@ a { color: inherit; }
 
 
 /* Secondary button: frosted off-white; goes solid on hover. */
-.btn--secondary { background: rgba(250, 250, 250, 0.9); color: var(--ink); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-.btn--secondary:hover { background: #fafafa; }
+.btn--secondary { background: rgba(250, 250, 250, 0.9); color: var(--ink); font-size: 14px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+/* The arrow: no room and out of sight until the button is hovered or focused;
+   then it takes its room (22px in all) and slides in from the left. The
+   button's own right margin gives that room back, so it grows to the right
+   over the page and nothing beside it moves. */
+a.btn--secondary::after {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 9.35px;
+  margin: 0;
+  vertical-align: 0.2px; /* centred on the capitals */
+  background: url("assets/ic-arrow-right.svg") right center / 13.95px 9.35px no-repeat;
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: width 0.25s cubic-bezier(0.23, 1, 0.32, 1), margin 0.25s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.2s ease, transform 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+}
+a.btn--secondary:focus-visible { margin-right: -22px; background: #fafafa; }
+a.btn--secondary:focus-visible::after { width: 13.95px; margin: 0 -1.5px 0 9.55px; opacity: 1; transform: none; }
+@media (hover: hover) {
+  .btn:hover { background: #000; }
+  .btn:not(.btn--secondary):hover { box-shadow: 0 0 0 2px #000; }
+  .btn--secondary:hover { background: #fafafa; }
+  a.btn--secondary:hover { margin-right: -22px; }
+  a.btn--secondary:hover::after { width: 13.95px; margin: 0 -1.5px 0 9.55px; opacity: 1; transform: none; }
+}
 
 
 /* ==========================================================================
@@ -258,7 +285,8 @@ a { color: inherit; }
    ========================================================================== */
 
 /* Always fixed at the top, above every section. The bar itself is
-   transparent and click-through; only the logo and button take pointer events. */
+   transparent, with nothing behind the logo and the button, and click-through:
+   only the logo and button take pointer events. */
 .site-header {
   position: fixed;
   z-index: 100;
@@ -267,32 +295,14 @@ a { color: inherit; }
   right: 0;
   pointer-events: none;
 }
-/* Frosted bar behind the logo and button: blurs whatever scrolls underneath.
-   Almost no tint, and it fades out at the bottom so there is no hard edge. */
-.site-header::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 92px;
-  background: rgba(255, 255, 255, 0.12);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  -webkit-mask-image: linear-gradient(#000 68%, transparent);
-  mask-image: linear-gradient(#000 68%, transparent);
-  /* only once the page has scrolled, so the top of the page stays crisp */
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-.site-header.is-scrolled::before { opacity: 1; }
 .site-header__inner {
-  position: relative; /* above the frosted bar */
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   max-width: 1440px;
   margin-inline: auto;
-  padding: 30px calc(var(--edge) + var(--gutter)) 0;
+  padding: 30px max(40px, calc(var(--edge) + var(--gutter))) 0; /* on the page's content line; 20px inside the hero's corners on tablets */
 }
 .site-header__inner > * { pointer-events: auto; }
 .logo { display: block; flex: none; }
@@ -744,10 +754,11 @@ html:not(.js) .collage { display: none; }
 .crumple[data-stage="c"] .crumple__c { display: block; }
 
 /* ==========================================================================
-   Section 3 — one intake, one care team, one record
-   As wide and as tall as the hero, with the blurred texture on the right. The
-   texture is not clipped to the section: it sits behind the page and runs on
-   past the section's edges, above, below and off the side of the screen.
+   Section 4 — one intake, one care team, one record
+   Copy on the left, the app on a phone on the right, with the blurred texture
+   behind it. The texture is not clipped to the section: it sits behind the
+   page and runs on past the section's edges, above, below and off the side
+   of the screen.
    ========================================================================== */
 
 .connected {
@@ -762,88 +773,133 @@ html:not(.js) .collage { display: none; }
 /* Content lines up with the sections below (--inset), not with the hero. */
 .connected.panel--bleed { padding-inline: calc(var(--bleed) + var(--inset)); }
 .connected > :not(.tex-bg) { position: relative; z-index: 1; }
+/* The texture fades in once the section's top has come up to the middle of
+   the screen, and out again if it goes back down (script.js adds .is-lit). */
+.js-reveal .connected .tex-bg { opacity: 0; transition: opacity 1.4s ease; }
+.js-reveal .connected.is-lit .tex-bg { opacity: 1; }
 .connected__copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--stack-lg); max-width: 514px; }
 .connected__copy .display { font-size: var(--display-l); }
 .connected__copy > p:not(.eyebrow) { max-width: 410px; }
 .connected__visual { display: flex; justify-content: center; }
 
-/* Sarah's card: her one record. Whose record it is (Sword's, dated like her
-   receipt), who she is and what she came with (quiet, in a line), the plan
-   (the point of the card, in a tinted block) and a summary set like the
-   totals of a receipt. Built on the Marketing Kit's "Signal detected" card,
-   at 1.25 times the kit's sizes. */
-.signal-card {
+/* The app's chat on a phone: the Marketing Kit's "Chat / Device", 270 × 570
+   there and 300 × 633 here (--pw is its width). Every size inside is a
+   multiple of --pu, one unit of the kit's phone, so the whole phone follows
+   its width. Its corners are a little less round than the kit's (36 against
+   45). */
+.phone {
+  --pw: 300px;
+  --pu: calc(var(--pw) / 270);
+  position: relative;
+  flex: none;
+  width: calc(270 * var(--pu));
+  height: calc(570 * var(--pu));
+  margin: 0;
+  border-radius: calc(36 * var(--pu));
+  background: var(--white);
+  box-shadow: 0 calc(12 * var(--pu)) calc(40 * var(--pu)) rgba(0, 0, 0, 0.05);
+  color: var(--ink);
+}
+.phone :where(p, span, b) { text-box: none; }
+.phone__screen {
+  position: absolute;
+  inset: calc(5 * var(--pu));
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  width: 419px;
-  max-width: 100%;
-  padding: 24px 20px;
-  border-radius: 20px;
+  overflow: hidden;
+  border-radius: calc(31 * var(--pu));
+  background: #f2f2f2 url("assets/chat-bg.webp") center / 100% 100% no-repeat;
+}
+.phone__head {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--pu));
+  padding: calc(12 * var(--pu)) calc(14 * var(--pu));
+  border-bottom: 1px solid #dbdbdb;
+  background: #f2f2f2;
+}
+.phone__team { flex: none; display: flex; }
+.phone__team img, .turn__who { flex: none; width: calc(24 * var(--pu)); height: calc(24 * var(--pu)); border-radius: 50%; object-fit: cover; }
+.phone__team img + img { margin-left: calc(-8 * var(--pu)); }
+/* The care team's photos have a white ring; the member's has none. */
+.phone__team img:not(:last-child), .turn:not(.turn--me) .turn__who { box-shadow: 0 0 0 calc(2 * var(--pu)) var(--white); }
+.phone__who { display: flex; flex-direction: column; gap: calc(1 * var(--pu)); min-width: 0; font-size: calc(11 * var(--pu)); line-height: 1.2; color: var(--grey-700); white-space: nowrap; }
+.phone__who b { font-size: calc(12 * var(--pu)); font-weight: 500; color: var(--ink); }
+
+/* The conversation grows from the bottom, above the reply field; what does
+   not fit slides up under the header. */
+.phone__chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: calc(10 * var(--pu)) calc(4 * var(--pu)) calc(66 * var(--pu));
+}
+.phone__thread { display: flex; flex-direction: column; gap: calc(6 * var(--pu)); }
+/* One turn: who is talking, then up to two messages. The care team talks from
+   the left, the member from the right; each stops short of the other side. */
+.turn { display: flex; align-items: flex-end; gap: calc(4 * var(--pu)); padding-right: calc(28 * var(--pu)); }
+.turn--me { justify-content: flex-end; padding: 0 0 0 calc(28 * var(--pu)); }
+.turn__stack { display: flex; flex-direction: column; align-items: flex-start; gap: calc(3 * var(--pu)); min-width: 0; }
+.turn--me .turn__stack { align-items: flex-end; }
+.bubble {
+  max-width: calc(184 * var(--pu));
+  padding: calc(10 * var(--pu)) calc(14 * var(--pu));
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: calc(16 * var(--pu));
   background: rgba(255, 255, 255, 0.86);
-  -webkit-backdrop-filter: blur(12.5px);
-  backdrop-filter: blur(12.5px);
-  /* the white edge is drawn inside the card, as in the design, so it takes no room from the text */
-  box-shadow: inset 0 0 0 1.25px rgba(255, 255, 255, 0.95), 0 7.5px 21.25px rgba(13, 13, 13, 0.07);
+  box-shadow: 0 calc(6 * var(--pu)) calc(17 * var(--pu)) rgba(13, 13, 13, 0.07);
+  font-size: calc(12 * var(--pu));
+  line-height: 1.4;
+  transform-origin: 0 100%;
 }
-.signal-card :where(p, span, li) { text-box: none; }
-.signal-card__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-inline: 4px; }
-.signal-card__logo { flex: none; width: 73.75px; height: auto; }
-.signal-card__date { font: 400 13px/1 var(--sans); color: var(--grey-700); white-space: nowrap; }
-.signal-card__rule { height: 1.25px; margin-top: -1.25px; background: #dbdbdb; }
-.signal-card__block { display: flex; flex-direction: column; gap: 11.25px; padding-inline: 4px; }
-.signal-card__head { display: flex; align-items: center; gap: 13px; }
-.signal-card__photo { flex: none; width: 34.45px; height: 34.45px; border-radius: 50%; }
-.signal-card__who { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.signal-card__name { font: 500 18px/1.2 var(--sans); white-space: nowrap; }
-.signal-card__role { font: 400 16px/1.4 var(--sans); color: var(--grey-700); white-space: nowrap; }
-.signal-card__eyebrow { font: 500 13px/1.2 var(--sans); letter-spacing: 0.65px; text-transform: uppercase; }
+.turn--me .bubble { background: #e7d7f5; transform-origin: 100% 100%; }
+/* While the chat plays (script.js), a message that has not been sent yet
+   takes no room. */
+.phone.is-live .is-off { display: none; }
 
-/* Her symptoms run on as lines of text with a dot between one and the next.
-   Each symptom carries its dot in front of it, and the list is pulled left by
-   the dot's room, so a dot never starts a line: there it is clipped away. */
-.signal-card__person { gap: 12px; overflow: hidden; }
-.signal-card__reasons { display: flex; flex-wrap: wrap; margin-left: -16px; font: 400 14px/1.5 var(--sans); color: var(--grey-700); }
-.signal-card__reasons li { position: relative; padding-left: 16px; white-space: nowrap; }
-.signal-card__reasons li::before { content: "·"; position: absolute; left: 6px; font-weight: 700; }
-
-.signal-card__plan { gap: 15px; padding: 17.5px; border-radius: 12.5px; background: rgba(153, 87, 214, 0.09); }
-.signal-card__steps { display: flex; flex-direction: column; gap: 11.25px; }
-.signal-card__steps li { display: flex; align-items: center; gap: 8px; font: 500 16px/1.3 var(--sans); }
-.signal-card__steps li::before {
-  content: "";
-  flex: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--purple-600) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.7 8.3l2.2 2.2 4.4-4.8'/%3E%3C/svg%3E") center / 100% no-repeat;
+.phone__input {
+  position: absolute;
+  left: calc(6.5 * var(--pu));
+  right: calc(6.4 * var(--pu));
+  bottom: calc(7.8 * var(--pu));
+  display: flex;
+  align-items: center;
+  gap: calc(7.6 * var(--pu));
+  padding: calc(7.6 * var(--pu)) calc(11.4 * var(--pu)) calc(11.4 * var(--pu));
 }
-.signal-card__steps small { font-size: inherit; font-weight: 400; color: var(--grey-700); white-space: nowrap; }
-
-.signal-card__summary { display: flex; flex-direction: column; gap: 6.25px; margin: 0; font: 400 16.25px/1.4 var(--sans); }
-.signal-card__summary > div { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
-.signal-card__summary dt { color: var(--grey-700); white-space: nowrap; }
-.signal-card__summary dd { margin: 0; font-weight: 500; text-align: right; }
-
-/* On a phone the card is narrower than the kit's: the summary a size down, so
-   its longer answers still sit beside their labels. */
-@media (max-width: 479px) {
-  .signal-card__summary { font-size: 14px; }
+.phone__add, .phone__send { flex: none; display: grid; place-items: center; border-radius: 50%; }
+.phone__add { width: calc(32.3 * var(--pu)); height: calc(32.3 * var(--pu)); background: rgba(255, 255, 255, 0.86); box-shadow: 0 calc(1.9 * var(--pu)) calc(7.6 * var(--pu)) rgba(13, 13, 13, 0.06); }
+.phone__add img { width: calc(16.15 * var(--pu)); height: auto; }
+.phone__field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(3.8 * var(--pu)) calc(3.8 * var(--pu)) calc(3.8 * var(--pu)) calc(13.3 * var(--pu));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 calc(1.9 * var(--pu)) calc(7.6 * var(--pu)) rgba(13, 13, 13, 0.06);
+  font-size: calc(11.4 * var(--pu));
+  line-height: 1.4;
+  color: #808080; /* the app's placeholder grey; this field is decoration */
 }
+.phone__send { width: calc(26.6 * var(--pu)); height: calc(26.6 * var(--pu)); background: #f2f2f2; }
+.phone__send img { width: calc(13.3 * var(--pu)); height: auto; }
 
-/* The card fades up from below, slowly and smoothly: the opposite of the
-   stop-motion receipts above it. script.js adds .is-visible. */
-.js-reveal .signal-card {
-  opacity: 0;
-  transform: translateY(80px);
-  transition: opacity 1.2s cubic-bezier(0.22, 0.61, 0.36, 1), transform 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+/* .phone-rest carries the page's fade-in; the phone inside it is the one that
+   flies (see "Desktop" below). The narrowest phones get a narrower phone. */
+.phone-rest { display: flex; justify-content: center; }
+@media (max-width: 359px) {
+  .phone { --pw: 260px; }
 }
-.js-reveal .signal-card.is-visible { opacity: 1; transform: none; }
 
 /* ==========================================================================
-   Section 4 — Meet Sword Women's Health
-   One card, as wide as the sections below: copy on the left, the app and the
-   Bloom pod on the right.
+   Section 5 — Meet Sword Women's Health
+   One card, as wide as the sections below: copy on the left; on the right
+   the app on three phones, fanned out, and the Bloom pod.
    ========================================================================== */
 
 .meet__card {
@@ -866,10 +922,51 @@ html:not(.js) .collage { display: none; }
 .points__was s { text-decoration-thickness: 1px; }
 .points li > p:last-child { font-size: var(--body-s); line-height: var(--lh-body); }
 
-.meet__visual { align-self: center; width: min(440px, 100%); height: auto; margin-bottom: 26px; }
+.meet__visual { align-self: center; width: min(440px, 100%); margin-bottom: 34px; }
+/* The fan: three phones, each a size up on the one behind it, and the pod in
+   front. Everything is placed and sized in percent of the fan (479 × 516 in
+   the design), so the pod always keeps its size next to the phones. */
+.fan { position: relative; aspect-ratio: 478.86 / 516.2; }
+.fan__item { position: absolute; height: auto; }
+.fan__chat { left: 0; top: 10.63%; width: 34.62%; aspect-ratio: 165.79 / 350; }
+/* The two pictures have the kit's rounder corners cut into them; the white
+   behind them fills those out to the chat phone's corners. */
+.fan__session, .fan__exercise { border-radius: 13.333% / 6.316%; background: var(--white); }
+.fan__session { left: 16.51%; top: 4.64%; width: 39.57%; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.05); }
+.fan__exercise { left: 38.17%; top: 0; width: 44.51%; box-shadow: 0 9px 32px rgba(0, 0, 0, 0.05); }
+.fan__pod { left: 17.78%; top: 56.71%; width: 82.22%; }
+/* The chat phone again: script.js copies the phone from the section above
+   into .fan__chat and sets --k, the fan's phone over the full-size one.
+   --shift moves it sideways (the journey below). */
+.phone--twin { position: absolute; left: 0; top: 0; transform: translateX(var(--shift, 0px)) scale(var(--k, 0.5526)); transform-origin: 0 0; }
+
+/* Desktop, once the journey is on (.is-armed, script.js). The phone from the
+   section above comes straight down, so it lands to the right of its place:
+   --push (script.js) is how far. Its copy takes over there (.is-in), and then
+   the other screens come in from the right and push it left, in two steps:
+   the session pushes it half the way (.is-step1), the exercise pushes both
+   the rest of the way (.is-step2), and the pod comes last (.is-step3). A
+   screen that is pushed starts a moment after the one that pushes it.
+   Without the step classes everything goes back, quickly. */
+.fan.is-armed { --half: calc(var(--push, 0px) * 0.5); }
+.fan.is-armed .fan__chat { visibility: hidden; }
+.fan.is-armed .phone--twin { --shift: var(--push, 0px); transition: transform 0.22s ease-out; }
+.fan.is-armed :is(.fan__session, .fan__exercise, .fan__pod) { opacity: 0; transition: opacity 0.16s ease-out, transform 0.2s ease-out; }
+.fan.is-armed .fan__session { transform: translateX(calc(var(--half) + 30%)) scale(0.96); }
+.fan.is-armed .fan__exercise { transform: translateX(32%) scale(0.96); }
+.fan.is-armed .fan__pod { transform: translateY(9%) scale(0.95); }
+.fan.is-armed.is-in .fan__chat { visibility: visible; }
+.fan.is-step1 .phone--twin { --shift: var(--half); transition: transform 0.65s cubic-bezier(0.23, 1, 0.32, 1) 0.07s; }
+.fan.is-step1 .fan__session { opacity: 1; transform: translateX(var(--half)); transition: opacity 0.3s ease-out, transform 0.65s cubic-bezier(0.23, 1, 0.32, 1); }
+.fan.is-step2 .phone--twin { --shift: 0px; }
+.fan.is-step2 .fan__session { transform: none; transition: opacity 0.3s ease-out, transform 0.65s cubic-bezier(0.23, 1, 0.32, 1) 0.07s; }
+.fan.is-step2 .fan__exercise { opacity: 1; transform: none; transition: opacity 0.3s ease-out, transform 0.65s cubic-bezier(0.23, 1, 0.32, 1); }
+.fan.is-step3 .fan__pod { opacity: 1; transform: none; transition: opacity 0.4s ease-out, transform 0.7s cubic-bezier(0.23, 1, 0.32, 1); }
+/* Put straight into place (the page opened further down, or was resized). */
+.no-fly :is(.phone, .fan__item) { transition: none !important; }
 
 /* ==========================================================================
-   Section 5 — savings calculator
+   Section 3 — savings calculator (on the page straight after Sarah's story)
    ========================================================================== */
 
 /* --pad: the card's padding; --gap: between the groups inside it. */
@@ -1018,14 +1115,26 @@ html:not(.js) .collage { display: none; }
   .calc__others {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
-    gap: 32px;
+    gap: 16px;
     border-top: 1px solid rgba(13, 13, 13, 0.12);
   }
   .calc__others::before { content: ""; grid-column: 2; grid-row: 1; background: rgba(13, 13, 13, 0.12); }
-  .calc__other { grid-row: 1; padding-block: min(64px, 10.7cqw) 0; border-top: 0; }
+  .calc__other { grid-row: 1; padding-block: 32px 16px; border-top: 0; }
   .calc__other:first-child { grid-column: 1; }
   .calc__other:last-child { grid-column: 3; }
 }
+/* Under the results: a line, then "See how it works for your population" and
+   Book a demo side by side, or one under the other where there is no room. */
+.calc__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px 32px;
+  padding-top: 32px;
+  border-top: 1px solid rgba(13, 13, 13, 0.12);
+}
+.calc__cta-text { font: 400 clamp(19px, 17px + 0.35vw, 22px)/1.3 var(--serif); }
 
 /* ==========================================================================
    Section 6 — what changes (outcomes and economics)
@@ -1062,21 +1171,43 @@ html:not(.js) .collage { display: none; }
 
 .voice { display: flex; flex-direction: column; align-items: flex-start; gap: var(--stack-lg); }
 .voice__mark { width: 29px; height: 27px; margin-bottom: -8px; }
-.voice__quote { max-width: 446px; font: italic 400 var(--display-l)/1.1 var(--serif); }
-/* A quote on its own: smaller and wider (32px at 1.3, 711px in the design), so it stays a few lines */
+.voice__quote { max-width: 446px; font: italic 400 clamp(36px, 22px + 2.6vw, 48px)/1.1 var(--serif); }
+/* A quote on its own: smaller (32px at 1.3), with a smaller quote mark, so it stays a few lines */
 .voice--solo { max-width: 711px; }
+.voice--solo .voice__mark { width: 18px; height: 17px; }
 .voice--solo .voice__quote { max-width: none; font-size: clamp(24px, 16px + 2vw, 32px); line-height: 1.3; }
-.byline { font-size: var(--body-s); font-weight: 600; line-height: var(--lh-body); }
-.byline span { display: block; max-width: 520px; margin-top: 12px; font-weight: 400; color: var(--grey-700); }
+.byline { font-size: var(--body-m); font-weight: 500; line-height: var(--lh-body); }
+.byline span { display: block; max-width: 400px; margin-top: 20px; font-size: var(--body-s); font-weight: 400; }
 
-/* One bar per slide: 48 × 2px, with room around it to click. The bar of the
-   slide on show fills up over --turn (script.js moves on when it is full).
-   Needs script.js, so it only shows under the `js` class. */
-.voices__progress { display: none; }
-.js .voices__progress { display: flex; gap: var(--stack-xs); }
+/* Under the slide: one bar per slide, then two small arrows, back and forward.
+   A bar is 48 × 2px, with room around it to click; the bar of the slide on
+   show fills up over --turn (script.js moves on when it is full). All of it
+   needs script.js, so it only shows under the `js` class. */
+.voices__nav { display: none; }
+.js .voices__nav { display: flex; align-items: center; gap: var(--stack-sm); }
+.voices__progress { display: flex; gap: var(--stack-xs); }
+.voices__arrows { display: flex; gap: 4px; }
+/* Plain chevrons, no ground: 16px drawn, 24px to click. */
+.voices__arrow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.16s ease-out;
+}
+.voices__arrow:active { transform: scale(0.9); }
+@media (hover: hover) {
+  .voices__arrow:hover { opacity: 0.55; }
+}
 .voices__bar { position: relative; width: 48px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; }
 .voices__bar::before, .voices__bar span { content: ""; position: absolute; left: 0; top: 12px; width: 100%; height: 2px; }
-.voices__bar::before { background: #949494; } /* 3:1 on white: it is the button's only visible edge */
+.voices__bar::before { background: #c2c2c2; } /* Figma's grey/400: a light line; the arrows are the clear way to move */
 .voices__bar span { background: var(--ink); transform: scaleX(0); transform-origin: 0 50%; }
 .voices__bar.is-done span { transform: scaleX(1); }
 .voices__bar.is-active span { animation: voice-turn var(--turn, 7s) linear forwards; }
@@ -1119,13 +1250,14 @@ html:not(.js) .play { display: none; } /* the film needs script.js to play */
    ========================================================================== */
 
 .whitepaper {
+  --pad: var(--inset-feature);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--stack-lg);
-  padding: var(--inset-card);
+  padding: var(--pad);
   border-radius: var(--radius-panel);
 }
 .whitepaper__text { display: flex; flex-direction: column; gap: var(--stack-md); max-width: 424px; }
@@ -1141,7 +1273,7 @@ html:not(.js) .play { display: none; } /* the film needs script.js to play */
 
 /* Page carousel: a scroll-snapping row of pages; the next page peeks in.
    script.js wires up the arrows, the counter and a slow autoplay. */
-.wp-carousel { width: calc(100% + var(--inset-card)); margin-right: calc(-1 * var(--inset-card)); }
+.wp-carousel { width: calc(100% + var(--pad)); margin-right: calc(-1 * var(--pad)); }
 .wp-carousel__track {
   display: flex;
   gap: 16px;
@@ -1149,7 +1281,6 @@ html:not(.js) .play { display: none; } /* the film needs script.js to play */
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   scrollbar-width: none;
-  padding-right: var(--inset-card);
 }
 .wp-carousel__track::-webkit-scrollbar { display: none; }
 .wp-carousel__track:focus-visible { outline-offset: -2px; }
@@ -1157,7 +1288,10 @@ html:not(.js) .play { display: none; } /* the film needs script.js to play */
   flex: 0 0 min(78%, 420px);
   scroll-snap-align: start;
 }
-.wp-carousel__slide img { width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 28px rgba(42, 12, 78, 0.12); }
+/* The last page stops short of the card's edge (the room is part of the slide,
+   so every browser counts it when the row is scrolled to its end). */
+.wp-carousel__slide:last-child { box-sizing: content-box; padding-right: var(--pad); }
+.wp-carousel__slide img { width: 100%; height: auto; border-radius: 4px; box-shadow: 0 8px 28px rgba(42, 12, 78, 0.12); }
 /* Figma "carousel controls": the Secondary button's look on 36px circles. */
 .wp-carousel__controls { display: flex; align-items: center; gap: 12px; }
 .wp-carousel__btn {
@@ -1248,7 +1382,9 @@ html:not(.js) .play { display: none; } /* the film needs script.js to play */
   text-align: center;
 }
 .closing > :not(.tex-bg) { position: relative; z-index: 1; }
-.closing__text { display: flex; flex-direction: column; align-items: center; gap: var(--stack-md); }
+.closing__text { display: flex; flex-direction: column; align-items: center; gap: var(--stack-lg); }
+/* Figma: Display/L on two lines (505px wide at 56px) */
+.closing .display { max-width: 9.1em; font-size: var(--display-l); }
 .closing__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--stack-sm); }
 
 /* ==========================================================================
@@ -1310,7 +1446,7 @@ html:not(.js) .play { display: none; } /* the film needs script.js to play */
   .faq__answer { padding: 0 var(--inset-panel) var(--inset-row); }
 
   /* Logo on the left, icons in the middle, copyright on the right */
-  .footer { display: grid; grid-template-columns: 1fr auto 1fr; padding: var(--inset-row) var(--inset-panel); text-align: left; }
+  .footer { display: grid; grid-template-columns: 1fr auto 1fr; padding: var(--inset-row) max(20px, calc(var(--inset) - var(--edge))); text-align: left; } /* on the page's content line */
   .footer p { justify-self: end; }
 }
 
@@ -1378,26 +1514,47 @@ html:not(.js) .play { display: none; } /* the film needs script.js to play */
     column-gap: clamp(var(--layout-column-gap), 5.6vw, var(--layout-content-inset));
     align-items: start;
   }
-  .meet__copy { padding-bottom: var(--inset-panel); }
-  .meet__visual { justify-self: center; align-self: end; margin-block: 22px 38px; }
+  /* Figma: 64px each side, the fan 51px from the top and 34px from the
+     bottom (it sets the card's height), 7px out into the right-hand
+     padding; the copy centred a little above the middle. */
+  .meet__card { padding: 51px var(--inset-feature) 34px; align-items: center; }
+  .meet__copy { padding-bottom: 26px; }
+  .meet__intro { gap: var(--stack-lg); }
+  .meet__visual { justify-self: end; width: min(479px, 100% + 7px); margin: 0 -7px 0 0; }
 
-  /* Copy on the left, the card centred in the right-hand part; the panel
-     fills the screen, as the hero does (up to the design's 874px). */
+  /* Copy on the left, 64px in (in line with what is inside the cards above
+     and below); the phone centred in the right-hand part. The panel is as
+     tall as the design's (732px), or the screen where that is shorter. */
   .connected {
     display: grid;
-    grid-template-columns: minmax(0, 514px) minmax(0, 657px);
+    grid-template-columns: minmax(0, 583px) minmax(0, 657px);
     justify-content: space-between;
     align-items: center;
     column-gap: 40px;
-    min-height: min(874px, calc(100svh - 2 * var(--wide-inset)));
-    padding-block: 80px;
+    min-height: min(732px, calc(100svh - 2 * var(--wide-inset)));
+    padding-block: var(--inset-panel);
   }
+  .connected__copy { padding-left: var(--inset-feature); max-width: none; }
+  /* The phone's journey (script.js adds .is-travel). When the card below
+     comes into view (.is-down) the phone flies to it in one movement:
+     straight down by --fly-y and down to the card's size, --fly-s, from the
+     middle of its top edge, so it stays on its own vertical line. It lies
+     over the page on the way, and is hidden once it has landed (.is-landed),
+     when its copy in the card takes over. Without .is-down it flies back. */
+  .connected.is-travel .phone { transform-origin: 50% 0; transition: transform 0.95s cubic-bezier(0.65, 0, 0.35, 1); will-change: transform; }
+  .connected.is-travel.is-down .phone { transform: translateY(var(--fly-y, 0px)) scale(var(--fly-s, 1)); }
+  .connected.is-landed .phone { visibility: hidden; }
 
   /* Inputs on the left, results on the right, centred in what the inputs leave. */
-  .calc__card { --pad: clamp(40px, 4.45vw, 64px); --gap: var(--pad); grid-template-columns: minmax(0, 514fr) minmax(0, 726fr); }
+  /* Figma: 64px inside the card (32px under the last row), 40px under the
+     title, inputs 440px wide at 1440, 64px between the columns, the inputs
+     centred against the results. */
+  .calc__card { --pad: var(--inset-feature); --gap: 40px; grid-template-columns: minmax(0, 504fr) minmax(0, 776fr); border-radius: var(--radius-feature); }
   .calc__title { grid-column: 1 / -1; }
-  .calc__inputs { padding: var(--gap) 0 var(--pad) var(--pad); }
-  .calc__results { padding: var(--gap) var(--pad) var(--pad); }
+  .calc__inputs { align-self: center; padding: var(--gap) 0 32px var(--pad); }
+  .calc__fields { margin-top: calc(var(--pad) - var(--stack-md)); }
+  .calc__field :where(select, input) { height: 64px; }
+  .calc__results { gap: 32px; padding: var(--gap) var(--pad) var(--pad); }
 
   /* Four across, a hairline in the middle of each 48px gap */
   .outcomes__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: calc(2 * var(--layout-column-gap)); }
@@ -1406,17 +1563,30 @@ html:not(.js) .play { display: none; } /* the film needs script.js to play */
 
   .resources { grid-template-columns: minmax(0, 400px) minmax(0, 816px); column-gap: var(--layout-column-gap); justify-content: space-between; align-items: start; }
 
-  /* First slide: the quote on the left, the video on the right */
+  /* Every slide at least 400px tall, on the page's content line (no padding
+     of its own). The bars sit in the same place on every slide: bottom left,
+     32px up (they are in the middle of their 26px row, so the row is 20px up). */
+  .voices__carousel { position: relative; }
+  .voices__slide { min-height: 400px; }
+  .js .voices__nav { position: absolute; left: 0; bottom: 20px; }
+  /* First slide: the quote on the left, centred in the room above the bars
+     (82px: the bars, 48px over them and 32px under), the video on the right */
   .voices__slide--video { flex-direction: row; align-items: center; gap: var(--layout-column-gap); }
-  .voices__slide--video .voice { flex: 0 0 min(446px, 36%); }
-  .voices__slide--video .video { flex: 1; min-width: 0; }
+  .voices__slide--video .voice { flex: 0 0 min(446px, 36%); align-self: stretch; justify-content: center; padding-bottom: 82px; }
+  .voices__slide--video .video { flex: 0 1 706px; min-width: 0; margin-left: auto; } /* the design's size, against the right edge */
+  /* A quote on its own: the quote on the left, who said it on the right, both
+     resting on one line 64px above the room for the bars */
+  .voices__slide:not(.voices__slide--video) { justify-content: flex-end; }
+  .voice--solo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 64px; align-items: end; max-width: none; padding-bottom: 146px; }
+  .voice--solo :where(.voice__mark, .voice__quote) { grid-column: 1; }
+  .voice--solo .byline { grid-column: 2; grid-row: 2; }
 
   /* Text and controls on the left; the pages run off the right and bottom edges. */
-  .whitepaper { min-height: 594px; justify-content: space-between; }
+  .whitepaper { min-height: 599px; justify-content: space-between; }
   .whitepaper__text, .whitepaper__actions { position: relative; z-index: 1; max-width: min(424px, 40%); }
   .whitepaper__actions { justify-content: flex-start; }
   .wp-carousel { position: absolute; left: min(599px, 48.3%); top: 84px; right: 0; width: auto; margin: 0; }
-  .wp-carousel__track { gap: var(--layout-column-gap); padding-right: 0; }
+  .wp-carousel__track { gap: var(--layout-column-gap); }
   .wp-carousel__slide { flex-basis: min(530px, 90%); }
 
   .faq { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: var(--layout-column-gap); }
@@ -1750,8 +1920,13 @@ html:has(dialog[open]) { overflow: hidden; scrollbar-gutter: stable; }
    ========================================================================== */
 
 @media print {
-  .js-reveal :where([data-reveal]:not([data-reveal="children"]), [data-reveal="children"] > *),
-  .js-reveal .signal-card { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .js-reveal :where([data-reveal]:not([data-reveal="children"]), [data-reveal="children"] > *) { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .fan .fan__item { opacity: 1 !important; transform: none !important; transition: none !important; visibility: visible !important; }
+  .phone:not(.phone--twin) { transform: none !important; visibility: visible !important; }
+  .phone--twin { --shift: 0px !important; }
+  .phone .bubble.is-off { display: block !important; }
+  .phone .turn.is-off { display: flex !important; }
   .site-header { position: absolute; }
-  .site-header::before, .fall-layer, .intro-replay, .scroll-cue, .guide-form { display: none !important; }
+  .fall-layer, .intro-replay, .scroll-cue, .guide-form { display: none !important; }
+  .connected .tex-bg { opacity: 1 !important; }
 }

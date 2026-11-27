@@ -73,7 +73,7 @@
       <div class="sarah__moment sarah__top">
         <div class="sarah__copy">
           <div class="sarah__intro" data-reveal="children">
-            <p class="meet-kicker">Meet <span class="meet-kicker__who"><img src="assets/avatar-sarah.png" alt="" width="32" height="32">Sarah, 46</span></p>
+            <p class="meet-kicker">Meet <span class="meet-kicker__who"><img src="assets/avatar-sarah.webp" alt="" width="32" height="32">Sarah, 46</span></p>
             <h2 class="display" id="sarah-title">One year.<br class="until-lg"> Nine claims.<br>Still no answer.</h2>
             <div class="sarah__story">
               <p>This year, Sarah was tired in a way sleep didn’t fix, anxious, and in pain. She saw six kinds of specialist, and each heard a piece. At work, she said she was fine. Her plan paid every claim, but no one saw the whole picture, so she never got a proper diagnosis.</p>
@@ -284,97 +284,7 @@
     </section>
     </div>
 
-    <!-- Section 3 — one intake, one care team, one record: a full-screen
-         stretch, copy on the left, Sarah’s card on the right. Its blurred
-         texture is not clipped: it runs on past the section’s edges. -->
-    <section class="panel panel--bleed section connected" aria-labelledby="connected-title">
-      <div class="tex-bg" aria-hidden="true">
-        <div class="tex" style="--cx:83.93;--cy:49.94;--w:195.54cqh;--h:88.57cqw;--t:rotate(90deg)"><img src="assets/texture.png" alt=""></div>
-      </div>
-
-      <div class="connected__copy" data-reveal="children">
-        <p class="eyebrow">But there’s another path.</p>
-        <h2 class="display" id="connected-title">One intake.<br>One care team.<br>One record.</h2>
-        <p>Sword connects the dots. One team sees the whole picture, stays in touch between visits and recognizes the pattern earlier. Less time lost, less spend scattered.</p>
-        <div><a class="btn btn--secondary" href="#download">Download the guide</a></div>
-      </div>
-
-      <!-- Fades up smoothly once the receipts above have crumpled and fallen -->
-      <div class="connected__visual">
-        <figure class="signal-card" aria-label="Sarah Lawrence, 46: her symptoms, her care plan and a summary, on one record">
-          <div class="signal-card__top">
-            <img class="signal-card__logo" src="assets/logo-color.svg" alt="Sword" width="99" height="24">
-            <p class="signal-card__date">11/27/2026</p>
-          </div>
-          <div class="signal-card__rule"></div>
-          <div class="signal-card__block signal-card__person">
-            <div class="signal-card__head">
-              <img class="signal-card__photo" src="assets/avatar-sarah.png" alt="" width="40" height="40">
-              <p class="signal-card__who"><span class="signal-card__name">Sarah Lawrence</span><span class="signal-card__role">46yo</span></p>
-            </div>
-            <ul class="signal-card__reasons" aria-label="Symptoms">
-              <li>Fatigue</li>
-              <li>Sleep complaints</li>
-              <li>Irregular bleeding</li>
-              <li>New onset anxiety</li>
-              <li>Hip and knee pain</li>
-              <li>Memory, concentration</li>
-            </ul>
-          </div>
-
-          <!-- The plan is the point of the card: one tinted block -->
-          <div class="signal-card__block signal-card__plan">
-            <p class="signal-card__eyebrow">Sword all in one care plan</p>
-            <ul class="signal-card__steps">
-              <li><span>Movement</span></li>
-              <li><span>Nutrition</span></li>
-              <li><span>Mindset</span></li>
-              <li><span>Hormone therapy <small>(if needed)</small></span></li>
-            </ul>
-          </div>
-          <div class="signal-card__rule"></div>
-
-          <div class="signal-card__block signal-card__totals">
-            <p class="signal-card__eyebrow">Summary</p>
-            <dl class="signal-card__summary">
-              <div><dt>Diagnosis</dt><dd>Menopause</dd></div>
-              <div><dt>Claims generated</dt><dd>None beyond the program fee.</dd></div>
-              <div><dt>What employer pays</dt><dd>One capped fee. 100% at risk.</dd></div>
-            </dl>
-          </div>
-        </figure>
-      </div>
-    </section>
-
-    <!-- Section 4 — Meet Sword Women’s Health: one card, copy on the left,
-         the app and the Bloom pod on the right -->
-    <section class="wrap section meet" id="how-it-works" aria-labelledby="meet-title">
-      <div class="meet__card" data-reveal>
-        <div class="meet__copy">
-          <div class="meet__intro">
-            <h2 class="display" id="meet-title">Meet Sword <br>Women’s Health</h2>
-            <p>One care team reads the whole story. Every woman works with a dedicated Women’s Health Specialist, supported by nurse practitioners, midwives, and physical therapists, all working from one record.</p>
-          </div>
-          <ul class="points">
-            <!-- Each point: the old way struck through, then the Sword way -->
-            <li>
-              <p class="points__was"><s>Care by appointment</s></p>
-              <h3>Continuous care</h3>
-              <p>Same-day evaluation, then proactive support around the clock, not just at the next appointment.</p>
-            </li>
-            <li>
-              <p class="points__was"><s>Paid per visit</s></p>
-              <h3>Paid for results</h3>
-              <p>Part of our fee is earned only when members get better, not when appointments go up.</p>
-            </li>
-          </ul>
-          <div><a class="btn meet__cta" href="https://hubs.ly/Q04GjnQ10" target="_blank" rel="noopener">Learn more<span class="sr-only"> (opens in a new tab)</span></a></div>
-        </div>
-        <img class="meet__visual" src="assets/meet-visual.webp" alt="The Sword app on two phones, an onboarding screen and a chat with the care team, beside the Bloom pod" width="474" height="522" loading="lazy">
-      </div>
-    </section>
-
-    <!-- Section 5 — cost of menopause calculator.
+    <!-- Section 3 — cost of menopause calculator, straight after Sarah's story.
          Built on the Excel model "Cost of menopause: Sword vs traditional
          cost": client inputs and the base case with its low and high range.
          The maths and the assumptions behind it live in script.js. -->
@@ -442,6 +352,120 @@
               <p class="calc__label">Estimated cost with Sword</p>
             </div>
           </div>
+          <div class="calc__cta">
+            <p class="calc__cta-text">See how it works for your population</p>
+            <a class="btn" href="https://hubs.ly/Q04GjpZF0" target="_blank" rel="noopener">Book a demo<span class="sr-only"> (opens in a new tab)</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4 — one intake, one care team, one record: copy on the left,
+         the app on a phone on the right, with Sarah’s chat with her care team.
+         On desktop the messages arrive one by one, and when the next
+         section’s card comes into view the phone flies down into it
+         (script.js). Its blurred
+         texture is not clipped: it runs on past the section’s edges. -->
+    <section class="panel panel--bleed section connected" aria-labelledby="connected-title">
+      <div class="tex-bg" aria-hidden="true">
+        <div class="tex" style="--cx:83.93;--cy:49.94;--w:233.5cqh;--h:88.57cqw;--t:rotate(90deg)"><img src="assets/texture.png" alt=""></div>
+      </div>
+
+      <div class="connected__copy" data-reveal="children">
+        <p class="eyebrow">But there’s another path.</p>
+        <h2 class="display" id="connected-title">One intake.<br>One care team.<br>One record.</h2>
+        <p>Sword connects the dots. One team sees the whole picture, stays in touch between visits, and recognizes the pattern earlier. Less time lost, less spend scattered.</p>
+        <p>Find out how much of your women’s health spend you can actually see with Sword.</p>
+        <div><a class="btn" href="#download">Download the guide</a></div>
+      </div>
+
+      <!-- The phone. .phone-rest carries the page’s fade-in, so the phone
+           itself is free to fly down to the next section’s card (script.js). -->
+      <div class="connected__visual">
+        <div class="phone-rest" data-reveal>
+          <figure class="phone" aria-label="Sarah’s chat with her Sword care team">
+            <div class="phone__screen">
+              <div class="phone__head">
+                <div class="phone__team" aria-hidden="true">
+                  <img src="assets/chat-lauren.webp" alt="" width="24" height="24">
+                  <img src="assets/chat-care-team.webp" alt="" width="24" height="24">
+                  <img src="assets/avatar-sarah.webp" alt="" width="24" height="24">
+                </div>
+                <p class="phone__who"><b>Your Care Team</b><span>Lauren (DPT), Phoenix, You</span></p>
+              </div>
+              <div class="phone__chat">
+                <div class="phone__thread">
+                  <div class="turn">
+                    <img class="turn__who" src="assets/chat-lauren.webp" alt="" width="24" height="24">
+                    <div class="turn__stack">
+                      <p class="bubble"><span class="sr-only">Lauren: </span>Good to talk today, Sarah. I’ve been through everything in your intake.</p>
+                      <p class="bubble">Tired in a way sleep doesn’t fix. Anxious. In pain. Losing words mid-sentence. That’s a lot to carry on your own.</p>
+                    </div>
+                  </div>
+                  <div class="turn">
+                    <img class="turn__who" src="assets/chat-lauren.webp" alt="" width="24" height="24">
+                    <div class="turn__stack">
+                      <p class="bubble">I’ll build your plan around all of it. It will include strength, movement and nutrition, and hormone therapy if it’s right for you.</p>
+                    </div>
+                  </div>
+                  <div class="turn turn--me">
+                    <div class="turn__stack">
+                      <p class="bubble"><span class="sr-only">Sarah: </span>That’s a relief.</p>
+                    </div>
+                    <img class="turn__who" src="assets/avatar-sarah.webp" alt="" width="24" height="24">
+                  </div>
+                  <div class="turn">
+                    <img class="turn__who" src="assets/chat-lauren.webp" alt="" width="24" height="24">
+                    <div class="turn__stack">
+                      <p class="bubble"><span class="sr-only">Lauren: </span>I’ll send over the plan shortly, let’s keep in touch.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="phone__input" aria-hidden="true">
+                <span class="phone__add"><img src="assets/ic-chat-add.svg" alt="" width="16" height="16"></span>
+                <span class="phone__field">Type to reply<span class="phone__send"><img src="assets/ic-chat-send.svg" alt="" width="13" height="13"></span></span>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5 — Meet Sword Women’s Health: one card, copy on the left; on
+         the right the app on three phones, fanned out, and the Bloom pod.
+         The first phone is the chat from the section above: script.js puts a
+         copy of it in .fan__chat; on desktop the phone itself flies down,
+         and the other screens push it into place before the pod appears. -->
+    <section class="wrap section meet" id="how-it-works" aria-labelledby="meet-title">
+      <div class="meet__card" data-reveal>
+        <div class="meet__copy">
+          <div class="meet__intro">
+            <h2 class="display" id="meet-title">Meet Sword <br>Women’s Health</h2>
+            <p>One care team reads the whole story. Every woman works with a dedicated Women’s Health Specialist, supported by nurse practitioners, midwives, and physical therapists, all working from one record.</p>
+          </div>
+          <ul class="points">
+            <!-- Each point: the old way struck through, then the Sword way -->
+            <li>
+              <p class="points__was"><s>Care by appointment</s></p>
+              <h3>Continuous care.</h3>
+              <p>Same-day evaluation, then proactive support around the clock, not just at the next appointment.</p>
+            </li>
+            <li>
+              <p class="points__was"><s>Paid per visit</s></p>
+              <h3>Paid for results.</h3>
+              <p>Part of our fee is earned only when members get better, not when appointments go up.</p>
+            </li>
+          </ul>
+          <div><a class="btn btn--secondary meet__cta" href="https://hubs.ly/Q04GjnQ10" target="_blank" rel="noopener">Learn more about Bloom<span class="sr-only"> (opens in a new tab)</span></a></div>
+        </div>
+        <div class="meet__visual">
+          <div class="fan" role="img" aria-label="The Sword app on three phones: a chat with the care team, a guided session and a pelvic floor exercise, beside the Bloom pod">
+            <div class="fan__item fan__chat" aria-hidden="true"></div>
+            <img class="fan__item fan__session" src="assets/app-session.webp" alt="" width="569" height="1200" loading="lazy">
+            <img class="fan__item fan__exercise" src="assets/app-exercise.webp" alt="" width="640" height="1350" loading="lazy">
+            <img class="fan__item fan__pod" src="assets/bloom-pod.webp" alt="" width="505" height="287" loading="lazy">
+          </div>
         </div>
       </div>
     </section>
@@ -473,7 +497,8 @@
     <!-- Section 7 — the women behind the claims: a carousel that moves side to
          side. The first slide is a quote beside the member video; the other
          two are a quote on its own. script.js moves it on (the bars under it
-         show whose turn it is); it can also be swiped or scrolled sideways. -->
+         show whose turn it is; the two arrows after them go back and
+         forward); it can also be swiped or scrolled sideways. -->
     <section class="wrap section voices" aria-labelledby="voices-title">
       <h2 class="display" id="voices-title" data-reveal>The women behind the claims</h2>
       <div class="voices__carousel" data-reveal role="group" aria-roledescription="carousel" aria-label="What women and benefits leaders say">
@@ -492,22 +517,28 @@
           <div class="voices__slide" role="group" aria-roledescription="slide" aria-label="2 of 3">
             <figure class="voice voice--solo">
               <img class="voice__mark" src="assets/ic-quote.svg" alt="" width="29" height="27">
-              <blockquote class="voice__quote">I don’t recall any of our vendors presenting an analysis looking at the women in our population who were in peri and menopause ages.”</blockquote>
+              <blockquote class="voice__quote">I don’t recall any of our vendors presenting an analysis looking at the women in our population who were in peri and menopause ages.</blockquote>
               <figcaption class="byline">Candace Jodice, Head of Benefit Strategy<span>More than 25 years leading enterprise benefits programs, including a $3B+ annual benefits budget at CVS Health.</span></figcaption>
             </figure>
           </div>
           <div class="voices__slide" role="group" aria-roledescription="slide" aria-label="3 of 3">
             <figure class="voice voice--solo">
               <img class="voice__mark" src="assets/ic-quote.svg" alt="" width="29" height="27">
-              <blockquote class="voice__quote">I had accepted that this was just my life now. But since starting your program, everything has changed.”</blockquote>
+              <blockquote class="voice__quote">I had accepted that this was just my life now. But since starting your program, everything has changed.</blockquote>
               <figcaption class="byline">Sword Women’s Health member, age 50 to 59</figcaption>
             </figure>
           </div>
         </div>
-        <div class="voices__progress">
-          <button class="voices__bar is-active" type="button" aria-label="Quote 1 of 3" aria-current="true"><span></span></button>
-          <button class="voices__bar" type="button" aria-label="Quote 2 of 3"><span></span></button>
-          <button class="voices__bar" type="button" aria-label="Quote 3 of 3"><span></span></button>
+        <div class="voices__nav">
+          <div class="voices__progress">
+            <button class="voices__bar is-active" type="button" aria-label="Quote 1 of 3" aria-current="true"><span></span></button>
+            <button class="voices__bar" type="button" aria-label="Quote 2 of 3"><span></span></button>
+            <button class="voices__bar" type="button" aria-label="Quote 3 of 3"><span></span></button>
+          </div>
+          <div class="voices__arrows">
+            <button class="voices__arrow" type="button" data-dir="-1" aria-label="Previous quote"><svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button class="voices__arrow" type="button" data-dir="1" aria-label="Next quote"><svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 4.5 13 10l-5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
         </div>
       </div>
     </section>
@@ -528,19 +559,19 @@
           </ul>
         </div>
 
-        <!-- Page carousel: four pages of the whitepaper (5, 7, 11 and 13),
-             exported from the design at 682 × 883. -->
+        <!-- Page carousel: the whitepaper's cover and pages 4, 5 and 13, from the
+             designer's 1546 × 2000 exports, served 683 and 1366 wide. -->
         <div class="wp-carousel" role="group" aria-roledescription="carousel" aria-label="Pages from the whitepaper">
           <div class="wp-carousel__track" tabindex="0" aria-label="Whitepaper pages">
-            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 1 of 4"><img src="assets/whitepaper-page-05.webp" alt="Whitepaper page 5: chapter 1, what employers offer and what women experience" width="683" height="883" loading="lazy"></figure>
-            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 2 of 4"><img src="assets/whitepaper-page-07.webp" alt="Whitepaper page 7: chapter 2, claims data is a receipt, not a diagnosis" width="683" height="883" loading="lazy"></figure>
-            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 3 of 4"><img src="assets/whitepaper-page-11.webp" alt="Whitepaper page 11: chapter 6, how to start seeing it" width="683" height="883" loading="lazy"></figure>
-            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 4 of 4"><img src="assets/whitepaper-page-13.webp" alt="Whitepaper page 13: the five questions, answered" width="683" height="883" loading="lazy"></figure>
+            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 1 of 4"><img src="assets/whitepaper-cover.webp" srcset="assets/whitepaper-cover.webp 683w, assets/whitepaper-cover-2x.webp 1366w" sizes="(min-width: 1024px) 530px, min(78vw, 420px)" alt="Whitepaper cover: the hidden costs of menopause" width="683" height="884" loading="lazy"></figure>
+            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 2 of 4"><img src="assets/whitepaper-page-04.webp" srcset="assets/whitepaper-page-04.webp 683w, assets/whitepaper-page-04-2x.webp 1366w" sizes="(min-width: 1024px) 530px, min(78vw, 420px)" alt="Whitepaper page 4: part 1, understand the problem" width="683" height="884" loading="lazy"></figure>
+            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 3 of 4"><img src="assets/whitepaper-page-05.webp" srcset="assets/whitepaper-page-05.webp 683w, assets/whitepaper-page-05-2x.webp 1366w" sizes="(min-width: 1024px) 530px, min(78vw, 420px)" alt="Whitepaper page 5: chapter 1, what employers offer and what women experience" width="683" height="884" loading="lazy"></figure>
+            <figure class="wp-carousel__slide" aria-roledescription="slide" aria-label="Page 4 of 4"><img src="assets/whitepaper-page-13.webp" srcset="assets/whitepaper-page-13.webp 683w, assets/whitepaper-page-13-2x.webp 1366w" sizes="(min-width: 1024px) 530px, min(78vw, 420px)" alt="Whitepaper page 13: the five questions, answered" width="683" height="884" loading="lazy"></figure>
           </div>
         </div>
 
         <div class="whitepaper__actions">
-          <a class="btn btn--secondary" href="#download">Download the guide</a>
+          <a class="btn" href="#download">Download the guide</a>
           <div class="wp-carousel__controls">
             <button class="wp-carousel__btn" type="button" data-dir="-1" aria-label="Previous page"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.5 4.5 7 10l5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             <p class="wp-carousel__count" aria-live="polite"><span data-current>1</span> / <span data-total>4</span></p>
@@ -611,7 +642,7 @@
         <p>Get the guide, or see what the spend looks like in your own population.</p>
       </div>
       <div class="closing__actions" data-reveal>
-        <a class="btn btn--secondary" href="#download">Download the guide</a>
+        <a class="btn" href="#download">Download the guide</a>
         <a class="btn btn--secondary" href="https://hubs.ly/Q04GjpZF0" target="_blank" rel="noopener">Book a demo<span class="sr-only"> (opens in a new tab)</span></a>
       </div>
     </section>
@@ -677,7 +708,7 @@
           <input id="gf-note" name="hp_note" type="text" tabindex="-1" autocomplete="off">
         </div>
         <p class="guide-form__problem" role="alert" hidden></p>
-        <button class="btn guide-form__submit" type="submit">Get my copy</button>
+        <button class="btn guide-form__submit" type="submit">Send it to my inbox</button>
         <p class="note">By submitting this form, you agree to Sword Health’s <a href="https://swordhealth.com/legal/privacy-statement" target="_blank" rel="noopener">privacy policy</a>. You can unsubscribe at any time.</p>
       </form>
       <div class="receipt__barcode guide-form__barcode" aria-hidden="true"></div>

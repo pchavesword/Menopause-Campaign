@@ -35,6 +35,8 @@ Vercel is connected to this GitHub repository. Every push to `main` deploys to p
 
 If the repository is transferred to another GitHub account, the Vercel project's Git connection will need to be re-linked (or the project re-imported at vercel.com/new) before pushes deploy again.
 
+**Share previews.** The `og:` and `twitter:` tags in `<head>` give LinkedIn, Slack, iMessage, X and WhatsApp a title, a description and an image: `assets/share-image.jpg` (1200 × 640, from the design). The image needs a full address, so it points at `https://menopause-campaign.vercel.app/`, the address `main` deploys to; Vercel keeps that address working once a custom domain is added. When the final address is known, change it in `og:image` and `twitter:image`, and add `og:url` and a canonical link with it. Share previews are cached by each platform: after a change, LinkedIn's Post Inspector and Facebook's Sharing Debugger fetch the page again.
+
 ## Page structure
 
 Restructured on branch `bruno/updates` from the Figma frame "lp-lg v2" in the section "Receipt > Card Experiment". Sections in order, with the class to search for:
